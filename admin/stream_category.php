@@ -121,7 +121,7 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="category_type">Category Type</label>
                                                             <div class="col-md-8">
                                                                 <select name="category_type" id="category_type" class="form-control select2" data-toggle="select2">
-                                                                    <?php foreach (Array("live" => "Live TV", "movie" => "Movie", "series" => "TV Series") as $rGroupID => $rGroup) { ?>
+                                                                    <?php foreach (Array("live" => "Live TV", "movie" => "Movie", "series" => "TV Series", "radio" => "Radio Station") as $rGroupID => $rGroup) { ?>
                                                                     <option <?php if (isset($rCategoryArr)) { if ($rCategoryArr["category_type"] == $rGroupID) { echo "selected "; } } ?>value="<?=$rGroupID?>"><?=$rGroup?></option>
                                                                     <?php } ?>
                                                                 </select>
@@ -133,7 +133,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="category_name">Category Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="category_name" name="category_name" value="<?php if (isset($rCategoryArr)) { echo $rCategoryArr["category_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="category_name" name="category_name" value="<?php if (isset($rCategoryArr)) { echo htmlspecialchars($rCategoryArr["category_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -239,8 +239,10 @@ if ($rSettings["sidebar"]) {
                     "data": function(d) {
                         <?php if ($rCategoryArr["category_type"] == "live") { ?>
                         d.id = "streams_short";
-                        <?php } else if ($rCategoryArr["category_type"] == "live") { ?>
+                        <?php } else if ($rCategoryArr["category_type"] == "movie") { ?>
                         d.id = "movies_short";
+                        <?php } else if ($rCategoryArr["category_type"] == "radio") { ?>
+                        d.id = "radios_short";
                         <?php } else { ?>
                         d.id = "series_short";
                         <?php } ?>

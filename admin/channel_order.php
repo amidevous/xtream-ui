@@ -15,7 +15,7 @@ if (isset($_POST["stream_order_array"])) {
     }
 }
 
-$rOrdered = Array("stream" => Array(), "movie" => Array(), "series" => Array());
+$rOrdered = Array("stream" => Array(), "movie" => Array(), "series" => Array(), "radio" => Array());
 $result = $db->query("SELECT `id`, `type`, `stream_display_name`, `category_id` FROM `streams` ORDER BY `order` ASC, `stream_display_name` ASC;");
 if (($result) && ($result->num_rows > 0)) {
     while ($row = $result->fetch_assoc()) {
@@ -23,6 +23,8 @@ if (($result) && ($result->num_rows > 0)) {
             $rOrdered["stream"][] = $row;
         } else if ($row["type"] == 2) {
             $rOrdered["movie"][] = $row;
+        } else if ($row["type"] == 4) {
+            $rOrdered["radio"][] = $row;
         } else if ($row["type"] == 5) {
             $rOrdered["series"][] = $row;
         }
@@ -63,20 +65,26 @@ if ($rSettings["sidebar"]) {
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
                                                 <a href="#order-stream" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="la la-play-circle-o mr-1"></i>
+                                                    <i class="mdi mdi-play mr-1"></i>
                                                     <span class="d-none d-sm-inline">Streams</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#order-movie" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="la la-video-camera mr-1"></i>
+                                                    <i class="mdi mdi-movie mr-1"></i>
                                                     <span class="d-none d-sm-inline">Movies</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#order-series" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="la la-tv mr-1"></i>
+                                                    <i class="mdi mdi-youtube-tv mr-1"></i>
                                                     <span class="d-none d-sm-inline">Series</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="#order-radio" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <i class="mdi mdi-radio mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Radio</span>
                                                 </a>
                                             </li>
                                         </ul>
@@ -153,6 +161,32 @@ if ($rSettings["sidebar"]) {
                                                         <a href="javascript: void(0);" onClick="MoveTop('series')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-up"></i></a>
                                                         <a href="javascript: void(0);" onClick="MoveBottom('series')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-down"></i></a>
                                                         <a href="javascript: void(0);" onClick="AtoZ('series')" class="btn btn-info">A to Z</a>
+                                                    </li>
+                                                    <li class="list-inline-item float-right">
+                                                        <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="order-radio">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <p class="sub-header">
+                                                            To re-order a radio, select it and use the <i class="mdi mdi-chevron-up"></i> and <i class="mdi mdi-chevron-down"></i> buttons to move it. Select multiple by dragging or using CTRL. Click Save Changes at the bottom once finished.
+                                                        </p>
+                                                        <select multiple id="sort_radio" class="form-control" style="min-height:400px;">
+                                                        <?php foreach ($rOrdered["radio"] as $rStream) { ?>
+                                                            <option value="<?=$rStream["id"]?>"><?=$rStream["stream_display_name"]?></option>
+                                                        <?php } ?>
+                                                        </select>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0 add-margin-top-20">
+                                                    <li class="list-inline-item">
+                                                        <a href="javascript: void(0);" onClick="MoveUp('radio')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveDown('radio')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveTop('radio')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveBottom('radio')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('radio')" class="btn btn-info">A to Z</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
@@ -253,6 +287,9 @@ if ($rSettings["sidebar"]) {
                     rOrder.push($(this).val());
                 });
                 $('#sort_series option').each(function() {
+                    rOrder.push($(this).val());
+                });
+                $('#sort_radios option').each(function() {
                     rOrder.push($(this).val());
                 });
                 $("#stream_order_array").val(JSON.stringify(rOrder));

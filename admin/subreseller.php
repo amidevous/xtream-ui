@@ -75,8 +75,7 @@ if (isset($_POST["submit_user"])) {
                 $db->query("INSERT INTO `reg_userlog`(`owner`, `username`, `password`, `date`, `type`) VALUES(".intval($rUserInfo["id"]).", '".$db->real_escape_string($rArray["username"])."', '".$db->real_escape_string($rArray["password"])."', ".intval(time()).", '[<b>UserPanel</b> -> <u>New Subreseller</u>] Credits: <font color=\"green\">".$rUserInfo["credits"]."</font> -> <font color=\"red\">".$rNewCredits."</font>');");
                 $rUserInfo["credits"] = $rNewCredits;
             }
-            $_STATUS = 0;
-            $_GET["id"] = $rInsertID;
+            header("Location: ./subreseller.php?id=".$rInsertID); exit;
         } else {
             $_STATUS = 2;
         }
@@ -189,7 +188,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="username">Username</label>
                                                             <div class="col-md-8">
-                                                                <input <?php if (isset($_GET["id"])) { echo "disabled "; } ?>type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>" required data-parsley-trigger="change">
+                                                                <input <?php if (isset($_GET["id"])) { echo "disabled "; } ?>type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["username"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -201,19 +200,19 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="email">Email Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="email" name="email" value="<?php if (isset($rUser)) { echo $rUser["email"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="email" name="email" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["email"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="reseller_dns">Reseller DNS</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="reseller_dns" name="reseller_dns" value="<?php if (isset($rUser)) { echo $rUser["reseller_dns"]; } ?>">
+                                                                <input type="text" class="form-control" id="reseller_dns" name="reseller_dns" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["reseller_dns"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="notes">Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo $rUser["notes"]; } ?></textarea>
+                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo htmlspecialchars($rUser["notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->

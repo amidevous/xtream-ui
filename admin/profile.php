@@ -162,7 +162,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="profile_name">Profile Name</label>
                                                             <div class="col-md-9">
-                                                                <input type="text" class="form-control" id="profile_name" name="profile_name" value="<?php if (isset($rProfileArr)) { echo $rProfileArr["profile_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="profile_name" name="profile_name" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileArr["profile_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -204,73 +204,73 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="video_bitrate">Average Video Bit Rate <i data-toggle="tooltip" data-placement="top" title="" data-original-title="With this you can change the bitrate of the target video. It is very useful in case you want your video to be playable on slow internet connections." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="video_bitrate" name="video_bitrate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["3"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="video_bitrate" name="video_bitrate" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["3"]["val"]); } ?>">
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="audio_bitrate">Average Audio Bitrate <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Change audio bitrate." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="audio_bitrate" name="audio_bitrate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["4"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="audio_bitrate" name="audio_bitrate" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["4"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="min_tolerance">Minimum Bitrate Tolerance <i data-toggle="tooltip" data-placement="top" title="" data-original-title="-minrate FFmpeg argument. Specify the minimum bitrate tolerance here in kbps. Enter number only." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="min_tolerance" name="min_tolerance" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["5"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="min_tolerance" name="min_tolerance" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["5"]["val"]); } ?>">
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="max_tolerance">Maximum Bitrate Tolerance <i data-toggle="tooltip" data-placement="top" title="" data-original-title="-maxrate FFmpeg argument. Specify the maximum bitrate tolerance here in kbps. Enter number only." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="max_tolerance" name="max_tolerance" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["6"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="max_tolerance" name="max_tolerance" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["6"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="buffer_size">Buffer Size <i data-toggle="tooltip" data-placement="top" title="" data-original-title="-bufsize is the rate control buffer. Basically it is assumed that the receiver/end player will buffer that much data so its ok to fluctuate within that much. Specify in kbps." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="buffer_size" name="buffer_size" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["7"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="buffer_size" name="buffer_size" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["7"]["val"]); } ?>">
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="crf_value">CRF Value <i data-toggle="tooltip" data-placement="top" title="" data-original-title="The range of the quantizer scale is 0-51: where 0 is lossless, 23 is default, and 51 is worst possible. A lower value is a higher quality and a subjectively sane range is 18-28. Consider 18 to be visually lossless or nearly so: it should look the same or nearly the same as the input but it isnt technically lossless. The range is exponential, so increasing the CRF value +6 is roughly half the bitrate while -6 is roughly twice the bitrate. General usage is to choose the highest CRF value that still provides an acceptable quality. If the output looks good, then try a higher value and if it looks bad then choose a lower value." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="crf_value" name="crf_value" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["8"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="crf_value" name="crf_value" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["8"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="scaling">Scaling <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Change the Width & Height of the target Video. (Eg. 320:240 ).  If we'd like to keep the aspect ratio, we need to specify only one component, either width or height, and set the other component to -1. (eg 320:-1)" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="scaling" name="scaling" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["9"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="scaling" name="scaling" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["9"]["val"]); } ?>">
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="aspect_ratio">Aspect Ratio <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Change the target Video Aspect. (eg 16:9)" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="aspect_ratio" name="aspect_ratio" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["10"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="aspect_ratio" name="aspect_ratio" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["10"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="framerate">Target Framerate <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set the framerate." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="framerate" name="framerate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["11"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="framerate" name="framerate" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["11"]["val"]); } ?>">
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="samplerate">Audio Sample Rate <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set the Audio Sample rate in Hz." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="samplerate" name="samplerate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["12"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="samplerate" name="samplerate" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["12"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="audio_channels">Audio Channels <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set the audio channels." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="audio_channels" name="audio_channels" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["13"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="audio_channels" name="audio_channels" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["13"]["val"]); } ?>">
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="threads">Threads <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Specify the number of threads you want to use for the transcoding process. Entering 0 as value will make FFmpeg to choose the most optimal settings." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="threads" name="threads" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["15"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="threads" name="threads" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["15"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="remove_parts">Remove Sensitive Parts <i data-toggle="tooltip" data-placement="top" title="" data-original-title="With this filter you can remove sensitive parts in your video. You will just specifiy the x & y pixels where there is a sensitive area and the width and height that will be removed. Example Use: x=0:y=0:w=100:h=77:band=10" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-9">
-                                                                <input type="text" class="form-control" id="remove_parts" name="remove_parts" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["14"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="remove_parts" name="remove_parts" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["14"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="logo_path">Logo Path / URL <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Add your Own Logo to the stream. The logo will be placed in the upper left. Please be sure that you have selected H.264 as codec otherwise this option won't work. Note that adding your own logo will consume A LOT of cpu power." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-9">
-                                                                <input type="text" class="form-control" id="logo_path" name="logo_path" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["16"]["val"]; } ?>">
+                                                                <input type="text" class="form-control" id="logo_path" name="logo_path" value="<?php if (isset($rProfileArr)) { echo htmlspecialchars($rProfileOptions["16"]["val"]); } ?>">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->

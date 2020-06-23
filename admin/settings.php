@@ -2,10 +2,16 @@
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
-$rTMDBLanguages = Array("" => "Default - EN", "aa" => "Afar", "af" => "Afrikaans", "ak" => "Akan", "an" => "Aragonese", "as" => "Assamese", "av" => "Avaric", "ae" => "Avestan", "ay" => "Aymara", "az" => "Azerbaijani", "ba" => "Bashkir", "bm" => "Bambara", "bi" => "Bislama", "bo" => "Tibetan", "br" => "Breton", "ca" => "Catalan", "cs" => "Czech", "ce" => "Chechen", "cu" => "Slavic", "cv" => "Chuvash", "kw" => "Cornish", "co" => "Corsican", "cr" => "Cree", "cy" => "Welsh", "da" => "Danish", "de" => "German", "dv" => "Divehi", "dz" => "Dzongkha", "eo" => "Esperanto", "et" => "Estonian", "eu" => "Basque", "fo" => "Faroese", "fj" => "Fijian", "fi" => "Finnish", "fr" => "French", "fy" => "Frisian", "ff" => "Fulah", "gd" => "Gaelic", "ga" => "Irish", "gl" => "Galician", "gv" => "Manx", "gn" => "Guarani", "gu" => "Gujarati", "ht" => "Haitian", "ha" => "Hausa", "sh" => "Serbo-Croatian", "hz" => "Herero", "ho" => "Hiri Motu", "hr" => "Croatian", "hu" => "Hungarian", "ig" => "Igbo", "io" => "Ido", "ii" => "Yi", "iu" => "Inuktitut", "ie" => "Interlingue", "ia" => "Interlingua", "id" => "Indonesian", "ik" => "Inupiaq", "is" => "Icelandic", "it" => "Italian", "ja" => "Japanese", "kl" => "Kalaallisut", "kn" => "Kannada", "ks" => "Kashmiri", "kr" => "Kanuri", "kk" => "Kazakh", "km" => "Khmer", "ki" => "Kikuyu", "rw" => "Kinyarwanda", "ky" => "Kirghiz", "kv" => "Komi", "kg" => "Kongo", "ko" => "Korean", "kj" => "Kuanyama", "ku" => "Kurdish", "lo" => "Lao", "la" => "Latin", "lv" => "Latvian", "li" => "Limburgish", "ln" => "Lingala", "lt" => "Lithuanian", "lb" => "Letzeburgesch", "lu" => "Luba-Katanga", "lg" => "Ganda", "mh" => "Marshall", "ml" => "Malayalam", "mr" => "Marathi", "mg" => "Malagasy", "mt" => "Maltese", "mo" => "Moldavian", "mn" => "Mongolian", "mi" => "Maori", "ms" => "Malay", "my" => "Burmese", "na" => "Nauru", "nv" => "Navajo", "nr" => "Ndebele", "nd" => "Ndebele", "ng" => "Ndonga", "ne" => "Nepali", "nl" => "Dutch", "nn" => "Norwegian Nynorsk", "nb" => "Norwegian Bokmal", "no" => "Norwegian", "ny" => "Chichewa", "oc" => "Occitan", "oj" => "Ojibwa", "or" => "Oriya", "om" => "Oromo", "os" => "Ossetian; Ossetic", "pi" => "Pali", "pl" => "Polish", "pt" => "Portuguese", "qu" => "Quechua", "rm" => "Raeto-Romance", "ro" => "Romanian", "rn" => "Rundi", "ru" => "Russian", "sg" => "Sango", "sa" => "Sanskrit", "si" => "Sinhalese", "sk" => "Slovak", "sl" => "Slovenian", "se" => "Northern Sami", "sm" => "Samoan", "sn" => "Shona", "sd" => "Sindhi", "so" => "Somali", "st" => "Sotho", "es" => "Spanish", "sq" => "Albanian", "sc" => "Sardinian", "sr" => "Serbian", "ss" => "Swati", "su" => "Sundanese", "sw" => "Swahili", "sv" => "Swedish", "ty" => "Tahitian", "ta" => "Tamil", "tt" => "Tatar", "te" => "Telugu", "tg" => "Tajik", "tl" => "Tagalog", "th" => "Thai", "ti" => "Tigrinya", "to" => "Tonga", "tn" => "Tswana", "ts" => "Tsonga", "tk" => "Turkmen", "tr" => "Turkish", "tw" => "Twi", "ug" => "Uighur", "uk" => "Ukrainian", "ur" => "Urdu", "uz" => "Uzbek", "ve" => "Venda", "vi" => "Vietnamese", "vo" => "Volapük", "wa" => "Walloon", "wo" => "Wolof", "xh" => "Xhosa", "yi" => "Yiddish", "za" => "Zhuang", "zu" => "Zulu", "ab" => "Abkhazian", "zh" => "Mandarin", "ps" => "Pushto", "am" => "Amharic", "ar" => "Arabic", "bg" => "Bulgarian", "cn" => "Cantonese", "mk" => "Macedonian", "el" => "Greek", "fa" => "Persian", "he" => "Hebrew", "hi" => "Hindi", "hy" => "Armenian", "en" => "English", "ee" => "Ewe", "ka" => "Georgian", "pa" => "Punjabi", "bn" => "Bengali", "bs" => "Bosnian", "ch" => "Chamorro", "be" => "Belarusian", "yo" => "Yoruba");
+$rTMDBLanguages = Array("" => "Default - EN", "aa" => "Afar", "af" => "Afrikaans", "ak" => "Akan", "an" => "Aragonese", "as" => "Assamese", "av" => "Avaric", "ae" => "Avestan", "ay" => "Aymara", "az" => "Azerbaijani", "ba" => "Bashkir", "bm" => "Bambara", "bi" => "Bislama", "bo" => "Tibetan", "br" => "Breton", "ca" => "Catalan", "cs" => "Czech", "ce" => "Chechen", "cu" => "Slavic", "cv" => "Chuvash", "kw" => "Cornish", "co" => "Corsican", "cr" => "Cree", "cy" => "Welsh", "da" => "Danish", "de" => "German", "dv" => "Divehi", "dz" => "Dzongkha", "eo" => "Esperanto", "et" => "Estonian", "eu" => "Basque", "fo" => "Faroese", "fj" => "Fijian", "fi" => "Finnish", "fr" => "French", "fy" => "Frisian", "ff" => "Fulah", "gd" => "Gaelic", "ga" => "Irish", "gl" => "Galician", "gv" => "Manx", "gn" => "Guarani", "gu" => "Gujarati", "ht" => "Haitian", "ha" => "Hausa", "sh" => "Serbo-Croatian", "hz" => "Herero", "ho" => "Hiri Motu", "hr" => "Croatian", "hu" => "Hungarian", "ig" => "Igbo", "io" => "Ido", "ii" => "Yi", "iu" => "Inuktitut", "ie" => "Interlingue", "ia" => "Interlingua", "id" => "Indonesian", "ik" => "Inupiaq", "is" => "Icelandic", "it" => "Italian", "ja" => "Japanese", "kl" => "Kalaallisut", "kn" => "Kannada", "ks" => "Kashmiri", "kr" => "Kanuri", "kk" => "Kazakh", "km" => "Khmer", "ki" => "Kikuyu", "rw" => "Kinyarwanda", "ky" => "Kirghiz", "kv" => "Komi", "kg" => "Kongo", "ko" => "Korean", "kj" => "Kuanyama", "ku" => "Kurdish", "lo" => "Lao", "la" => "Latin", "lv" => "Latvian", "li" => "Limburgish", "ln" => "Lingala", "lt" => "Lithuanian", "lb" => "Letzeburgesch", "lu" => "Luba-Katanga", "lg" => "Ganda", "mh" => "Marshall", "ml" => "Malayalam", "mr" => "Marathi", "mg" => "Malagasy", "mt" => "Maltese", "mo" => "Moldavian", "mn" => "Mongolian", "mi" => "Maori", "ms" => "Malay", "my" => "Burmese", "na" => "Nauru", "nv" => "Navajo", "nr" => "Ndebele", "nd" => "Ndebele", "ng" => "Ndonga", "ne" => "Nepali", "nl" => "Dutch", "nn" => "Norwegian Nynorsk", "nb" => "Norwegian Bokmal", "no" => "Norwegian", "ny" => "Chichewa", "oc" => "Occitan", "oj" => "Ojibwa", "or" => "Oriya", "om" => "Oromo", "os" => "Ossetian; Ossetic", "pi" => "Pali", "pl" => "Polish", "pt" => "Portuguese", "pt-BR" => "Portuguese - Brazil", "qu" => "Quechua", "rm" => "Raeto-Romance", "ro" => "Romanian", "rn" => "Rundi", "ru" => "Russian", "sg" => "Sango", "sa" => "Sanskrit", "si" => "Sinhalese", "sk" => "Slovak", "sl" => "Slovenian", "se" => "Northern Sami", "sm" => "Samoan", "sn" => "Shona", "sd" => "Sindhi", "so" => "Somali", "st" => "Sotho", "es" => "Spanish", "sq" => "Albanian", "sc" => "Sardinian", "sr" => "Serbian", "ss" => "Swati", "su" => "Sundanese", "sw" => "Swahili", "sv" => "Swedish", "ty" => "Tahitian", "ta" => "Tamil", "tt" => "Tatar", "te" => "Telugu", "tg" => "Tajik", "tl" => "Tagalog", "th" => "Thai", "ti" => "Tigrinya", "to" => "Tonga", "tn" => "Tswana", "ts" => "Tsonga", "tk" => "Turkmen", "tr" => "Turkish", "tw" => "Twi", "ug" => "Uighur", "uk" => "Ukrainian", "ur" => "Urdu", "uz" => "Uzbek", "ve" => "Venda", "vi" => "Vietnamese", "vo" => "Volapük", "wa" => "Walloon", "wo" => "Wolof", "xh" => "Xhosa", "yi" => "Yiddish", "za" => "Zhuang", "zu" => "Zulu", "ab" => "Abkhazian", "zh" => "Mandarin", "ps" => "Pushto", "am" => "Amharic", "ar" => "Arabic", "bg" => "Bulgarian", "cn" => "Cantonese", "mk" => "Macedonian", "el" => "Greek", "fa" => "Persian", "he" => "Hebrew", "hi" => "Hindi", "hy" => "Armenian", "en" => "English", "ee" => "Ewe", "ka" => "Georgian", "pa" => "Punjabi", "bn" => "Bengali", "bs" => "Bosnian", "ch" => "Chamorro", "be" => "Belarusian", "yo" => "Yoruba");
+$rMAGs = Array("AuraHD","AuraHD2","AuraHD3","AuraHD4","AuraHD5","AuraHD6","AuraHD7","AuraHD8","AuraHD9","MAG200","MAG245","MAG245D","MAG250","MAG254","MAG255","MAG256","MAG257","MAG260","MAG270","MAG275","MAG322","MAG323","MAG324","MAG325","MAG349","MAG350","MAG351","MAG352","MAG420","WR320");
 
 if (isset($_GET["update"])) {
     updateTables();
+    header("Location: ./settings.php");exit;
+}
+
+if (isset($_GET["reset"])) {
+    resetSettings();
     header("Location: ./settings.php");exit;
 }
 
@@ -19,11 +25,23 @@ if (isset($_POST["submit_settings"])) {
             $rArray[$rSetting] = 0;
         }
     }
+    if (!isset($_POST["allowed_stb_types_for_local_recording"])) {
+        $rArray["allowed_stb_types_for_local_recording"] = Array();
+    }
+    if (!isset($_POST["allowed_stb_types"])) {
+        $rArray["allowed_stb_types"] = Array();
+    }
     if (isset($_POST["auto_update"])) {
         $rAdminSettings["auto_update"] = true;
         unset($_POST["auto_update"]);
     } else {
         $rAdminSettings["auto_update"] = false;
+    }
+	if (isset($_POST["disable_trial"])) {
+        $rAdminSettings["disable_trial"] = true;
+        unset($_POST["disable_trial"]);
+    } else {
+        $rAdminSettings["disable_trial"] = false;
     }
     if (isset($_POST["sidebar"])) {
         $rAdminSettings["sidebar"] = true;
@@ -83,6 +101,26 @@ if (isset($_POST["submit_settings"])) {
     if (isset($_POST["tmdb_language"])) {
         $rAdminSettings["tmdb_language"] = $_POST["tmdb_language"];
         unset($_POST["tmdb_language"]);
+    }
+    if (isset($_POST["release_parser"])) {
+        $rAdminSettings["release_parser"] = $_POST["release_parser"];
+        unset($_POST["release_parser"]);
+    }
+	if (isset($_POST["recaptcha_v2_site_key"])) {
+        $rAdminSettings["recaptcha_v2_site_key"] = $_POST["recaptcha_v2_site_key"];
+        unset($_POST["recaptcha_v2_site_key"]);
+    }
+	if (isset($_POST["recaptcha_v2_secret_key"])) {
+        $rAdminSettings["recaptcha_v2_secret_key"] = $_POST["recaptcha_v2_secret_key"];
+        unset($_POST["recaptcha_v2_secret_key"]);
+    }
+	if (isset($_POST["login_flood"])) {
+        $rAdminSettings["login_flood"] = $_POST["login_flood"];
+        unset($_POST["login_flood"]);
+    }
+	if (isset($_POST["pass_length"])) {
+        $rAdminSettings["pass_length"] = $_POST["pass_length"];
+        unset($_POST["pass_length"]);
     }
     writeAdminSettings();
     foreach($_POST as $rKey => $rValue) {
@@ -155,37 +193,38 @@ if ($rSettings["sidebar"]) {
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
                                                 <a href="#general-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <span class="d-none d-sm-inline">General</span>
+                                                    <i class="mdi mdi-account-card-details-outline mr-1"></i>
+													<span class="d-none d-sm-inline">General</span>
                                                 </a>
                                             </li>
 											<li class="nav-item">
                                                 <a href="#xui" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+													<i class="mdi mdi-settings mr-1"></i>
                                                     <span class="d-none d-sm-inline">Xtream UI</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#ddos" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+													<i class="mdi mdi-bug mr-1"></i>
                                                     <span class="d-none d-sm-inline">DDOS</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#streaming" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+													<i class="mdi mdi-play mr-1"></i>
                                                     <span class="d-none d-sm-inline">Streaming</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#mag" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+													<i class="mdi mdi-tablet mr-1"></i>
                                                     <span class="d-none d-sm-inline">MAG</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
-                                                <a href="#backups" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                <a href="#backups" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
+													<i class="mdi mdi-backup-restore mr-1"></i>
                                                     <span class="d-none d-sm-inline">Backups</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a href="#database" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <span class="d-none d-sm-inline">Database</span>
                                                 </a>
                                             </li>
                                         </ul>
@@ -196,7 +235,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="server_name">Server Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="server_name" name="server_name" value="<?=$rSettings["server_name"]?>">
+                                                                <input type="text" class="form-control" id="server_name" name="server_name" value="<?=htmlspecialchars($rSettings["server_name"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -214,18 +253,29 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="bouquet_name">Bouquet Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="bouquet_name" name="bouquet_name" value="<?=$rSettings["bouquet_name"]?>">
+                                                                <input type="text" class="form-control" id="bouquet_name" name="bouquet_name" value="<?=htmlspecialchars($rSettings["bouquet_name"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="live_streaming_pass">Live Streaming Pass</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="live_streaming_pass" name="live_streaming_pass" value="<?=$rSettings["live_streaming_pass"]?>">
+                                                                <input type="text" class="form-control" id="live_streaming_pass" name="live_streaming_pass" value="<?=htmlspecialchars($rSettings["live_streaming_pass"])?>">
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <ul class="list-inline wizard mb-0">
+													<li class="list-inline-item">
+														<a href="https://xtream-ui.com/donate.html">
+															<button type="button" class="btn btn-info waves-effect waves-light btn-xl"><i class="mdi mdi-credit-card"></i> Donate via Card</button></a>
+														</a>
+														<a href="https://commerce.coinbase.com/checkout/55484922-e35e-4efb-b15c-4c1e59fe7734">
+															<button type="button" class="btn btn-primary waves-effect waves-light btn-xl"><i class="mdi mdi-currency-btc"></i> Donate via CoinBase</button></a>
+														</a>
+														<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=BB8LWS2VEZX2U&currency_code=GBP&source=url">
+															<button type="button" class="btn btn-success waves-effect waves-light btn-xl"><i class="mdi mdi-paypal"></i> Donate via PayPal</button></a>
+														</a>
+													</li>
                                                     <li class="list-inline-item float-right">
                                                         <input name="submit_settings" type="submit" class="btn btn-primary" value="Save Changes" />
                                                     </li>
@@ -237,22 +287,22 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="copyrights_text">Reseller Footer Copyright</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="copyrights_text" name="copyrights_text" value="<?=$rSettings["copyrights_text"]?>">
+                                                                <input type="text" class="form-control" id="copyrights_text" name="copyrights_text" value="<?=htmlspecialchars($rSettings["copyrights_text"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="admin_username">Player Credentials <i data-toggle="tooltip" data-placement="top" title="" data-original-title="To play live streams in the Admin Interface, create a line with HLS output enabled and access to all bouquets. Enter the credentials here." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-4">
-                                                                <input type="text" placeholder="Line Username" class="form-control" id="admin_username" name="admin_username" value="<?=$rAdminSettings["admin_username"]?>">
+                                                                <input type="text" placeholder="Line Username" class="form-control" id="admin_username" name="admin_username" value="<?=htmlspecialchars($rAdminSettings["admin_username"])?>">
                                                             </div>
                                                             <div class="col-md-4">
-                                                                <input type="text" placeholder="Line Password" class="form-control" id="admin_password" name="admin_password" value="<?=$rAdminSettings["admin_password"]?>">
+                                                                <input type="text" placeholder="Line Password" class="form-control" id="admin_password" name="admin_password" value="<?=htmlspecialchars($rAdminSettings["admin_password"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="forum_username">Update Credentials <i data-toggle="tooltip" data-placement="top" title="" data-original-title="To enable auto-update, enter your forum username and password here." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-4">
-                                                                <input type="text" placeholder="Forum Username" class="form-control" id="forum_username" name="forum_username" value="<?=$rAdminSettings["forum_username"]?>">
+                                                                <input type="text" placeholder="Forum Username" class="form-control" id="forum_username" name="forum_username" value="<?=htmlspecialchars($rAdminSettings["forum_username"])?>">
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <input type="password" placeholder="<?php if (strlen($rAdminSettings["forum_password"]) > 0) { echo str_repeat("*", strlen($rAdminSettings["forum_password"])); } else { echo "Forum Password"; } ?>" class="form-control" id="forum_password" name="forum_password" value="">
@@ -261,17 +311,49 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="tmdb_api_key">TMDB Key</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="tmdb_api_key" name="tmdb_api_key" value="<?=$rSettings["tmdb_api_key"]?>">
+                                                                <input type="text" class="form-control" id="tmdb_api_key" name="tmdb_api_key" value="<?=htmlspecialchars($rSettings["tmdb_api_key"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="tmdb_language">TMDB Language <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select which language to prioritise when utilising TMDb data." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="tmdb_language">TMDB Language <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select which parser to use when matching TMDb entries. Python is preferable." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
                                                                 <select name="tmdb_language" id="tmdb_language" class="form-control" data-toggle="select2">
                                                                     <?php foreach ($rTMDBLanguages as $rKey => $rLanguage) { ?>
                                                                     <option<?php if ($rAdminSettings["tmdb_language"] == $rKey) { echo " selected"; } ?> value="<?=$rKey?>"><?=$rLanguage?></option>
                                                                     <?php } ?>
                                                                 </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="release_parser">Release Parser <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select which language to prioritise when utilising TMDb data." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <select name="release_parser" id="release_parser" class="form-control" data-toggle="select2">
+                                                                    <?php foreach (Array("python" => "Python Based (slower, more accurate)", "php" => "PHP Based (faster, less accurate)") as $rKey => $rParser) { ?>
+                                                                    <option<?php if ($rAdminSettings["release_parser"] == $rKey) { echo " selected"; } ?> value="<?=$rKey?>"><?=$rParser?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="recaptcha_v2_site_key">reCAPTCHA V2 - Site Key <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Adding a site key will enable reCAPTCHA V2 on login. Please visit https://google.com/recaptcha/admin to obtain your API keys." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="recaptcha_v2_site_key" name="recaptcha_v2_site_key" value="<?=htmlspecialchars($rAdminSettings["recaptcha_v2_site_key"])?>">
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="recaptcha_v2_secret_key">reCAPTCHA V2 - Secret Key</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="recaptcha_v2_secret_key" name="recaptcha_v2_secret_key" value="<?=htmlspecialchars($rAdminSettings["recaptcha_v2_secret_key"])?>">
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="login_flood">Maximum Login Attempts <i data-toggle="tooltip" data-placement="top" title="" data-original-title="How many login attempts are permitted before banning for 24 hours. Use 0 for unlimited, if you have other measures in place such as 2 factor or reCAPTCHA." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="login_flood" name="login_flood" value="<?=htmlspecialchars($rAdminSettings["login_flood"]) ?: 0?>">
+                                                            </div>
+															<label class="col-md-4 col-form-label" for="pass_length">Minimum Password Length <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set this to enforece password change if password length is less than X characters. Use 0 to disable enforcement." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="pass_length" name="pass_length" value="<?=htmlspecialchars($rAdminSettings["pass_length"]) ?: 0?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -318,6 +400,12 @@ if ($rSettings["sidebar"]) {
                                                                 <input name="change_usernames" id="change_usernames" type="checkbox"<?php if ($rAdminSettings["change_usernames"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="disable_trial">Disable Trials <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Use this option to temporarily disable generating trials for all users." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="disable_trial" id="disable_trial" type="checkbox"<?php if ($rAdminSettings["disable_trial"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <ul class="list-inline wizard mb-0">
@@ -332,13 +420,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="flood_limit">Flood Limit <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Enter 0 to disable flood detection." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="flood_limit" name="flood_limit" value="<?=$rSettings["flood_limit"]?>">
+                                                                <input type="text" class="form-control" id="flood_limit" name="flood_limit" value="<?=htmlspecialchars($rSettings["flood_limit"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="flood_ips_exclude">Flood IP Exclusions <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Separate each IP with a comma." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="flood_ips_exclude" name="flood_ips_exclude" value="<?=$rSettings["flood_ips_exclude"]?>">
+                                                                <input type="text" class="form-control" id="flood_ips_exclude" name="flood_ips_exclude" value="<?=htmlspecialchars($rSettings["flood_ips_exclude"])?>">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -355,7 +443,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="user_auto_kick_hours">Auto-Kick Users <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Automatically kick users who are online for more than X hours." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="user_auto_kick_hours" name="user_auto_kick_hours" value="<?=$rSettings["user_auto_kick_hours"]?>">
+                                                                <input type="text" class="form-control" id="user_auto_kick_hours" name="user_auto_kick_hours" value="<?=htmlspecialchars($rSettings["user_auto_kick_hours"])?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="disallow_empty_user_agents">Disallow Empty UA <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Don't allow connections from clients with no user-agent." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
@@ -365,11 +453,11 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="client_prebuffer">Client Prebuffer <i data-toggle="tooltip" data-placement="top" title="" data-original-title="How much data will be sent to the client when connecting to a stream. Larger values will create larger prebuffers." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="client_prebuffer" name="client_prebuffer" value="<?=$rSettings["client_prebuffer"]?>">
+                                                                <input type="text" class="form-control" id="client_prebuffer" name="client_prebuffer" value="<?=htmlspecialchars($rSettings["client_prebuffer"])?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="restreamer_prebuffer">Restreamer Prebuffer <i data-toggle="tooltip" data-placement="top" title="" data-original-title="How much data will be sent to the client when connecting to a stream. Larger values will create larger prebuffers." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="restreamer_prebuffer" name="restreamer_prebuffer" value="<?=$rSettings["restreamer_prebuffer"]?>">
+                                                                <input type="text" class="form-control" id="restreamer_prebuffer" name="restreamer_prebuffer" value="<?=htmlspecialchars($rSettings["restreamer_prebuffer"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -405,11 +493,11 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_max_analyze">Analysis Duration <i data-toggle="tooltip" data-placement="top" title="" data-original-title="How long to analyse a stream, longer duration will increase sample accuracy. 5,000,000 microseconds = 5s." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="stream_max_analyze" name="stream_max_analyze" value="<?=$rSettings["stream_max_analyze"]?>">
+                                                                <input type="text" class="form-control" id="stream_max_analyze" name="stream_max_analyze" value="<?=htmlspecialchars($rSettings["stream_max_analyze"])?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="probesize">Probe Size <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Amount of data to be probed in bytes." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="probesize" name="probesize" value="<?=$rSettings["probesize"]?>">
+                                                                <input type="text" class="form-control" id="probesize" name="probesize" value="<?=htmlspecialchars($rSettings["probesize"])?>">
                                                             </div>
                                                         </div>
 														<div class="form-group row mb-4">
@@ -425,11 +513,11 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_start_delay">Stream Start Delay <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Delay in milliseconds before starting stream." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="stream_start_delay" name="stream_start_delay" value="<?=$rSettings["stream_start_delay"]?>">
+                                                                <input type="text" class="form-control" id="stream_start_delay" name="stream_start_delay" value="<?=htmlspecialchars($rSettings["stream_start_delay"])?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="online_capacity_interval">Online Capacity Interval <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Interval at which to check server activity for connection limits." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="online_capacity_interval" name="online_capacity_interval" value="<?=$rSettings["online_capacity_interval"]?>">
+                                                                <input type="text" class="form-control" id="online_capacity_interval" name="online_capacity_interval" value="<?=htmlspecialchars($rSettings["online_capacity_interval"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -484,7 +572,7 @@ if ($rSettings["sidebar"]) {
                                                                 <input name="show_not_on_air_video" id="show_not_on_air_video" type="checkbox"<?php if ($rSettings["show_not_on_air_video"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                             <div class="col-md-6">
-                                                                <input type="text" class="form-control" id="not_on_air_video_path" name="not_on_air_video_path" value="<?=$rSettings["not_on_air_video_path"]?>">
+                                                                <input type="text" class="form-control" id="not_on_air_video_path" name="not_on_air_video_path" value="<?=htmlspecialchars($rSettings["not_on_air_video_path"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -493,7 +581,7 @@ if ($rSettings["sidebar"]) {
                                                                 <input name="show_banned_video" id="show_banned_video" type="checkbox"<?php if ($rSettings["show_banned_video"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                             <div class="col-md-6">
-                                                                <input type="text" class="form-control" id="banned_video_path" name="banned_video_path" value="<?=$rSettings["banned_video_path"]?>">
+                                                                <input type="text" class="form-control" id="banned_video_path" name="banned_video_path" value="<?=htmlspecialchars($rSettings["banned_video_path"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -502,25 +590,25 @@ if ($rSettings["sidebar"]) {
                                                                 <input name="show_expired_video" id="show_expired_video" type="checkbox"<?php if ($rSettings["show_expired_video"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                             <div class="col-md-6">
-                                                                <input type="text" class="form-control" id="expired_video_path" name="expired_video_path" value="<?=$rSettings["expired_video_path"]?>">
+                                                                <input type="text" class="form-control" id="expired_video_path" name="expired_video_path" value="<?=htmlspecialchars($rSettings["expired_video_path"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="allowed_ips_admin">Admin Streaming IP's <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Allowed IP's to access admin_live.php using the Live Streaming Pass. Separate each IP with a comma." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="allowed_ips_admin" name="allowed_ips_admin" value="<?=$rSettings["allowed_ips_admin"]?>">
+                                                                <input type="text" class="form-control" id="allowed_ips_admin" name="allowed_ips_admin" value="<?=htmlspecialchars($rSettings["allowed_ips_admin"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="api_ips">API IP's <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Allowed IP's to access the official XC API. Separate each IP with a comma." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="api_ips" name="api_ips" value="<?=$rSettings["api_ips"]?>">
+                                                                <input type="text" class="form-control" id="api_ips" name="api_ips" value="<?=htmlspecialchars($rSettings["api_ips"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="message_of_day">Message of the Day <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Message to display in player API." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="message_of_day" name="message_of_day" value="<?=$rSettings["message_of_day"]?>">
+                                                                <input type="text" class="form-control" id="message_of_day" name="message_of_day" value="<?=htmlspecialchars($rSettings["message_of_day"])?>">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -597,17 +685,37 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="record_max_length">Recording Max Length</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="record_max_length" name="record_max_length" value="<?=$rSettings["record_max_length"]?>">
+                                                                <input type="text" class="form-control" id="record_max_length" name="record_max_length" value="<?=htmlspecialchars($rSettings["record_max_length"])?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="max_local_recordings">Max Local Recordings</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="max_local_recordings" name="max_local_recordings" value="<?=$rSettings["max_local_recordings"]?>">
+                                                                <input type="text" class="form-control" id="max_local_recordings" name="max_local_recordings" value="<?=htmlspecialchars($rSettings["max_local_recordings"])?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="playback_limit">Playback Limit</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="playback_limit" name="playback_limit" value="<?=$rSettings["playback_limit"]?>">
+                                                                <input type="text" class="form-control" id="playback_limit" name="playback_limit" value="<?=htmlspecialchars($rSettings["playback_limit"])?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="allowed_stb_types">Allowed STB Types</label>
+                                                            <div class="col-md-8">
+                                                                <select name="allowed_stb_types[]" id="allowed_stb_types" class="form-control select2-multiple" data-toggle="select2" multiple="multiple" data-placeholder="Choose...">
+                                                                    <?php foreach ($rMAGs as $rMAG) { ?>
+                                                                    <option <?php if (in_array($rMAG, json_decode($rSettings["allowed_stb_types"], True))) { echo "selected "; } ?>value="<?=$rMAG?>"><?=$rMAG?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="allowed_stb_types_for_local_recording">Allowed STB Recording</label>
+                                                            <div class="col-md-8">
+                                                                <select name="allowed_stb_types_for_local_recording[]" id="allowed_stb_types_for_local_recording" class="form-control select2-multiple" data-toggle="select2" multiple="multiple" data-placeholder="Choose...">
+                                                                    <?php foreach ($rMAGs as $rMAG) { ?>
+                                                                    <option <?php if (in_array($rMAG, json_decode($rSettings["allowed_stb_types_for_local_recording"], True))) { echo "selected "; } ?>value="<?=$rMAG?>"><?=$rMAG?></option>
+                                                                    <?php } ?>
+                                                                </select>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -635,45 +743,14 @@ if ($rSettings["sidebar"]) {
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0" style="margin-top:30px;">
-                                                    <li class="list-inline-item float-right">
-                                                        <button id="create_backup" onClick="api('', 'backup')" class="btn btn-primary">Create Backup</button>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            <div class="tab-pane" id="database">
-                                                <div class="row">
-                                                    <div class="col-12">
-                                                        <table class="table table-borderless mb-0">
-                                                            <thead class="thead-light">
-                                                                <tr>
-                                                                    <th class="text-center">Host</th>
-                                                                    <th class="text-center">Database</th>
-                                                                    <th class="text-center">Username</th>
-                                                                    <th class="text-center">Password</th>
-                                                                    <th class="text-center">Port</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <tr>
-                                                                    <th class="text-center"><?=$_SERVER['SERVER_ADDR']?></th>
-                                                                    <td class="text-center"><?=$_INFO["db_name"]?></td>
-                                                                    <td class="text-center"><?=$_INFO["db_user"]?></td>
-                                                                    <td class="text-center"><?=$_INFO["db_pass"]?></td>
-                                                                    <td class="text-center"><?=$_INFO["db_port"]?></td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
-                                                        <p class="sub-header" style="margin-top:30px;">
-                                                            We have integrated a freeware PHP based MySQL editor into the system to allow you to manage your database manually. You can access it below.
-                                                        </p>
-                                                    </div> <!-- end col -->
-                                                </div> <!-- end row -->
-                                                <ul class="list-inline wizard mb-0" style="margin-top:30px;">
                                                     <li class="list-inline-item">
                                                         <a href="./settings.php?update"><button type="button" class="btn btn-warning waves-effect waves-light btn-xl">Update Tables</button></a>
                                                     </li>
                                                     <li class="list-inline-item">
-                                                        <a href="./database.php"><button type="button" class="btn btn-info waves-effect waves-light btn-xl">Database Editor</button></a>
+                                                        <a href="./settings.php?reset"><button type="button" class="btn btn-danger waves-effect waves-light btn-xl">Reset Settings</button></a>
+                                                    </li>
+                                                    <li class="list-inline-item float-right">
+                                                        <button id="create_backup" onClick="api('', 'backup')" class="btn btn-primary">Create Backup</button>
                                                     </li>
                                                 </ul>
                                             </div>

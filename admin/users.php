@@ -374,6 +374,12 @@ if ($rSettings["sidebar"]) {
             $("#datatable-users").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
+			$(window).keydown(function(event){
+				if(event.keyCode == 13) {
+					event.preventDefault();
+					return false;
+				}
+			});
             formCache.init();
             formCache.fetch();
             

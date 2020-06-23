@@ -15,8 +15,9 @@ if (isset($_POST["submit_folder"])) {
                 $rArray = getWatchFolder($_POST["edit"]);
                 unset($rArray["id"]);
             } else {
-                $rArray = Array("directory" => "", "last_run" => 0, "server_id" => 0, "type" => $_POST["folder_type"], "active" => 1, "bouquets" => "[]", "fb_bouquets" => "[]", "category_id" => 0, "fb_category_id" => 0, "disable_tmdb" => 0, "ignore_no_match" => 0, "auto_subtitles" => 0, "allowed_extensions" => Array());
+                $rArray = Array("directory" => "", "last_run" => 0, "server_id" => 0, "type" => "movie", "active" => 1, "bouquets" => "[]", "fb_bouquets" => "[]", "category_id" => 0, "fb_category_id" => 0, "disable_tmdb" => 0, "ignore_no_match" => 0, "auto_subtitles" => 0, "allowed_extensions" => Array());
             }
+            $rArray["type"] = $_POST["folder_type"];
             $rArray["directory"] = $rPath;
             $rArray["server_id"] = intval($_POST["server_id"]);
             if (count($_POST["bouquets"]) > 0) {
@@ -182,7 +183,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="selected_path">Selected Path</label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" id="selected_path" name="selected_path" class="form-control" value="<?php if (isset($rFolder)) { echo $rFolder["directory"]; } else { echo "/"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" id="selected_path" name="selected_path" class="form-control" value="<?php if (isset($rFolder)) { echo htmlspecialchars($rFolder["directory"]); } else { echo "/"; } ?>" required data-parsley-trigger="change">
                                                                 <div class="input-group-append">
                                                                     <button class="btn btn-primary waves-effect waves-light" type="button" id="changeDir"><i class="mdi mdi-chevron-right"></i></button>
                                                                 </div>

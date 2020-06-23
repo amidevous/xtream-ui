@@ -1,3 +1,4 @@
+<?php if (count(get_included_files()) == 1) { exit; } ?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -44,7 +45,12 @@
                             </a>
                             <!-- End mobile menu toggle-->
                         </li>
-                        <?php if (($rServerError) && ($rPermissions["is_admin"] == 1)) { ?>
+						<li class="notification-list">
+                            <a class="nav-link text-white waves-effect" href="#" role="button">
+                                <?=$rUserInfo["username"]?>
+                            </a>
+                        </li>
+						<?php if (($rServerError) && ($rPermissions["is_admin"] == 1)) { ?>
                         <li class="notification-list">
                             <a href="./servers.php" class="nav-link right-bar-toggle waves-effect text-warning">
                                 <i class="mdi mdi-wifi-strength-off noti-icon"></i>
@@ -79,6 +85,7 @@
                                 <a href="./groups.php" class="dropdown-item notify-item"><span>Groups</span></a>
                                 <a href="./mass_delete.php" class="dropdown-item notify-item"><span>Mass Delete</span></a>
                                 <a href="./packages.php" class="dropdown-item notify-item"><span>Packages</span></a>
+                                <a href="./process_monitor.php?server=<?=$_INFO["server_id"]?>" class="dropdown-item notify-item"><span>Process Monitor</span></a>
                                 <a href="./rtmp_ips.php" class="dropdown-item notify-item"><span>RTMP IP's</span></a>
                                 <a href="./subresellers.php" class="dropdown-item notify-item"><span>Subresellers</span></a>
                                 <a href="./profiles.php" class="dropdown-item notify-item"><span>Transcode Profiles</span></a>
@@ -141,7 +148,7 @@
                             <li class="has-submenu">
                                 <a href="#"> <i class="la la-user"></i>Users <div class="arrow-down"></div></a>
                                 <ul class="submenu">
-                                    <?php if (($rPermissions["is_reseller"]) && ($rPermissions["total_allowed_gen_trials"] > 0)) { ?>
+                                    <?php if ((!$rAdminSettings["disable_trial"]) && (($rPermissions["is_reseller"]) && ($rPermissions["total_allowed_gen_trials"] > 0))) { ?>
                                     <li><a href="./user_reseller.php?trial">Generate Trial</a></li>
                                     <?php } ?>
                                     <li><a href="./user<?php if ($rPermissions["is_reseller"]) { echo "_reseller"; } ?>.php">Add User</a></li>
@@ -193,18 +200,29 @@
                             <?php if ($rPermissions["is_admin"]) { ?>
                             <li class="has-submenu">
                                 <a href="#"> <i class="la la-video-camera"></i>VOD <div class="arrow-down"></div></a>
-                                <ul class="submenu">
-                                    <li><a href="./movie.php">Add Movie</a></li>
-                                    <li><a href="./movie.php?import">Import Movies</a></li>
-                                    <li><a href="./movies.php">Manage Movies</a></li>
-                                    <li class="separator"></li>
-                                    <li><a href="./serie.php">Add Series</a></li>
-                                    <li><a href="./series.php">Manage Series</a></li>
-                                    <li><a href="./episodes.php">Manage Episodes</a></li>
-                                    <li class="separator"></li>
-                                    <li><a href="./movie_mass.php">Mass Edit Movies</a></li>
-                                    <li><a href="./series_mass.php">Mass Edit Series</a></li>
-                                    <li><a href="./episodes_mass.php">Mass Edit Episodes</a></li>
+                                <ul class="submenu megamenu">
+                                    <li>
+                                        <ul>
+                                            <li><a href="./movie.php">Add Movie</a></li>
+                                            <li><a href="./movie.php?import">Import Movies</a></li>
+                                            <li><a href="./movies.php">Manage Movies</a></li>
+                                            <li class="separator"></li>
+                                            <li><a href="./serie.php">Add Series</a></li>
+                                            <li><a href="./series.php">Manage Series</a></li>
+                                            <li><a href="./episodes.php">Manage Episodes</a></li>
+                                        </ul>
+                                    </li>
+                                    <li>
+                                        <ul>
+                                            <li><a href="./radio.php">Add Station</a></li>
+                                            <li><a href="./radios.php">Manage Stations</a></li>
+                                            <li class="separator"></li>
+                                            <li><a href="./movie_mass.php">Mass Edit Movies</a></li>
+                                            <li><a href="./series_mass.php">Mass Edit Series</a></li>
+                                            <li><a href="./episodes_mass.php">Mass Edit Episodes</a></li>
+                                            <li><a href="./radio_mass.php">Mass Edit Stations</a></li>
+                                        </ul>
+                                    </li>
                                 </ul>
                             </li>
                             <li class="has-submenu">
@@ -237,6 +255,7 @@
                                     <li><a href="./movies.php">Movies</a></li>
                                     <li><a href="./series.php">Series</a></li>
                                     <li><a href="./episodes.php">Episodes</a></li>
+                                    <li><a href="./radios.php">Stations</a></li>
                                 </ul>
                             </li>
                             <?php }

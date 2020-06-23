@@ -22,8 +22,8 @@ if (isset($_POST["submit_stream"])) {
 	} else {
 		$rRestart = false;
 	}
-    if ($_POST["series_no"] > 0) {
-        // Generate sources.
+    $rArray["movie_propeties"] = Array("type" => intval($_POST["channel_type"]));
+    if (intval($_POST["channel_type"]) == 0) {
         $rPlaylist = generateSeriesPlaylist($_POST["series_no"]);
         if ($rPlaylist["success"]) {
             $rArray["created_channel_location"] = $rPlaylist["server_id"];
@@ -69,7 +69,6 @@ if (isset($_POST["submit_stream"])) {
             $rValues = $_POST["edit"].",".$rValues;
         }
         $rQuery = "REPLACE INTO `streams`(".$rCols.") VALUES(".$rValues.");";
-        echo $rQuery;
         if ($db->query($rQuery)) {
             if (isset($_POST["edit"])) {
                 $rInsertID = intval($_POST["edit"]);
@@ -150,6 +149,14 @@ if (isset($_GET["id"])) {
     if ((!$rChannel) or ($rChannel["type"] <> 3)) {
         exit;
     }
+    $rProperties = json_decode($rChannel["movie_propeties"], True);
+    if (!$rProperties) {
+        if ($rChannel["series_no"] > 0) {
+            $rProperties = Array("type" => 0);
+        } else {
+            $rProperties = Array("type" => 1);
+        }
+    }
     $rChannelSys = getStreamSys($_GET["id"]);
     foreach ($rServers as $rServer) {
         if (isset($rChannelSys[intval($rServer["id"])])) {
@@ -175,9 +182,9 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content boxed-layout"><div class="container-fluid">
+        <div class="content-page"><div class="content boxed-layout-ext"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper boxed-layout"><div class="container-fluid">
+        <div class="wrapper boxed-layout-ext"><div class="container-fluid">
         <?php } ?>
                 <!-- start page title -->
                 <div class="row">
@@ -278,7 +285,19 @@ if ($rSettings["sidebar"]) {
                                                     <span class="d-none d-sm-inline">Details</span>
                                                 </a>
                                             </li>
-                                            <li class="nav-item" id="videos_nav"<?php if (isset($rChannel)) { if ($rChannel["series_no"] <> 0) { echo ' style="display:none;"'; } } ?>>
+                                            <li class="nav-item" id="selection_nav">
+                                                <a href="#selection" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <i class="mdi mdi-movie mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Selection</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item" id="review_nav">
+                                                <a href="#review" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <i class="mdi mdi-marker mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Review</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item" id="videos_nav">
                                                 <a href="#videos" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                     <i class="mdi mdi-movie mr-1"></i>
                                                     <span class="d-none d-sm-inline">Videos</span>
@@ -296,9 +315,30 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="channel_type">Selection Type</label>
+                                                            <div class="col-md-8">
+                                                                <select name="channel_type" id="channel_type" class="form-control select2" data-toggle="select2">
+                                                                    <?php foreach (Array(0 => "Series", 1 => "File Browser", 2 => "VOD Selection") as $rID => $rType) { ?>
+                                                                    <option <?php if (isset($rChannel)) { if ($rProperties["type"] == $rID) { echo "selected "; } } ?>value="<?=$rID?>"><?=$rType?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4" id="series_nav">
+                                                            <label class="col-md-4 col-form-label" for="series_no">24/7 Series</label>
+                                                            <div class="col-md-8">
+                                                                <select name="series_no" id="series_no" class="form-control select2" data-toggle="select2">
+                                                                    <option value="0">Select a series...</option>
+                                                                    <?php foreach (getSeries() as $rSeries) { ?>
+                                                                    <option <?php if (isset($rChannel)) { if (intval($rChannel["series_no"]) == intval($rSeries["id"])) { echo "selected "; } } ?>value="<?=$rSeries["id"]?>"><?=$rSeries["title"]?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_display_name">Channel Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rChannel)) { echo $rChannel["stream_display_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rChannel)) { echo htmlspecialchars($rChannel["stream_display_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -307,17 +347,6 @@ if ($rSettings["sidebar"]) {
                                                                 <select name="category_id" id="category_id" class="form-control select2" data-toggle="select2">
                                                                     <?php foreach ($rCategories as $rCategory) { ?>
                                                                     <option <?php if (isset($rChannel)) { if (intval($rChannel["category_id"]) == intval($rCategory["id"])) { echo "selected "; } } else if ((isset($_GET["category"])) && ($_GET["category"] == $rCategory["id"])) { echo "selected "; } ?>value="<?=$rCategory["id"]?>"><?=$rCategory["category_name"]?></option>
-                                                                    <?php } ?>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="series_no">24/7 Series</label>
-                                                            <div class="col-md-8">
-                                                                <select name="series_no" id="series_no" class="form-control select2" data-toggle="select2">
-                                                                    <option value="0" <?php if (isset($rChannel)) { if (intval($rChannel["series_no"]) == 0) { echo "selected "; } } ?>>Do Not Use</option>
-                                                                    <?php foreach (getSeries() as $rSeries) { ?>
-                                                                    <option <?php if (isset($rChannel)) { if (intval($rChannel["series_no"]) == intval($rSeries["id"])) { echo "selected "; } } ?>value="<?=$rSeries["id"]?>"><?=$rSeries["title"]?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -345,37 +374,89 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_icon">Stream Logo URL</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="stream_icon" name="stream_icon" value="<?php if (isset($rChannel)) { echo $rChannel["stream_icon"]; } ?>">
+                                                                <input type="text" class="form-control" id="stream_icon" name="stream_icon" value="<?php if (isset($rChannel)) { echo htmlspecialchars($rChannel["stream_icon"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="notes">Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rChannel)) { echo $rChannel["notes"]; } ?></textarea>
+                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rChannel)) { echo htmlspecialchars($rChannel["notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
                                                     <li class="list-inline-item float-right">
-                                                        <a href="javascript: void(0);" id="first_next" class="btn btn-secondary">Next</a>
+                                                        <a href="javascript: void(0);" id="next_0" class="btn btn-secondary">Next</a>
                                                     </li>
                                                 </ul>
                                             </div>
-                                            <div class="tab-pane" id="videos">
+                                            <div class="tab-pane" id="selection">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="server_idc">Server Name</label>
+                                                            <div class="col-md-8">
+                                                                <select id="server_idc" class="form-control select2" data-toggle="select2">
+                                                                    <?php foreach (getStreamingServers() as $rServer) { ?>
+                                                                    <option value="<?=$rServer["id"]?>"<?php if (isset($rChannel) && ($rChannel["created_channel_location"] == $rServer["id"])) { echo " selected"; } ?>><?=$rServer["server_name"]?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="category_name">Category / Series</label>
+                                                            <div class="col-md-8">
+                                                                <select id="category_idv" class="form-control select2" data-toggle="select2">
+                                                                    <option value="" selected>No Filter</option>
+                                                                    <?php foreach (getCategories("movie") as $rCategory) { ?>
+                                                                    <option value="0:<?=$rCategory["id"]?>"><?=$rCategory["category_name"]?></option>
+                                                                    <?php }
+                                                                    foreach (getSeriesList() as $rSeries) { ?>
+                                                                    <option value="1:<?=$rSeries["id"]?>"><?=$rSeries["title"]?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="vod_search">Search</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="vod_search" value="">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <table id="datatable-vod" class="table nowrap">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th class="text-center">ID</th>
+                                                                        <th>Name</th>
+                                                                        <th>Category / Series</th>
+                                                                        <th class="text-center">Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody></tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="previous list-inline-item">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
+                                                    </li>
+                                                    <span class="float-right">
+                                                        <li class="next list-inline-item">
+                                                            <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
+                                                        </li>
+                                                    </span>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="review">
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4 stream-url">
-                                                            <label class="col-md-3 col-form-label" for="import_folder">Import Folder</label>
-                                                            <div class="col-md-9 input-group">
-                                                                <input type="text" id="import_folder" name="import_folder" readonly class="form-control" value="<?php if (isset($rChannel)) { echo $rServers[$rChannel["created_channel_location"]]["server_name"]; } ?>">
-                                                                <div class="input-group-append">
-                                                                    <a href="#file-browser" id="filebrowser" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-folder-open-outline"></i></a>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-12 add-margin-top-20">
-                                                                <select multiple id="videos_sort" name="videos_sort" class="form-control" style="min-height:400px;">
-                                                                <?php if (isset($rChannel)) { foreach (json_decode($rChannel["stream_source"], True) as $rSource) { ?>
+                                                            <div class="col-md-12">
+                                                                <select multiple id="review_sort" name="review_sort" class="form-control" style="min-height:400px;">
+                                                                <?php if ((isset($rChannel)) && (in_array(intval($rProperties["type"]), Array(2)))) { foreach (json_decode($rChannel["stream_source"], True) as $rSource) { ?>
                                                                     <option value="<?=$rSource?>"><?=$rSource?></option>
                                                                 <?php } } ?>
                                                                 </select>
@@ -385,10 +466,42 @@ if ($rSettings["sidebar"]) {
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
                                                     <li class="list-inline-item">
-                                                        <a href="javascript: void(0);" onClick="MoveUp()" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
-                                                        <a href="javascript: void(0);" onClick="MoveDown()" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
-                                                        <a href="javascript: void(0);" onClick="Remove()" class="btn btn-warning"><i class="mdi mdi-close"></i></a>
-                                                        <a href="javascript: void(0);" onClick="AtoZ()" class="btn btn-info">A to Z</a>
+                                                        <a href="javascript: void(0);" onClick="MoveUp('review')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveDown('review')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('review')" class="btn btn-info">A to Z</a>
+                                                    </li>
+                                                    <li class="next list-inline-item float-right">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="videos">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4 stream-url">
+                                                            <label class="col-md-3 col-form-label" for="import_folder">Import Folder</label>
+                                                            <div class="col-md-9 input-group">
+                                                                <input type="text" id="import_folder" name="import_folder" readonly class="form-control" value="<?php if (isset($rChannel)) { echo htmlspecialchars($rServers[$rChannel["created_channel_location"]]["server_name"]); } ?>">
+                                                                <div class="input-group-append">
+                                                                    <a href="#file-browser" id="filebrowser" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-folder-open-outline"></i></a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-12 add-margin-top-20">
+                                                                <select multiple id="videos_sort" name="videos_sort" class="form-control" style="min-height:400px;">
+                                                                <?php if ((isset($rChannel)) && (in_array(intval($rProperties["type"]), Array(1)))) { foreach (json_decode($rChannel["stream_source"], True) as $rSource) { ?>
+                                                                    <option value="<?=$rSource?>"><?=$rSource?></option>
+                                                                <?php } } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="list-inline-item">
+                                                        <a href="javascript: void(0);" onClick="MoveUp('videos')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveDown('videos')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="Remove('videos')" class="btn btn-warning"><i class="mdi mdi-close"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('videos')" class="btn btn-info">A to Z</a>
                                                     </li>
                                                     <li class="next list-inline-item float-right">
                                                         <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
@@ -413,8 +526,8 @@ if ($rSettings["sidebar"]) {
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
-                                                    <li class="previous list-inline-item">
-                                                        <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
+                                                    <li class="list-inline-item">
+                                                        <a href="javascript: void(0);" id="previous_0" class="btn btn-secondary">Previous</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <input name="submit_stream" type="submit" class="btn btn-primary" value="<?php if (isset($rChannel)) { echo "Edit"; } else { echo "Create"; } ?>" />
@@ -431,7 +544,7 @@ if ($rSettings["sidebar"]) {
                                             <div class="col-md-8">
                                                 <select id="server_id" class="form-control select2" data-toggle="select2">
                                                     <?php foreach (getStreamingServers() as $rServer) { ?>
-                                                    <option value="<?=$rServer["id"]?>"<?php if ((isset($_GET["server"])) && ($_GET["server"] == $rServer["id"])) { echo " selected"; } ?>><?=$rServer["server_name"]?></option>
+                                                    <option value="<?=$rServer["id"]?>"<?php if (isset($rChannel) && ($rChannel["created_channel_location"] == $rServer["id"])) { echo " selected"; } ?>><?=$rServer["server_name"]?></option>
                                                     <?php } ?>
                                                 </select>
                                             </div>
@@ -524,15 +637,20 @@ if ($rSettings["sidebar"]) {
         var changeTitle = false;
         var rSwitches = [];
         var rChannels = {};
+        <?php if ((isset($rChannel)) && ($rProperties["type"] == 2)) { ?>
+        var rSelection = <?=json_encode(getSelections(json_decode($rChannel["stream_source"], True)))?>;
+        <?php } else { ?>
+        var rSelection = [];
+        <?php } ?>
         
         function AtoZ(rType) {
-            $("#videos_sort").append($("#videos_sort option").remove().sort(function(a, b) {
+            $("#" + rType + "_sort").append($("#" + rType + "_sort option").remove().sort(function(a, b) {
                 var at = $(a).text().toUpperCase().split("/").pop(), bt = $(b).text().toUpperCase().split("/").pop();
                 return (at > bt) ? 1 : ((at < bt) ? -1 : 0);
             }));
         }
-        function MoveUp() {
-            var rSelected = $('#videos_sort option:selected');
+        function MoveUp(rType) {
+            var rSelected = $('#' + rType + '_sort option:selected');
             if (rSelected.length) {
                 var rPrevious = rSelected.first().prev()[0];
                 if ($(rPrevious).html() != '') {
@@ -540,19 +658,24 @@ if ($rSettings["sidebar"]) {
                 }
             }
         }
-        function MoveDown() {
-            var rSelected = $('#videos_sort option:selected');
+        function MoveDown(rType) {
+            var rSelected = $('#' + rType + '_sort option:selected');
             if (rSelected.length) {
                 rSelected.last().next().after(rSelected);
             }
         }
-        function Remove() {
-            var rSelected = $('#videos_sort option:selected');
+        function Remove(rType) {
+            var rSelected = $('#' + rType + '_sort option:selected');
             if (rSelected.length) {
                 rSelected.remove();
             }
         }
-        
+        function getCategory() {
+            return $("#category_idv").val();
+        }
+        function getServer() {
+            return $("#server_idc").val();
+        }
         (function($) {
           $.fn.inputFilter = function(inputFilter) {
             return this.on("input keydown keyup mousedown mouseup select contextmenu drop", function() {
@@ -567,6 +690,40 @@ if ($rSettings["sidebar"]) {
             });
           };
         }(jQuery));
+        
+        function toggleSelection(rID) {
+            var rIndex = rSelection.indexOf(parseInt(rID));
+            if (rIndex > -1) {
+                rSelection = jQuery.grep(rSelection, function(rValue) {
+                    return parseInt(rValue) != parseInt(rID);
+                });
+            } else {
+                rSelection.push(parseInt(rID));
+            }
+            $("#datatable-vod").DataTable().ajax.reload(null, false);
+            reviewSelection();
+        }
+        
+        function reviewSelection() {
+            $.post("./api.php?action=review_selection", {"data": rSelection}, function(rData) {
+                if (rData.result === true) {
+                    var rActiveStreams = [];
+                    $(rData.streams).each(function(rIndex) {
+                        rStreamSource = $.parseJSON(rData.streams[rIndex]["stream_source"])[0].replace("s:" + $("#server_idc").val() + ":", "");
+                        rActiveStreams.push(rStreamSource);
+                        rExt = rStreamSource.split('.').pop().toLowerCase();
+                        if ((["mp4", "mkv", "mov", "avi", "mpg", "mpeg", "flv", "wmv"].includes(rExt)) && ($("#review_sort option[value='" + rStreamSource.replace("'", "\\'") + "']").length == 0)) {
+                            $("#review_sort").append(new Option(rStreamSource, rStreamSource));
+                        }
+                    });
+                    $("#review_sort option").each(function() {
+                        if (!rActiveStreams.includes($(this).val())) {
+                            $(this).remove();
+                        }
+                    });
+                }
+            }, "json");
+        }
         
         function api(rID, rServerID, rType) {
             if (rType == "delete") {
@@ -648,6 +805,52 @@ if ($rSettings["sidebar"]) {
                 }
             });
             
+            $("#datatable-vod").DataTable({
+                language: {
+                    paginate: {
+                        previous: "<i class='mdi mdi-chevron-left'>",
+                        next: "<i class='mdi mdi-chevron-right'>"
+                    }
+                },
+                drawCallback: function() {
+                    $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+                },
+                createdRow: function(row, data, index) {
+                    $(row).addClass('vod-' + data[0]);
+                    var rIndex = rSelection.indexOf(parseInt(data[0]));
+                    if (rIndex > -1) {
+                        $(row).find(".btn-remove").show();
+                    } else {
+                        $(row).find(".btn-add").show();
+                    }
+                },
+                bInfo: false,
+                bAutoWidth: false,
+                searching: true,
+                pageLength: 100,
+                lengthChange: false,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "./table.php",
+                    "data": function(d) {
+                        d.id = "vod_selection";
+                        d.category_id = getCategory();
+                        d.server_id = getServer();
+                    }
+                },
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0,3]}
+                ],
+            });
+            
+            $("#category_idv").on("select2:select", function(e) { 
+                $("#datatable-vod").DataTable().ajax.reload(null, false);
+            });
+            $('#vod_search').keyup(function(){
+                $('#datatable-vod').DataTable().search($(this).val()).draw();
+            })
+            
             var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
             elems.forEach(function(html) {
               var switchery = new Switchery(html);
@@ -663,7 +866,7 @@ if ($rSettings["sidebar"]) {
                 $("#datatable-files").DataTable().rows().every(function ( rowIdx, tableLoop, rowLoop) {
                     var data = this.data();
                     rExt = data[1].split('.').pop().toLowerCase();
-                    if ((["mp4", "mkv", "mov", "avi", "mpg", "mpeg", "flv", "wmv"].includes(rExt)) && ($("#videos_sort option[value='" + escape(window.currentDirectory + data[1]) + "']").length == 0)) {
+                    if ((["mp4", "mkv", "mov", "avi", "mpg", "mpeg", "flv", "wmv"].includes(rExt)) && ($("#videos_sort option[value='" + (window.currentDirectory + data[1]).replace("'", "\\'") + "']").length == 0)) {
                         $("#videos_sort").append(new Option(window.currentDirectory + data[1], window.currentDirectory + data[1]));
                     }
                 });
@@ -722,19 +925,36 @@ if ($rSettings["sidebar"]) {
             });
             
             $("#stream_form").submit(function(e){
-                if (($("#videos_sort option").length == 0) && ($("#series_no").val() == 0)) {
-                    $.toast("Please add at least one video to the channel.");
-                    e.preventDefault();
+                var rVideoFiles = [];
+                if ($("#channel_type").val() == 0) {
+                    if ($("#series_no").val() == 0) {
+                        $.toast("Please select a series to map.");
+                        e.preventDefault();
+                    }
+                } else if ($("#channel_type").val() == 1) {
+                    if ($("#videos_sort option").length == 0) {
+                        $.toast("Please add at least one video to the channel.");
+                        e.preventDefault();
+                    }
+                    $("#videos_sort option").each(function() {
+                        rVideoFiles.push($(this).val());
+                    });
+                    $("#created_channel_location").val($("#server_id").val());
+                } else if ($("#channel_type").val() == 2) {
+                    if ($("#review_sort option").length == 0) {
+                        $.toast("Please add at least one video to the channel.");
+                        e.preventDefault();
+                    }
+                    $("#review_sort option").each(function() {
+                        rVideoFiles.push($(this).val());
+                    });
+                    $("#created_channel_location").val($("#server_idc").val());
                 }
                 if (!$("#transcode_profile_id").val()) {
                     $.toast("Please select a trancoding profile.");
                     e.preventDefault();
                 }
                 $("#server_tree_data").val(JSON.stringify($('#server_tree').jstree(true).get_json('#', {flat:true})));
-                var rVideoFiles = [];
-                $("#videos_sort option").each(function() {
-                    rVideoFiles.push($(this).val());
-                });
                 $("#video_files").val(JSON.stringify(rVideoFiles));
             });
             
@@ -789,13 +1009,33 @@ if ($rSettings["sidebar"]) {
             });
             
             $("#series_no").change(function() {
-                if ($(this).val() == 0) {
-                    $("#videos_nav").show();
-                    $("#videos").show();
-                } else {
-                    $("#videos_nav").hide();
-                    $("#videos").hide();
+                if ($("#series_no").val() > 0) {
+                    $("#stream_display_name").val("24/7 " + $("#series_no option:selected").text());
                 }
+            });
+            
+            $("#channel_type").change(function() {
+                if ($("#channel_type").val() == 0) {
+                    $("#review_nav").hide();
+                    $("#selection_nav").hide()
+                    $("#videos_nav").hide();
+                    $("#series_nav").show();
+                } else if ($("#channel_type").val() == 1) {
+                    $("#review_nav").hide();
+                    $("#selection_nav").hide()
+                    $("#videos_nav").show();
+                    $("#series_nav").hide();
+                } else {
+                    $("#review_nav").show();
+                    $("#selection_nav").show()
+                    $("#videos_nav").hide();
+                    $("#series_nav").hide();
+                }
+            });
+            
+            $("#server_idc").change(function() {
+                $("#review_sort").empty();
+                $("#datatable-vod").DataTable().ajax.reload(null, false);
             });
             
             <?php if (isset($rChannel)) { ?>
@@ -822,16 +1062,28 @@ if ($rSettings["sidebar"]) {
             $("#season_num").trigger('change');
             <?php } ?>
             
-            $("#first_next").click(function() {
-                if ($("#series_no").val() == 0) {
+            $("#next_0").click(function() {
+                if ($("#channel_type").val() == 0) {
+                    $('[href="#load-balancing"]').tab('show');
+                } else if ($("#channel_type").val() == 1) {
+                    $('[href="#selection"]').tab('show');
+                } else {
+                    $('[href="#videos"]').tab('show');
+                }
+            });
+            $("#previous_0").click(function() {
+                if ($("#channel_type").val() == 0) {
+                    $('[href="#stream-details"]').tab('show');
+                } else if ($("#channel_type").val() == 1) {
                     $('[href="#videos"]').tab('show');
                 } else {
-                    $('[href="#load-balancing"]').tab('show');
+                    $('[href="#review"]').tab('show');
                 }
             });
             
             $("form").attr('autocomplete', 'off');
             $("#changeDir").click();
+            $("#channel_type").trigger('change');
         });
         </script>
     </body>

@@ -10,6 +10,10 @@ if ((isset($_GET["trial"])) OR (isset($_POST["trial"]))) {
     $canGenerateTrials = True;
 }
 
+if ($rAdminSettings["disable_trial"]) {
+	$canGenerateTrials = False;
+}
+
 if (isset($_POST["submit_user"])) {
     $_POST["mac_address_mag"] = strtoupper($_POST["mac_address_mag"]);
     $_POST["mac_address_e2"] = strtoupper($_POST["mac_address_e2"]);
@@ -252,12 +256,9 @@ if (isset($_POST["submit_user"])) {
                         $db->query("INSERT INTO `enigma2_devices`(`user_id`, `mac`, `lock_device`) VALUES(".intval($rInsertID).", '".$db->real_escape_string(strtoupper($_POST["mac_address_e2"]))."', ".intval($rLockDevice).");");
                     }
                 }
-                $_STATUS = 0;
+                header("Location: ./user_reseller.php?id=".$rInsertID); exit;
             } else {
                 $_STATUS = 2;
-            }
-            if (!isset($_GET["id"])) {
-                $_GET["id"] = $rInsertID;
             }
         }
     }
@@ -423,13 +424,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4" id="uname">
                                                             <label class="col-md-4 col-form-label" for="username">Username</label>
                                                             <div class="col-md-8">
-                                                                <input<?php if ((!$rPermissions["allow_change_pass"]) && (!$rAdminSettings["change_usernames"])) { echo " disabled"; } ?> type="text" class="form-control" id="username" name="username" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>">
+                                                                <input<?php if ((!$rPermissions["allow_change_pass"]) && (!$rAdminSettings["change_usernames"])) { echo " disabled"; } ?> type="text" class="form-control" id="username" name="username" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["username"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4" id="pass">
                                                             <label class="col-md-4 col-form-label" for="password">Password</label>
                                                             <div class="col-md-8">
-                                                                <input<?php if (!$rPermissions["allow_change_pass"]) { echo " disabled"; } ?> type="text" class="form-control" id="password" name="password" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo $rUser["password"]; } ?>">
+                                                                <input<?php if (!$rPermissions["allow_change_pass"]) { echo " disabled"; } ?> type="text" class="form-control" id="password" name="password" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["password"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -462,7 +463,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="max_connections">Max Connections</label>
                                                             <div class="col-md-2">
-                                                                <input disabled type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rUser)) { echo $rUser["max_connections"]; } else { echo "1"; } ?>">
+                                                                <input disabled type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["max_connections"]); } else { echo "1"; } ?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="exp_date">Expiry <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Leave blank for unlimited." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
@@ -482,19 +483,19 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4" style="display:none" id="mac_entry_mag">
                                                             <label class="col-md-4 col-form-label" for="mac_address_mag">MAC Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="mac_address_mag" name="mac_address_mag" value="<?php if (isset($rUser)) { echo $rUser["mac_address_mag"]; } ?>">
+                                                                <input type="text" class="form-control" id="mac_address_mag" name="mac_address_mag" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["mac_address_mag"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4" style="display:none" id="mac_entry_e2">
                                                             <label class="col-md-4 col-form-label" for="mac_address_e2">MAC Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="mac_address_e2" name="mac_address_e2" value="<?php if (isset($rUser)) { echo $rUser["mac_address_e2"]; } ?>">
+                                                                <input type="text" class="form-control" id="mac_address_e2" name="mac_address_e2" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["mac_address_e2"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="reseller_notes">Reseller Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="reseller_notes" name="reseller_notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo $rUser["reseller_notes"]; } ?></textarea>
+                                                                <textarea id="reseller_notes" name="reseller_notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo htmlspecialchars($rUser["reseller_notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->

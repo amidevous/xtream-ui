@@ -141,6 +141,12 @@ if ($rSettings["sidebar"]) {
         }
 
         $(document).ready(function() {
+			$(window).keydown(function(event){
+				if(event.keyCode == 13) {
+					event.preventDefault();
+					return false;
+				}
+			});
             $('select').select2({width: '100%'});
             $('#range').daterangepicker({
                 singleDatePicker: false,

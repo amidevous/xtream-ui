@@ -3722,6 +3722,9 @@ body.authentication-bg-pattern{
 #datatable-vod_wrapper {
     width: 100% !important;
 }
+#datatable-radios_wrapper {
+    width: 100% !important;
+}
 #datatable-series_wrapper {
     width: 100% !important;
 }
@@ -3732,6 +3735,9 @@ body.authentication-bg-pattern{
     display:none;
 }
 #datatable-vod_filter {
+    display:none;
+}
+#datatable-radios_filter {
     display:none;
 }
 #datatable-series_filter {

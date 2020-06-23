@@ -65,6 +65,7 @@ if (isset($_POST["submit_stream"])) {
             }
 			if (isset($_POST["c_serie_name"])) {
                 $db->query("UPDATE `series_episodes` SET `series_id` = '".intval($_POST["serie_name"])."' WHERE `stream_id` = ".intval($rStreamID).";");
+                $db->query("UPDATE `streams` SET `series_no` = '".intval($_POST["serie_name"])."' WHERE `stream_id` = ".intval($rStreamID).";");
 			}
             if (isset($_POST["c_server_tree"])) {
                 $rStreamExists = Array();

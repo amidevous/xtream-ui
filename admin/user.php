@@ -159,12 +159,9 @@ if (isset($_POST["submit_user"])) {
                     $db->query("DELETE FROM `enigma2_devices` WHERE `user_id` = ".intval($rInsertID).";");
                 }
             }
-            $_STATUS = 0;
+            header("Location: ./user.php?id=".$rInsertID); exit;
         } else {
             $_STATUS = 2;
-        }
-        if (!isset($_GET["id"])) {
-            $_GET["id"] = $rInsertID;
         }
     }
 }
@@ -295,13 +292,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="username">Username</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="username" name="username" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>">
+                                                                <input type="text" class="form-control" id="username" name="username" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["username"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="password">Password</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="password" name="password" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo $rUser["password"]; } ?>">
+                                                                <input type="text" class="form-control" id="password" name="password" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["password"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -318,7 +315,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="max_connections">Max Connections</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rUser)) { echo $rUser["max_connections"]; } else { echo "1"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["max_connections"]); } else { echo "1"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-2 col-form-label" for="exp_date">Expiry <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Leave blank for unlimited." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
@@ -334,13 +331,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="admin_notes">Admin Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="admin_notes" name="admin_notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo $rUser["admin_notes"]; } ?></textarea>
+                                                                <textarea id="admin_notes" name="admin_notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo htmlspecialchars($rUser["admin_notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="reseller_notes">Reseller Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="reseller_notes" name="reseller_notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo $rUser["reseller_notes"]; } ?></textarea>
+                                                                <textarea id="reseller_notes" name="reseller_notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo htmlspecialchars($rUser["reseller_notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -360,7 +357,7 @@ if ($rSettings["sidebar"]) {
                                                                 <select name="force_server_id" id="force_server_id" class="form-control select2" data-toggle="select2">
                                                                     <option <?php if (isset($rUser)) { if (intval($rUser["force_server_id"]) == 0) { echo "selected "; } } ?>value="0">Disabled</option>
                                                                     <?php foreach ($rServers as $rServer) { ?>
-                                                                    <option <?php if (isset($rUser)) { if (intval($rUser["force_server_id"]) == intval($rServer["id"])) { echo "selected "; } } ?>value="<?=$rServer["id"]?>"><?=$rServer["server_name"]?></option>
+                                                                    <option <?php if (isset($rUser)) { if (intval($rUser["force_server_id"]) == intval($rServer["id"])) { echo "selected "; } } ?>value="<?=$rServer["id"]?>"><?=htmlspecialchars($rServer["server_name"])?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -394,13 +391,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4" style="display:none" id="mac_entry_mag">
                                                             <label class="col-md-4 col-form-label" for="mac_address_mag">MAC Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="mac_address_mag" name="mac_address_mag" value="<?php if (isset($rUser)) { echo $rUser["mac_address_mag"]; } ?>">
+                                                                <input type="text" class="form-control" id="mac_address_mag" name="mac_address_mag" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["mac_address_mag"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4" style="display:none" id="mac_entry_e2">
                                                             <label class="col-md-4 col-form-label" for="mac_address_e2">MAC Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="mac_address_e2" name="mac_address_e2" value="<?php if (isset($rUser)) { echo $rUser["mac_address_e2"]; } ?>">
+                                                                <input type="text" class="form-control" id="mac_address_e2" name="mac_address_e2" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["mac_address_e2"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

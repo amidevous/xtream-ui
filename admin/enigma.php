@@ -44,13 +44,12 @@ if (isset($_POST["submit_e2"])) {
                     $rEditID = $db->insert_id;
                 }
                 $db->query("INSERT INTO `user_output`(`user_id`, `access_output_id`) VALUES(".intval($rNewID).", 2);");
-                $_STATUS = 0;
+                header("Location: ./enigma.php?id=".$rNewID); exit;
             }
         } else if ((isset($_POST["edit"])) && (strlen($_POST["edit"]))) {
             // Don't create a new user, legacy support for device.
             $db->query("UPDATE `enigma2_devices` SET `mac` = '".$db->real_escape_string($_POST["mac"])."' WHERE `device_id` = ".intval($_POST["edit"]).";");
-            $rEditID = $_POST["edit"];
-            $_STATUS = 0;
+            header("Location: ./enigma.php?id=".$_POST["edit"]); exit;
         }
     } else {
         $rE2Arr = Array("mac" => $_POST["mac"], "paired_user" => $_POST["paired_user"]);
@@ -136,7 +135,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="mac">MAC Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="mac" name="mac" value="<?php if (isset($rE2Arr)) { echo $rE2Arr["mac"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="mac" name="mac" value="<?php if (isset($rE2Arr)) { echo htmlspecialchars($rE2Arr["mac"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

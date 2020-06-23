@@ -1,3 +1,4 @@
+<?php if (count(get_included_files()) == 1) { exit; } ?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -32,6 +33,11 @@
             <!-- Topbar Start -->
             <div class="navbar-custom">
                 <ul class="list-unstyled topnav-menu float-right mb-0">
+					<li class="notification-list">
+						<a class="nav-link text-white waves-effect" href="#" role="button">
+							<?=$rUserInfo["username"]?>
+						</a>
+					</li>
                     <?php if (($rServerError) && ($rPermissions["is_admin"] == 1)) { ?>
                     <li class="notification-list">
                         <a href="./servers.php" class="nav-link right-bar-toggle waves-effect text-warning">
@@ -67,6 +73,7 @@
                             <a href="./groups.php" class="dropdown-item notify-item"><span>Groups</span></a>
                             <a href="./mass_delete.php" class="dropdown-item notify-item"><span>Mass Delete</span></a>
                             <a href="./packages.php" class="dropdown-item notify-item"><span>Packages</span></a>
+                            <a href="./process_monitor.php?server=<?=$_INFO["server_id"]?>" class="dropdown-item notify-item"><span>Process Monitor</span></a>
                             <a href="./rtmp_ips.php" class="dropdown-item notify-item"><span>RTMP IP's</span></a>
                             <a href="./subresellers.php" class="dropdown-item notify-item"><span>Subresellers</span></a>
                             <a href="./profiles.php" class="dropdown-item notify-item"><span>Transcode Profiles</span></a>
@@ -204,6 +211,15 @@
                                 </ul>
                             </li>
                             <li>
+                                <a href="javascript: void(0);"><i class="mdi mdi-radio"></i><span>Radio Stations</span><span class="menu-arrow"></span></a>
+                                <ul class="nav-second-level" aria-expanded="false">
+                                    <li><a href="./radio.php">Add Station</a></li>
+                                    <li><a href="./radios.php">Manage Stations</a></li>
+                                    <li class="separator"></li>
+                                    <li><a href="./radio_mass.php">Mass Edit Stations</a></li>
+                                </ul>
+                            </li>
+                            <li>
                                 <a href="javascript: void(0);"><i class="la la-play-circle-o"></i><span>Streams</span><span class="menu-arrow"></span></a>
                                 <ul class="nav-second-level" aria-expanded="false">
                                     <li><a href="./stream.php">Add Stream</a></li>
@@ -233,6 +249,7 @@
                                     <li><a href="./movies.php">Movies</a></li>
                                     <li><a href="./series.php">Series</a></li>
                                     <li><a href="./episodes.php">Episodes</a></li>
+                                    <li><a href="./radios.php">Stations</a></li>
                                 </ul>
                             </li>
                             <?php }

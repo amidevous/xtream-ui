@@ -2,15 +2,7 @@
 include "session.php"; include "functions.php";
 if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
 
-if (isset($_GET["category"])) {
-    if (!isset($rCategories[$_GET["category"]])) {
-        exit;
-    } else {
-        $rCategory = $rCategories[$_GET["category"]];
-    }
-} else {
-    $rCategory = null;
-}
+$rCategories = getCategories("radio");
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -53,38 +45,33 @@ if ($rSettings["sidebar"]) {
                                         </a>
                                         <?php }
                                         if ($rPermissions["is_admin"]) { ?>
-                                        <a href="stream.php">
+                                        <a href="radio.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
-                                                Add Stream
-                                            </button>
-                                        </a>
-                                        <a href="created_channel.php">
-                                            <button type="button" class="btn btn-purple waves-effect waves-light btn-sm">
-                                                Create
+                                                Add Station
                                             </button>
                                         </a>
                                         <?php } ?>
                                     </li>
                                 </ol>
                             </div>
-                            <h4 class="page-title">Streams<?php if ($rCategory) { echo " - ".$rCategory["category_name"]; } ?></h4>
+                            <h4 class="page-title">Radio Stations</h4>
                         </div>
                     </div>
-                </div>     
+                </div>
                 <!-- end page title --> 
 
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body" style="overflow-x:auto;">
-                                <form id="stream_form">
+                                <form id="station_form">
                                     <div class="form-group row mb-4">
                                         <?php if ($rPermissions["is_reseller"]) { ?>
                                         <div class="col-md-3">
-                                            <input type="text" class="form-control" id="stream_search" value="" placeholder="Search Streams...">
+                                            <input type="text" class="form-control" id="station_search" value="" placeholder="Search Stations...">
                                         </div>
                                         <div class="col-md-3">
-                                            <select id="stream_category_id" class="form-control" data-toggle="select2">
+                                            <select id="station_category_id" class="form-control" data-toggle="select2">
                                                 <option value="" selected>All Categories</option>
                                                 <?php foreach ($rCategories as $rCategory) { ?>
                                                 <option value="<?=$rCategory["id"]?>"<?php if ((isset($_GET["category"])) && ($_GET["category"] == $rCategory["id"])) { echo " selected"; } ?>><?=$rCategory["category_name"]?></option>
@@ -92,16 +79,16 @@ if ($rSettings["sidebar"]) {
                                             </select>
                                         </div>
                                         <div class="col-md-3">
-                                            <select id="stream_server_id" class="form-control" data-toggle="select2">
+                                            <select id="station_server_id" class="form-control" data-toggle="select2">
                                                 <option value="" selected>All Servers</option>
                                                 <?php foreach (getStreamingServers() as $rServer) { ?>
                                                 <option value="<?=$rServer["id"]?>"<?php if ((isset($_GET["server"])) && ($_GET["server"] == $rServer["id"])) { echo " selected"; } ?>><?=$rServer["server_name"]?></option>
                                                 <?php } ?>
                                             </select>
                                         </div>
-                                        <label class="col-md-1 col-form-label text-center" for="stream_show_entries">Show</label>
+                                        <label class="col-md-1 col-form-label text-center" for="station_show_entries">Show</label>
                                         <div class="col-md-2">
-                                            <select id="stream_show_entries" class="form-control" data-toggle="select2">
+                                            <select id="station_show_entries" class="form-control" data-toggle="select2">
                                                 <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
                                                 <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
                                                 <?php } ?>
@@ -109,10 +96,10 @@ if ($rSettings["sidebar"]) {
                                         </div>
                                         <?php } else { ?>
                                         <div class="col-md-2">
-                                            <input type="text" class="form-control" id="stream_search" value="" placeholder="Search Streams...">
+                                            <input type="text" class="form-control" id="station_search" value="" placeholder="Search Streams...">
                                         </div>
                                         <div class="col-md-3">
-                                            <select id="stream_server_id" class="form-control" data-toggle="select2">
+                                            <select id="station_server_id" class="form-control" data-toggle="select2">
                                                 <option value="" selected>All Servers</option>
                                                 <?php foreach (getStreamingServers() as $rServer) { ?>
                                                 <option value="<?=$rServer["id"]?>"<?php if ((isset($_GET["server"])) && ($_GET["server"] == $rServer["id"])) { echo " selected"; } ?>><?=$rServer["server_name"]?></option>
@@ -120,7 +107,7 @@ if ($rSettings["sidebar"]) {
                                             </select>
                                         </div>
                                         <div class="col-md-3">
-                                            <select id="stream_category_id" class="form-control" data-toggle="select2">
+                                            <select id="station_category_id" class="form-control" data-toggle="select2">
                                                 <option value="" selected>All Categories</option>
                                                 <?php foreach ($rCategories as $rCategory) { ?>
                                                 <option value="<?=$rCategory["id"]?>"<?php if ((isset($_GET["category"])) && ($_GET["category"] == $rCategory["id"])) { echo " selected"; } ?>><?=$rCategory["category_name"]?></option>
@@ -128,7 +115,7 @@ if ($rSettings["sidebar"]) {
                                             </select>
                                         </div>
                                         <div class="col-md-2">
-                                            <select id="stream_filter" class="form-control" data-toggle="select2">
+                                            <select id="station_filter" class="form-control" data-toggle="select2">
                                                 <option value=""<?php if (!isset($_GET["filter"])) { echo " selected"; } ?>>No Filter</option>
                                                 <option value="1"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 1)) { echo " selected"; } ?>>Online</option>
                                                 <option value="2"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 2)) { echo " selected"; } ?>>Down</option>
@@ -136,13 +123,11 @@ if ($rSettings["sidebar"]) {
                                                 <option value="4"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 4)) { echo " selected"; } ?>>Starting</option>
                                                 <option value="5"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 5)) { echo " selected"; } ?>>On Demand</option>
                                                 <option value="6"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 6)) { echo " selected"; } ?>>Direct</option>
-												<option value="7"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 7)) { echo " selected"; } ?>>Timeshift</option>
-                                                <option value="8"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 8)) { echo " selected"; } ?>>Created Channel</option>
                                             </select>
                                         </div>
-                                        <label class="col-md-1 col-form-label text-center" for="stream_show_entries">Show</label>
+                                        <label class="col-md-1 col-form-label text-center" for="station_show_entries">Show</label>
                                         <div class="col-md-1">
-                                            <select id="stream_show_entries" class="form-control" data-toggle="select2">
+                                            <select id="station_show_entries" class="form-control" data-toggle="select2">
                                                 <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
                                                 <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
                                                 <?php } ?>
@@ -161,7 +146,6 @@ if ($rSettings["sidebar"]) {
                                             <th class="text-center">Clients</th>
                                             <th class="text-center">Uptime</th>
                                             <th class="text-center">Actions</th>
-                                            <th class="text-center">Player</th>
                                             <?php } ?>
                                             <th class="text-center">Stream Info</th>
                                         </tr>
@@ -221,20 +205,20 @@ if ($rSettings["sidebar"]) {
         
         function api(rID, rServerID, rType) {
             if (rType == "delete") {
-                if (confirm('Are you sure you want to delete this stream?') == false) {
+                if (confirm('Are you sure you want to delete this station?') == false) {
                     return;
                 }
             }
             $.getJSON("./api.php?action=stream&sub=" + rType + "&stream_id=" + rID + "&server_id=" + rServerID, function(data) {
                 if (data.result == true) {
                     if (rType == "start") {
-                        $.toast("Stream successfully started. It will take a minute or so before the stream becomes available.");
+                        $.toast("Station successfully started. It will take a minute or so before the station becomes available.");
                     } else if (rType == "stop") {
-                        $.toast("Stream successfully stopped.");
+                        $.toast("Station successfully stopped.");
                     } else if (rType == "restart") {
-                        $.toast("Stream successfully restarted. It will take a minute or so before the stream becomes available.");
+                        $.toast("Station successfully restarted. It will take a minute or so before the station becomes available.");
                     } else if (rType == "delete") {
-                        $.toast("Stream successfully deleted.");
+                        $.toast("Station successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
@@ -248,14 +232,6 @@ if ($rSettings["sidebar"]) {
                 $.toast("An error occured while processing your request.");
             });
         }
-        function player(rID) {
-            $.magnificPopup.open({
-                items: {
-                    src: "./player.php?type=live&id=" + rID,
-                    type: 'iframe'
-                }
-            });
-        }
         function reloadStreams() {
             if (autoRefresh == true) {
                 $('[data-toggle="tooltip"]').tooltip("hide");
@@ -265,13 +241,13 @@ if ($rSettings["sidebar"]) {
         }
 
         function getCategory() {
-            return $("#stream_category_id").val();
+            return $("#station_category_id").val();
         }
         function getFilter() {
-            return $("#stream_filter").val();
+            return $("#station_filter").val();
         }
         function getServer() {
-            return $("#stream_server_id").val();
+            return $("#station_server_id").val();
         }
         function changeZoom() {
             if ($("#datatable-streampage").hasClass("font-large")) {
@@ -288,14 +264,14 @@ if ($rSettings["sidebar"]) {
         }
         function clearFilters() {
             window.rClearing = true;
-            $("#stream_search").val("").trigger('change');
-            $('#stream_filter').val("").trigger('change');
-            $('#stream_server_id').val("").trigger('change');
-            $('#stream_category_id').val("").trigger('change');
-            $('#stream_show_entries').val("<?=$rAdminSettings["default_entries"] ?: 10?>").trigger('change');
+            $("#station_search").val("").trigger('change');
+            $('#station_filter').val("").trigger('change');
+            $('#station_server_id').val("").trigger('change');
+            $('#station_category_id').val("").trigger('change');
+            $('#station_show_entries').val("<?=$rAdminSettings["default_entries"] ?: 10?>").trigger('change');
             window.rClearing = false;
-            $('#datatable-streampage').DataTable().search($("#stream_search").val());
-            $('#datatable-streampage').DataTable().page.len($('#stream_show_entries').val());
+            $('#datatable-streampage').DataTable().search($("#station_search").val());
+            $('#datatable-streampage').DataTable().page.len($('#station_show_entries').val());
             $("#datatable-streampage").DataTable().page(0).draw('page');
             $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-streampage").DataTable().ajax.reload( null, false );
@@ -333,7 +309,7 @@ if ($rSettings["sidebar"]) {
                 ajax: {
                     url: "./table_search.php",
                     "data": function(d) {
-                        d.id = "streams",
+                        d.id = "radios",
                         d.category = getCategory();
                         <?php if ($rPermissions["is_admin"]) { ?>
                         d.filter = getFilter();
@@ -345,8 +321,8 @@ if ($rSettings["sidebar"]) {
                 },
                 columnDefs: [
                     <?php if ($rPermissions["is_admin"]) { ?>
-                    {"className": "dt-center", "targets": [0,3,4,5,6,7]},
-                    {"orderable": false, "targets": [5,6]}
+                    {"className": "dt-center", "targets": [0,3,4,5,6]},
+                    {"orderable": false, "targets": [5]}
                     <?php } else { ?>
                     {"className": "dt-center", "targets": [0,3]}
                     <?php } ?>
@@ -357,29 +333,29 @@ if ($rSettings["sidebar"]) {
                 stateSave: true
             });
             $("#datatable-streampage").css("width", "100%");
-            $('#stream_search').keyup(function(){
+            $('#station_search').keyup(function(){
                 if (!window.rClearing) {
                     $('#datatable-streampage').DataTable().search($(this).val()).draw();
                 }
             })
-            $('#stream_show_entries').change(function(){
+            $('#station_show_entries').change(function(){
                 if (!window.rClearing) {
                     $('#datatable-streampage').DataTable().page.len($(this).val()).draw();
                 }
             })
-            $('#stream_category_id').change(function(){
+            $('#station_category_id').change(function(){
                 if (!window.rClearing) {
                     $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })
-            $('#stream_server_id').change(function(){
+            $('#station_server_id').change(function(){
                 if (!window.rClearing) {
                     $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })
-            $('#stream_filter').change(function(){
+            $('#station_filter').change(function(){
                 if (!window.rClearing) {
                     $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );

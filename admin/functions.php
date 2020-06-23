@@ -1,5 +1,5 @@
 <?php
-$rRelease = 19;             // Official Beta Release Number
+$rRelease = 20;             // Official Beta Release Number
 $rTimeout = 60;             // Seconds Timeout for Queries, Functions & Requests
 $rDebug = False;
 
@@ -77,7 +77,7 @@ function SystemAPIRequest($rServerID, $rData) {
 }
 
 function sexec($rServerID, $rCommand) {
-    global $rServers, $rSettings;
+    global $_INFO;
     if ($rServerID <> $_INFO["server_id"]) {
         return SystemAPIRequest($rServerID, Array("action" => "BackgroundCLI", "cmds" => Array($rCommand)));
     } else {
@@ -85,11 +85,104 @@ function sexec($rServerID, $rCommand) {
     }
 }
 
+function getPIDs($rServerID) {
+    global $rAdminSettings;
+    $rReturn = Array();
+    $rFilename = tempnam(MAIN_DIR.'tmp/', 'proc_');
+    $rCommand = "ps aux >> ".$rFilename;
+    sexec($rServerID, $rCommand);
+    $rData = ""; $rI = 5;
+    while (strlen($rData) == 0) {
+        $rData = SystemAPIRequest($rServerID, Array('action' => 'getFile', 'filename' => $rFilename));
+        $rI --;
+        if (($rI == 0) OR (strlen($rData) > 0)) { break; }
+        sleep(1);
+    }
+    $rProcesses = explode("\n", $rData);
+    array_shift($rProcesses);
+    foreach ($rProcesses as $rProcess) {
+        $rSplit = explode(" ", preg_replace('!\s+!', ' ', trim($rProcess)));
+        if (strlen($rSplit[0]) > 0) {
+            $rReturn[] = Array("user" => $rSplit[0], "pid" => $rSplit[1], "cpu" => $rSplit[2], "mem" => $rSplit[3], "vsz" => $rSplit[4], "rss" => $rSplit[5], "tty" => $rSplit[6], "stat" => $rSplit[7], "start" => $rSplit[8], "time" => $rSplit[9], "command" => join(" ", array_splice($rSplit, 10, count($rSplit)-10)));
+        }
+    }
+    return $rReturn;
+}
+
+function getFreeSpace($rServerID) {
+    $rReturn = Array();
+    $rFilename = tempnam(MAIN_DIR.'tmp/', 'fs_');
+    $rCommand = "df -h >> ".$rFilename;
+    sexec($rServerID, $rCommand);
+    $rData = SystemAPIRequest($rServerID, Array('action' => 'getFile', 'filename' => $rFilename));
+    $rLines = explode("\n", $rData);
+    array_shift($rLines);
+    foreach ($rLines as $rLine) {
+        $rSplit = explode(" ", preg_replace('!\s+!', ' ', trim($rLine)));
+        if ((strlen($rSplit[0]) > 0) && (strpos($rSplit[5], "xtreamcodes") !== false)) {
+            $rReturn[] = Array("filesystem" => $rSplit[0], "size" => $rSplit[1], "used" => $rSplit[2], "avail" => $rSplit[3], "percentage" => $rSplit[4], "mount" => join(" ", array_slice($rSplit, 5, count($rSplit)-5)));
+        }
+    }
+    return $rReturn;
+}
+
+function freeTemp($rServerID) {
+    sexec($rServerID, "rm ".MAIN_DIR."tmp/*");
+}
+
+function freeStreams($rServerID) {
+    sexec($rServerID, "rm ".MAIN_DIR."streams/*");
+}
+
+function getStreamPIDs($rServerID) {
+    global $db;
+    $return = Array();
+    $result = $db->query("SELECT `streams`.`id`, `streams`.`stream_display_name`, `streams`.`type`, `streams_sys`.`pid`, `streams_sys`.`monitor_pid`, `streams_sys`.`delay_pid` FROM `streams_sys` LEFT JOIN `streams` ON `streams`.`id` = `streams_sys`.`stream_id` WHERE `streams_sys`.`server_id` = ".intval($rServerID).";");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            foreach (Array("pid", "monitor_pid", "delay_pid") as $rPIDType) {
+                if ($row[$rPIDType]) {
+                    $return[$row[$rPIDType]] = Array("id" => $row["id"], "title" => $row["stream_display_name"], "type" => $row["type"], "pid_type" => $rPIDType);
+                }
+            }
+        }
+    }
+    $result = $db->query("SELECT `id`, `stream_display_name`, `type`, `tv_archive_pid` FROM `streams` WHERE `tv_archive_server_id` = ".intval($rServerID).";");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            if ($row["pid"]) {
+                $return[$row["pid"]] = Array("id" => $row["id"], "title" => $row["stream_display_name"], "type" => $row["type"], "pid_type" => "timeshift");
+            }
+        }
+    }
+    $result = $db->query("SELECT `streams`.`id`, `streams`.`stream_display_name`, `streams`.`type`, `user_activity_now`.`pid` FROM `user_activity_now` LEFT JOIN `streams` ON `streams`.`id` = `user_activity_now`.`stream_id` WHERE `user_activity_now`.`server_id` = ".intval($rServerID).";");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            if ($row["pid"]) {
+                $return[$row["pid"]] = Array("id" => $row["id"], "title" => $row["stream_display_name"], "type" => $row["type"], "pid_type" => "activity");
+            }
+        }
+    }
+    return $return;
+}
+
 function checkSource($rServerID, $rFilename) {
     global $rServers, $rSettings;
     $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".$rSettings["live_streaming_pass"]."&action=getFile&filename=".urlencode($rFilename);
     $rCommand = 'timeout 5 '.MAIN_DIR.'bin/ffprobe -show_streams -v quiet "'.$rAPI.'" -of json';
     return json_decode(shell_exec($rCommand), True);
+}
+
+function getSelections($rSources) {
+    global $db;
+    $return = Array();
+    foreach ($rSources as $rSource) {
+        $result = $db->query("SELECT `id` FROM `streams` WHERE `type` IN (2,5) AND `stream_source` LIKE '%".$db->real_escape_string(str_replace("/", "\/", $rSource))."\"%' ESCAPE '|' LIMIT 1;");
+        if (($result) && ($result->num_rows == 1)) {
+            $return[] = intval($result->fetch_assoc()["id"]);
+        }
+    }
+    return $return;
 }
 
 function getBackups() {
@@ -104,6 +197,11 @@ function getBackups() {
         return $a['timestamp'] <=> $b['timestamp'];
     });
     return $rBackups;
+}
+
+function parseRelease($rRelease) {
+    $rCommand = "/usr/bin/python ".MAIN_DIR."pytools/release.py \"".$rRelease."\"";
+    return json_decode(shell_exec($rCommand), True);
 }
 
 function listDir($rServerID, $rDirectory, $rAllowed=null) {
@@ -1014,6 +1112,19 @@ function getTicket($rID) {
     return null;
 }
 
+function getExpiring($rID) {
+	global $db;
+	$rAvailableMembers = array_keys(getRegisteredUsers($rID));
+	$return = Array();
+	$result = $db->query("SELECT `id`, `member_id`, `username`, `password`, `exp_date` FROM `users` WHERE `member_id` IN (".join(",", $rAvailableMembers).") AND `exp_date` >= UNIX_TIMESTAMP() ORDER BY `exp_date` ASC LIMIT 100;");
+	if (($result) && ($result->num_rows > 0)) {
+		while ($row = $result->fetch_assoc()) {
+			$return[] = $row;
+		}
+	}
+	return $return;
+}
+
 function getTickets($rID=null) {
     global $db;
     $return = Array();
@@ -1127,6 +1238,18 @@ function getSubresellerSetup($rID) {
     return null;
 }
 
+function getEpisodeParents() {
+    global $db;
+    $return = Array();
+    $result = $db->query("SELECT `series_episodes`.`stream_id`, `series`.`id`, `series`.`title` FROM `series_episodes` LEFT JOIN `series` ON `series`.`id` = `series_episodes`.`series_id`;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $return[intval($row["stream_id"])] = $row;
+        }
+    }
+    return $return;
+}
+
 function getSeriesList() {
     global $db;
     $return = Array();
@@ -1148,7 +1271,8 @@ function checkTable($rTable) {
         "tmdb_async" => Array("CREATE TABLE `tmdb_async` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` int(1) NOT NULL DEFAULT '0', `stream_id` int(16) NOT NULL DEFAULT '0', `status` int(8) NOT NULL DEFAULT '0', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"),
         "watch_settings" => Array("CREATE TABLE `watch_settings` (`read_native` int(1) NOT NULL DEFAULT '1', `movie_symlink` int(1) NOT NULL DEFAULT '1', `auto_encode` int(1) NOT NULL DEFAULT '0', `transcode_profile_id` int(8) NOT NULL DEFAULT '0', `scan_seconds` int(8) NOT NULL DEFAULT '3600') ENGINE=InnoDB DEFAULT CHARSET=latin1;", "INSERT INTO `watch_settings` (`read_native`, `movie_symlink`, `auto_encode`, `transcode_profile_id`, `scan_seconds`) VALUES(1, 1, 0, 0, 3600);"),
         "watch_categories" => Array("CREATE TABLE `watch_categories` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` int(1) NOT NULL DEFAULT '0', `genre_id` int(8) NOT NULL DEFAULT '0', `genre` varchar(64) NOT NULL DEFAULT '', `category_id` int(8) NOT NULL DEFAULT '0', `bouquets` varchar(4096) NOT NULL DEFAULT '[]', PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1", "INSERT INTO `watch_categories` (`id`, `type`, `genre_id`, `genre`, `category_id`, `bouquets`) VALUES (1, 1, 28, 'Action', 0, '[]'), (2, 1, 12, 'Adventure', 0, '[]'), (3, 1, 16, 'Animation', 0, '[]'), (4, 1, 35, 'Comedy', 0, '[]'), (5, 1, 80, 'Crime', 0, '[]'), (6, 1, 99, 'Documentary', 0, '[]'), (7, 1, 18, 'Drama', 0, '[]'), (8, 1, 10751, 'Family', 0, '[]'), (9, 1, 14, 'Fantasy', 0, '[]'), (10, 1, 36, 'History', 0, '[]'), (11, 1, 27, 'Horror', 0, '[]'), (12, 1, 10402, 'Music', 0, '[]'), (13, 1, 9648, 'Mystery', 0, '[]'), (14, 1, 10749, 'Romance', 0, '[]'), (15, 1, 878, 'Science Fiction', 0, '[]'), (16, 1, 10770, 'TV Movie', 0, '[]'), (17, 1, 53, 'Thriller', 0, '[]'), (18, 1, 10752, 'War', 0, '[]'), (19, 1, 37, 'Western', 0, '[]');"),
-        "watch_output" => Array("CREATE TABLE `watch_output` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` int(1) NOT NULL DEFAULT '0', `server_id` int(8) NOT NULL DEFAULT '0', `filename` varchar(4096) NOT NULL DEFAULT '', `status` int(1) NOT NULL DEFAULT '0', `stream_id` int(8) NOT NULL DEFAULT '0', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;")
+        "watch_output" => Array("CREATE TABLE `watch_output` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` int(1) NOT NULL DEFAULT '0', `server_id` int(8) NOT NULL DEFAULT '0', `filename` varchar(4096) NOT NULL DEFAULT '', `status` int(1) NOT NULL DEFAULT '0', `stream_id` int(8) NOT NULL DEFAULT '0', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"),
+		"login_flood" => Array("CREATE TABLE `login_flood` (`id` int(11) NOT NULL AUTO_INCREMENT, `username` varchar(128) NOT NULL DEFAULT '', `ip` varchar(64) NOT NULL DEFAULT '', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;")
     );
     if ((!$db->query("DESCRIBE `".$rTable."`;")) && (isset($rTableQuery[$rTable]))) {
         // Doesn't exist! Create it.
@@ -1256,7 +1380,7 @@ function getFooter() {
     // Don't be a dick. Leave it.
     global $rAdminSettings, $rPermissions, $rSettings, $rRelease;
     if ($rPermissions["is_admin"]) {
-        return "Copyright &copy; 2019 - <a href=\"https://xtream-ui.com\">Xtream UI</a> R".$rRelease." - Free & Open Source Forever";
+        return "Copyright &copy; ".date("Y")." - <a href=\"https://xtream-ui.com\">Xtream UI</a> R".$rRelease." - Free & Open Source Forever";
     } else {
         return $rSettings["copyrights_text"];
     }
@@ -1379,6 +1503,15 @@ function generateSeriesPlaylist($rSeriesNo) {
     return $rReturn;
 }
 
+function flushIPs() {
+    global $db, $rServers;
+    $rCommand = "sudo /sbin/iptables -P INPUT ACCEPT && sudo /sbin/iptables -P OUTPUT ACCEPT && sudo /sbin/iptables -P FORWARD ACCEPT && sudo /sbin/iptables -F";
+    foreach ($rServers as $rServer) {
+        sexec($rServer["id"], $rCommand);
+    }
+    $db->query("DELETE FROM `blocked_ips`;");
+}
+
 function updateTables() {
     global $db;
     if (file_exists("./.update")) {
@@ -1392,6 +1525,7 @@ function updateTables() {
     checkTable("watch_settings");
     checkTable("watch_categories");
     checkTable("watch_output");
+	checkTable("login_flood");
     // R19A
     $rResult = $db->query("SHOW COLUMNS FROM `watch_folders` LIKE 'bouquets';");
     if (($rResult) && ($rResult->num_rows == 0)) {
@@ -1421,6 +1555,8 @@ function updateTables() {
     if (($rResult) && ($rResult->num_rows == 0)) {
         $db->query("ALTER TABLE `watch_folders` ADD COLUMN `allowed_extensions` VARCHAR(4096) NOT NULL DEFAULT '[]';");
     }
+	// R20 Official
+	$db->query("UPDATE `streams_arguments` SET `argument_cmd` = '-cookies \'%s\'' WHERE `id` = 17;");
     updateTMDbCategories();
 }
 
@@ -1465,7 +1601,7 @@ if (isset($_SESSION['hash'])) {
     if ($rPermissions["is_admin"]) {
         $rPermissions["is_reseller"] = 0; // Don't allow Admin & Reseller!
     }
-    if ((!$rUserInfo) or (!$rPermissions) or ((!$rPermissions["is_admin"]) && (!$rPermissions["is_reseller"]))) {
+    if ((!$rUserInfo) or (!$rPermissions) or ((!$rPermissions["is_admin"]) && (!$rPermissions["is_reseller"])) or ($_SESSION['ip'] <> getIP())) {
         unset($rUserInfo);
         unset($rPermissions);
         session_unset();

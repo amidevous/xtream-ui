@@ -175,7 +175,7 @@ if ($rSettings["sidebar"]) {
                                                         </p>
                                                         <select multiple id="sort_series" class="form-control" style="min-height:400px;">
                                                         <?php foreach ($rOrdered["series"] as $rStream) { ?>
-                                                            <option value="<?=$rStream["id"]?>"><?=$rStream["stream_display_name"]?></option>
+                                                            <option value="<?=$rStream["id"]?>"><?=$rStream["title"]?></option>
                                                         <?php } ?>
                                                         </select>
                                                     </div> <!-- end col -->

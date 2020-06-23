@@ -3,6 +3,11 @@ include "functions.php";
 if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
+if (isset($_GET["flush"])) {
+    flushIPs();
+    header("Location: ./ips.php");
+}
+
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -20,6 +25,11 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
+                                        <a href="ips.php?flush">
+                                            <button type="button" class="btn btn-danger waves-effect waves-light btn-sm">
+                                                <i class="mdi mdi-trash-can"></i> Flush IP's
+                                            </button>
+                                        </a>
                                         <a href="ip.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Block IP Address

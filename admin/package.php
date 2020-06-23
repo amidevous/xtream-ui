@@ -67,12 +67,9 @@ if (isset($_POST["submit_package"])) {
             } else {
                 $rInsertID = $db->insert_id;
             }
-            $_STATUS = 0;
+            header("Location: ./package.php?id=".$rInsertID); exit;
         } else {
             $_STATUS = 2;
-        }
-        if (!isset($_GET["id"])) {
-            $_GET["id"] = $rInsertID;
         }
     }
 }
@@ -160,7 +157,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="package_name">Package Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="package_name" name="package_name" value="<?php if (isset($rPackage)) { echo $rPackage["package_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="package_name" name="package_name" value="<?php if (isset($rPackage)) { echo htmlspecialchars($rPackage["package_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -170,13 +167,13 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="trial_credits">Trial Credits</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="trial_credits" name="trial_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo $rPackage["trial_credits"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="trial_credits" name="trial_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo htmlspecialchars($rPackage["trial_credits"]); } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="trial_duration">Trial Duration</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="trial_duration" name="trial_duration" value="<?php if (isset($rPackage)) { echo $rPackage["trial_duration"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="trial_duration" name="trial_duration" value="<?php if (isset($rPackage)) { echo htmlspecialchars($rPackage["trial_duration"]); } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="trial_duration_in">Trial Duration In</label>
                                                             <div class="col-md-2">
@@ -194,13 +191,13 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="official_credits">Official Credits</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="official_credits" name="official_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo $rPackage["official_credits"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="official_credits" name="official_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo htmlspecialchars($rPackage["official_credits"]); } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="official_duration">Official Duration</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="official_duration" name="official_duration" value="<?php if (isset($rPackage)) { echo $rPackage["official_duration"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="official_duration" name="official_duration" value="<?php if (isset($rPackage)) { echo htmlspecialchars($rPackage["official_duration"]); } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="official_duration_in">Official Duration In</label>
                                                             <div class="col-md-2">
@@ -244,7 +241,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="max_connections">Max Connections</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rPackage)) { echo $rPackage["max_connections"]; } else { echo "1"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rPackage)) { echo htmlspecialchars($rPackage["max_connections"]); } else { echo "1"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

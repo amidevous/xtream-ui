@@ -1,4 +1,13 @@
 <?php
+/////////////////////////////////////////////////////////////////////////////////////
+// Xtream UI Reseller API                                                          //
+/////////////////////////////////////////////////////////////////////////////////////
+//                                                                                 //
+// Disclaimer:                                                                     //
+// This is an externally developed API, not officially part of the Xtream UI base. //
+//                                                                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+
 include "../functions.php";
 
 function resellerapi_encrypt($q, $salt = null) {
@@ -42,7 +51,7 @@ class Controller {
         $return = array();
         $registerdetails = self::getresellerid($param);
         if ($registerdetails['result'] == 'success') {
-            $rUserInfo = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . $registerdetails['member_id'] . "'");
+            $rUserInfo = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . intval($registerdetails['member_id']) . "'");
             if ($rUserInfo->num_rows > 0) {
                 while ($row = $rUserInfo->fetch_assoc()) {
                     if (isset($row) && !empty($row)) {
@@ -68,7 +77,7 @@ class Controller {
         $return = array();
         $registerdetails = self::getresellerid($param);
         if ($registerdetails['result'] == 'success') {
-            $rUserInfo = $db->query("SELECT member_group_id FROM `reg_users` WHERE `id` = '" . $registerdetails['member_id'] . "'");
+            $rUserInfo = $db->query("SELECT member_group_id FROM `reg_users` WHERE `id` = '" . intval($registerdetails['member_id']) . "'");
             if ($rUserInfo->num_rows > 0) {
                 while ($row = $rUserInfo->fetch_assoc()) {
                     if (isset($row) && !empty($row)) {
@@ -124,7 +133,7 @@ class Controller {
         if ($registerdetails['result'] == 'success') {
             $param[] = $param['user_data'];
             $param["member_id"] = $registerdetails['member_id'];
-            $row = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . $registerdetails['member_id'] . "'");
+            $row = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . intval($registerdetails['member_id']) . "'");
             if ($row->num_rows > 0) {
                 $rUserInfo = $row->fetch_assoc();
                 $param["mac_address_mag"] = strtoupper($param["mac_address_mag"]);
@@ -208,6 +217,9 @@ class Controller {
                 }
                 if (!isset($_STATUS)) {
                     $rArray["created_by"] = $rUserInfo["id"];
+					foreach ($rArray as $rKey => $rValue) {
+						$rArray[$db->real_escape_string($rKey)] = $rValue;
+					}
                     $rCols = "`" . implode('`,`', array_keys($rArray)) . "`";
                     foreach (array_values($rArray) as $rValue) {
                         isset($rValues) ? $rValues .= ',' : $rValues = '';
@@ -312,9 +324,9 @@ class Controller {
             $reseller_notes = $params['reseller_notes'];
             if ($params['producttype'] == 'streamlineonly') {
                 if (isset($username) && !empty($username)) {
-                    $result = $db->query("SELECT username FROM users WHERE username='$username' AND enabled='1' AND reseller_notes ='$reseller_notes'");
+                    $result = $db->query("SELECT username FROM users WHERE username='".$db->real_escape_string($username)."' AND enabled='1' AND reseller_notes ='".$db->real_escape_string($reseller_notes)."'");
                     if ($result->num_rows > 0) {
-                        $disable = $db->query("UPDATE users SET enabled='0' WHERE username='$username' AND enabled='1' AND reseller_notes ='$reseller_notes' ");
+                        $disable = $db->query("UPDATE users SET enabled='0' WHERE username='".$db->real_escape_string($username)."' AND enabled='1' AND reseller_notes ='".$db->real_escape_string($reseller_notes)."' ");
                         if ($disable) {
                             $return['result'] = 'success';
                             $return['message'] = 'User Disable Successfully!';
@@ -332,10 +344,10 @@ class Controller {
                     $return['message'] = 'Username is required';
                 }
             } elseif ($params['producttype'] == 'magdevice') {
-                $result = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . base64_encode($params['mac_address_mag']) . "'");
+                $result = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . $db->real_escape_string(base64_encode($params['mac_address_mag'])) . "'");
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
-                        $disable = $db->query("UPDATE users SET enabled='0' WHERE reseller_notes='$reseller_notes' AND is_mag='1' AND enabled='1' AND id='" . $row['user_id'] . "'");
+                        $disable = $db->query("UPDATE users SET enabled='0' WHERE reseller_notes='".$db->real_escape_string($reseller_notes)."' AND is_mag='1' AND enabled='1' AND id='" . intval($row['user_id']) . "'");
                         if ($disable) {
                             $return['result'] = 'success';
                             $return['message'] = 'User Disable Successfully!';
@@ -350,10 +362,10 @@ class Controller {
                     $return['message'] = 'MAC Address No Found!';
                 }
             } elseif ($params['producttype'] == 'engdevice') {
-                $result = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $params['mac_address_e2'] . "'");
+                $result = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $db->real_escape_string($params['mac_address_e2']) . "'");
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
-                        $disable = $db->query("UPDATE users SET enabled='0' WHERE reseller_notes='$reseller_notes' AND is_e2='1' AND enabled='1' AND id='" . $row['user_id'] . "'");
+                        $disable = $db->query("UPDATE users SET enabled='0' WHERE reseller_notes='".$db->real_escape_string($reseller_notes)."' AND is_e2='1' AND enabled='1' AND id='" . intval($row['user_id']) . "'");
                         if ($disable) {
                             $return['result'] = 'success';
                             $return['message'] = 'User Disable Successfully!';
@@ -384,9 +396,9 @@ class Controller {
             $reseller_notes = $params['reseller_notes'];
             if ($params['producttype'] == 'streamlineonly') {
                 if (isset($username) && !empty($username)) {
-                    $result = $db->query("SELECT username FROM users WHERE username='$username' AND enabled='0' AND reseller_notes ='$reseller_notes'");
+                    $result = $db->query("SELECT username FROM users WHERE username='".$db->real_escape_string($username)."' AND enabled='0' AND reseller_notes ='".$db->real_escape_string($reseller_notes)."'");
                     if ($result->num_rows > 0) {
-                        $disable = $db->query("UPDATE users SET enabled='1' WHERE username='$username' AND enabled='0' AND reseller_notes ='$reseller_notes' ");
+                        $disable = $db->query("UPDATE users SET enabled='1' WHERE username='".$db->real_escape_string($username)."' AND enabled='0' AND reseller_notes ='".$db->real_escape_string($reseller_notes)."' ");
                         if ($disable) {
                             $return['result'] = 'success';
                             $return['message'] = 'User Disable Successfully!';
@@ -404,7 +416,7 @@ class Controller {
                     $return['message'] = 'Username is required';
                 }
             } elseif ($params['producttype'] == 'magdevice') {
-                $result = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . base64_encode($params['mac_address_mag']) . "'");
+                $result = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . $db->real_escape_string(base64_encode($params['mac_address_mag'])) . "'");
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
                         $disable = $db->query("UPDATE users SET enabled='1' WHERE reseller_notes='$reseller_notes' AND is_mag='1' AND enabled='0' AND id='" . $row['user_id'] . "'");
@@ -422,10 +434,10 @@ class Controller {
                     $return['message'] = 'MAC Address No Found!';
                 }
             } elseif ($params['producttype'] == 'engdevice') {
-                $result = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $params['mac_address_e2'] . "'");
+                $result = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $db->real_escape_string($params['mac_address_e2']) . "'");
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
-                        $disable = $db->query("UPDATE users SET enabled='1' WHERE reseller_notes='$reseller_notes' AND is_e2='1' AND enabled='0' AND id='" . $row['user_id'] . "'");
+                        $disable = $db->query("UPDATE users SET enabled='1' WHERE reseller_notes='".$db->real_escape_string($reseller_notes)."' AND is_e2='1' AND enabled='0' AND id='" . intval($row['user_id']) . "'");
                         if ($disable) {
                             $return['result'] = 'success';
                             $return['message'] = 'User Disable Successfully!';
@@ -452,9 +464,9 @@ class Controller {
         $return = array();
         $registerdetails = self::getresellerid($param);
         if ($registerdetails['result'] == 'success') {
-            $rUserInfo = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . $registerdetails['member_id'] . "'");
+            $rUserInfo = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . intval($registerdetails['member_id']) . "'");
             if ($rUserInfo->num_rows > 0) {
-                $result = $db->query("SELECT * FROM users WHERE username='" . $param['username'] . "' AND password='" . $param['password'] . "' AND member_id ='" . $registerdetails['member_id'] . "'");
+                $result = $db->query("SELECT * FROM users WHERE username='" . $db->real_escape_string($param['username']) . "' AND password='" . $db->real_escape_string($param['password']) . "' AND member_id ='" . intval($registerdetails['member_id']) . "'");
                 if ($result->num_rows > 0) {
                     $access_output = $db->query("SELECT * FROM access_output");
                     while ($output = $access_output->fetch_assoc()) {
@@ -484,13 +496,13 @@ class Controller {
         $return = array();
         $registerdetails = self::getresellerid($param);
         if ($registerdetails['result'] == 'success') {
-            $rUserInfo = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . $registerdetails['member_id'] . "'");
+            $rUserInfo = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . intval($registerdetails['member_id']) . "'");
             if ($rUserInfo->num_rows > 0) {
                 if (isset($param['mac']) && !empty($param['mac'])) {
-                    $mag = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . base64_encode($param['mac']) . "'");
+                    $mag = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . $db->real_escape_string(base64_encode($param['mac'])) . "'");
                     if ($mag->num_rows > 0) {
                         while ($magoutput = $mag->fetch_assoc()) {
-                            $result = $db->query("SELECT * FROM users WHERE id='" . $magoutput['user_id'] . "' AND member_id ='" . $registerdetails['member_id'] . "'");
+                            $result = $db->query("SELECT * FROM users WHERE id='" . intval($magoutput['user_id']) . "' AND member_id ='" . intval($registerdetails['member_id']) . "'");
                             if ($result->num_rows > 0) {
                                 while ($row = $result->fetch_assoc()) {
                                     $return['result'] = 'success';
@@ -511,10 +523,10 @@ class Controller {
                         return json_encode($return);
                     }
                 } elseif (isset($param['eng']) && !empty($param['eng'])) {
-                    $mag = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $param['eng'] . "'");
+                    $mag = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $db->real_escape_string($param['eng']) . "'");
                     if ($mag->num_rows > 0) {
                         while ($magoutput = $mag->fetch_assoc()) {
-                            $result = $db->query("SELECT * FROM users WHERE id='" . $magoutput['user_id'] . "' AND member_id ='" . $registerdetails['member_id'] . "'");
+                            $result = $db->query("SELECT * FROM users WHERE id='" . intval($magoutput['user_id']) . "' AND member_id ='" . intval($registerdetails['member_id']) . "'");
                             if ($result->num_rows > 0) {
                                 while ($row = $result->fetch_assoc()) {
                                     $return['result'] = 'success';
@@ -552,21 +564,21 @@ class Controller {
         if ($registerdetails['result'] == 'success') {
             $param[] = $param['user_data'];
             $param["member_id"] = $registerdetails['member_id'];
-            $row = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . $registerdetails['member_id'] . "'");
+            $row = $db->query("SELECT * FROM `reg_users` WHERE `id` = '" . intval($registerdetails['member_id']) . "'");
             if ($row->num_rows > 0) {
                 $rUserInfo = $row->fetch_assoc();
                 if ($param['extend'] == 'streamlineonly') {
                     $username = $param['username'];
                     if (isset($username) && !empty($username)) {
-                        $result = $db->query("SELECT * FROM users WHERE username='$username'");
+                        $result = $db->query("SELECT * FROM users WHERE username='".$db->real_escape_string($username)."'");
                     } else {
                         $return['result'] = 'error';
                         $return['message'] = 'No Record Found!';
                     }
                 } elseif ($param['extend'] == 'magdevice') {
-                    $result = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . base64_encode($param['mac_address_mag']) . "'");
+                    $result = $db->query("SELECT user_id FROM `mag_devices` WHERE mac='" . $db->real_escape_string(base64_encode($param['mac_address_mag'])) . "'");
                 } elseif ($param['extend'] == 'engdevice') {
-                    $result = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $param['mac_address_e2'] . "'");
+                    $result = $db->query("SELECT user_id FROM `enigma2_devices` WHERE mac='" . $db->real_escape_string($param['mac_address_e2']) . "'");
                 }
                 if ($result->num_rows != 0) {
                     $rUserdata = $result->fetch_assoc();
@@ -652,18 +664,17 @@ class Controller {
                             if ($upCounter == $totalUpdateData) {
                                 $commasel = "";
                             }
-                            $val = $db->real_escape_string($val);
-                            $rQuery .= " $KeyColumn = '$val' " . $commasel;
+                            $rQuery .= " ".$db->real_escape_string($KeyColumn)." = '".$db->real_escape_string($val)."' " . $commasel;
                             ++$upCounter;
                         }
 
-                        $rQuery .= " WHERE id = '$user_id'";
+                        $rQuery .= " WHERE id = '".intval($user_id)."'";
                         // Checks completed, run,
                         if ($db->query($rQuery)) {
                             $rInsertID = $db->insert_id;
                             if (isset($rCost)) {
                                 $rNewCredits = $rUserInfo["credits"] - $rCost;
-                                $db->query("UPDATE `reg_users` SET `credits` = " . $rNewCredits . " WHERE `id` = " . $rUserInfo["id"] . ";");
+                                $db->query("UPDATE `reg_users` SET `credits` = " . $rNewCredits . " WHERE `id` = " . intval($rUserInfo["id"]) . ";");
                                 if ($isMag) {
                                     $db->query("INSERT INTO `reg_userlog`(`owner`, `username`, `password`, `date`, `type`) VALUES(" . intval($rUserInfo["id"]) . ", '" . $db->real_escape_string($rArray["username"]) . "', '" . $db->real_escape_string($rArray["password"]) . "', " . intval(time()) . ", '[<b>UserPanel</b> -> <u>Extend MAG</u>] with Package [" . $db->real_escape_string($rPackage["package_name"]) . "], Credits: <font color=\"green\">" . $rUserInfo["credits"] . "</font> -> <font color=\"red\">" . $rNewCredits . "</font>');");
                                 } else if ($isE2) {

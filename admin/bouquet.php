@@ -40,8 +40,8 @@ if (isset($_POST["submit_bouquet"])) {
             $rInsertID = $db->insert_id;
         }
         $_STATUS = 0;
-        $_GET["id"] = $rInsertID;
         scanBouquet($rInsertID);
+        header("Location: ./bouquet.php?id=".$rInsertID); exit;
     } else {
         $_STATUS = 1;
     }
@@ -131,6 +131,12 @@ if ($rSettings["sidebar"]) {
                                                 </a>
                                             </li>
                                             <li class="nav-item">
+                                                <a href="#radios" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
+                                                    <i class="mdi mdi-radio mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Radio</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
                                                 <a href="#review" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
                                                     <i class="mdi mdi-book-open-variant mr-1"></i>
                                                     <span class="d-none d-sm-inline">Review</span>
@@ -145,7 +151,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="bouquet_name">Bouquet Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="bouquet_name" name="bouquet_name" value="<?php if (isset($rBouquetArr)) { echo $rBouquetArr["bouquet_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="bouquet_name" name="bouquet_name" value="<?php if (isset($rBouquetArr)) { echo htmlspecialchars($rBouquetArr["bouquet_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -308,6 +314,55 @@ if ($rSettings["sidebar"]) {
                                                     </span>
                                                 </ul>
                                             </div>
+                                            <div class="tab-pane" id="radios">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="category_idr">Category Name</label>
+                                                            <div class="col-md-8">
+                                                                <select id="category_idr" class="form-control" data-toggle="select2">
+                                                                    <option value="" selected>All Categories</option>
+                                                                    <?php foreach (getCategories("radio") as $rCategory) { ?>
+                                                                    <option value="<?=$rCategory["id"]?>"><?=$rCategory["category_name"]?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="radios_search">Search</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="radios_search" value="">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <table id="datatable-radios" class="table nowrap">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th class="text-center">ID</th>
+                                                                        <th>Station Name</th>
+                                                                        <th>Category</th>
+                                                                        <th class="text-center">Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody></tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="previous list-inline-item">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
+                                                    </li>
+                                                    <span class="float-right">
+                                                        <li class="list-inline-item">
+                                                            <a href="javascript: void(0);" onClick="toggleBouquets('datatable-series')" class="btn btn-primary">Toggle Page</a>
+                                                        </li>
+                                                        <li class="next list-inline-item">
+                                                            <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
+                                                        </li>
+                                                    </span>
+                                                </ul>
+                                            </div>
                                             <div class="tab-pane" id="review">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -406,6 +461,9 @@ if ($rSettings["sidebar"]) {
                     $(rData.vod).each(function(rIndex) {
                         rTable.row.add([rData.vod[rIndex].id, "Movie", rData.vod[rIndex].stream_display_name, '<button type="button" class="btn-remove btn btn-outline-danger waves-effect waves-light btn-xs" onClick="toggleBouquet(' + rData.vod[rIndex].id + ', \'vod\', true);"><i class="mdi mdi-minus"></i></button>']);
                     });
+                    $(rData.radios).each(function(rIndex) {
+                        rTable.row.add([rData.radios[rIndex].id, "Radio", rData.radios[rIndex].stream_display_name, '<button type="button" class="btn-remove btn btn-outline-danger waves-effect waves-light btn-xs" onClick="toggleBouquet(' + rData.radios[rIndex].id + ', \'radios\', true);"><i class="mdi mdi-minus"></i></button>']);
+                    });
                     $(rData.series).each(function(rIndex) {
                         rTable.row.add([rData.series[rIndex].id, "Series", rData.series[rIndex].title, '<button type="button" class="btn-remove btn btn-outline-danger waves-effect waves-light btn-xs" onClick="toggleBouquet(' + rData.series[rIndex].id + ', \'series\', true);"><i class="mdi mdi-minus"></i></button>']);
                     });
@@ -418,6 +476,7 @@ if ($rSettings["sidebar"]) {
         
         function toggleBouquet(rID, rType, rReview = false) {
             if (rType == "vod") { rType = "stream"; }
+            if (rType == "radios") { rType = "stream"; }
             var rIndex = rBouquet[rType].indexOf(parseInt(rID));
             if (rIndex > -1) {
                 rBouquet[rType] = jQuery.grep(rBouquet[rType], function(rValue) {
@@ -430,6 +489,7 @@ if ($rSettings["sidebar"]) {
                 if (rType == "stream") {
                     $("#datatable-streams").DataTable().ajax.reload(null, false);
                     $("#datatable-vod").DataTable().ajax.reload(null, false);
+                    $("#datatable-radios").DataTable().ajax.reload(null, false);
                 } else {
                     $("#datatable-series").DataTable().ajax.reload(null, false);
                 }
@@ -559,6 +619,43 @@ if ($rSettings["sidebar"]) {
                     {"className": "dt-center", "targets": [0,3]}
                 ],
             });
+            $("#datatable-radios").DataTable({
+                language: {
+                    paginate: {
+                        previous: "<i class='mdi mdi-chevron-left'>",
+                        next: "<i class='mdi mdi-chevron-right'>"
+                    }
+                },
+                drawCallback: function() {
+                    $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+                },
+                createdRow: function(row, data, index) {
+                    $(row).addClass('radios-' + data[0]);
+                    var rIndex = rBouquet["stream"].indexOf(parseInt(data[0]));
+                    if (rIndex > -1) {
+                        $(row).find(".btn-remove").show();
+                    } else {
+                        $(row).find(".btn-add").show();
+                    }
+                },
+                bInfo: false,
+                bAutoWidth: false,
+                searching: true,
+                pageLength: 100,
+                lengthChange: false,
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "./table.php",
+                    "data": function(d) {
+                        d.id = "bouquets_radios";
+                        d.category_id = $("#category_idr").val();
+                    }
+                },
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0,3]}
+                ],
+            });
             $("#datatable-review").DataTable({
                 language: {
                     paginate: {
@@ -596,7 +693,13 @@ if ($rSettings["sidebar"]) {
             });
             $('#series_search').keyup(function(){
                 $('#datatable-series').DataTable().search($(this).val()).draw();
-            })
+            });
+            $("#category_idr").on("select2:select", function(e) { 
+                $("#datatable-radios").DataTable().ajax.reload(null, false);
+            });
+            $('#radios_search').keyup(function(){
+                $('#datatable-radios').DataTable().search($(this).val()).draw();
+            });
             $(document).keypress(function(event){
                 if (event.which == '13') {
                     event.preventDefault();

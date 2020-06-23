@@ -182,7 +182,7 @@ if (isset($_POST["submit_stream"])) {
 		if (isset($_POST["edit"])) {
 			$rImportStreams[] = $rImportArray;
 		} else {
-			$rResult = $db->query("SELECT COUNT(`id`) AS `count` FROM `streams` WHERE `stream_display_name` = '".$db->real_escape_string($rImportArray["stream_display_name"])."';");
+			$rResult = $db->query("SELECT COUNT(`id`) AS `count` FROM `streams` WHERE `stream_display_name` = '".$db->real_escape_string($rImportArray["stream_display_name"])."' AND `type` IN (1,3);");
 			if ($rResult->fetch_assoc()["count"] == 0) {
 				$rImportStreams[] = $rImportArray;
 			} else {
@@ -274,13 +274,16 @@ if (isset($_POST["submit_stream"])) {
                 if ((isset($_POST["http_proxy"])) && (strlen($_POST["http_proxy"]) > 0)) {
                     $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 2, '".$db->real_escape_string($_POST["http_proxy"])."');");
                 }
+				if ((isset($_POST["cookie"])) && (strlen($_POST["cookie"]) > 0)) {
+                    $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 17, '".$db->real_escape_string($_POST["cookie"])."');");
+                }
 				if ($rRestart) {
 					APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => Array($rInsertID)));
 				}
                 foreach ($rBouquets as $rBouquet) {
                     addToBouquet("stream", $rBouquet, $rInsertID);
                 }
-                if ((!isset($_FILES["m3u_file"])) && (!isset($_POST["edit"]))) {
+                if ((!isset($_FILES["m3u_file"])) && (isset($_POST["edit"]))) {
                     foreach (getBouquets() as $rBouquet) {
                         if (!in_array($rBouquet["id"], $rBouquets)) {
                             removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
@@ -297,7 +300,7 @@ if (isset($_POST["submit_stream"])) {
         if (isset($_FILES["m3u_file"])) {
             header("Location: ./streams.php");exit;
         } else if (!isset($_GET["id"])) {
-            $_GET["id"] = $rInsertID;
+            header("Location: ./stream.php?id=".$rInsertID); exit;
         }
     } else {
 		if (!isset($_STATUS)) {
@@ -379,7 +382,7 @@ if ($rSettings["sidebar"]) {
                                                 View Streams
                                             </button>
                                         </a>
-                                        <?php if (!isset($_GET["import"])) { ?>
+                                        <?php if (!isset($rStream)) { if (!isset($_GET["import"])) { ?>
                                         <a href="./stream.php?import">
                                             <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
                                                 Import M3U
@@ -391,7 +394,7 @@ if ($rSettings["sidebar"]) {
                                                 Add Single
                                             </button>
                                         </a>
-                                        <?php } ?>
+                                        <?php } } ?>
                                     </li>
                                 </ol>
                             </div>
@@ -513,7 +516,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_display_name">Stream Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rStream)) { echo $rStream["stream_display_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rStream)) { echo htmlspecialchars($rStream["stream_display_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <span class="streams">
@@ -532,7 +535,7 @@ if ($rSettings["sidebar"]) {
                                                             <div class="form-group row mb-4 stream-url">
                                                                 <label class="col-md-4 col-form-label" for="stream_source"> Stream URL</label>
                                                                 <div class="col-md-8 input-group">
-                                                                    <input type="text" id="stream_source" name="stream_source[]" class="form-control" value="<?=$rStreamSource?>">
+                                                                    <input type="text" id="stream_source" name="stream_source[]" class="form-control" value="<?=htmlspecialchars($rStreamSource)?>">
                                                                     <div class="input-group-append">
                                                                         <button class="btn btn-info waves-effect waves-light" onClick="moveUp(this);" type="button"><i class="mdi mdi-chevron-up"></i></button>
                                                                         <button class="btn btn-info waves-effect waves-light" onClick="moveDown(this);" type="button"><i class="mdi mdi-chevron-down"></i></button>
@@ -575,14 +578,14 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_icon">Stream Logo URL</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="stream_icon" name="stream_icon" value="<?php if (isset($rStream)) { echo $rStream["stream_icon"]; } ?>">
+                                                                <input type="text" class="form-control" id="stream_icon" name="stream_icon" value="<?php if (isset($rStream)) { echo htmlspecialchars($rStream["stream_icon"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <?php } ?>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="notes">Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rStream)) { echo $rStream["notes"]; } ?></textarea>
+                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rStream)) { echo htmlspecialchars($rStream["notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -629,7 +632,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="custom_sid">Custom Channel SID <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Here you can specify the SID of the channel in order to work with the epg on the enigma2 devices. You have to specify the code with the ':' but without the first number, 1 or 4097 . Example: if we have this code:  '1:0:1:13f:157c:13e:820000:0:0:0:2097' then you have to add on this field:  ':0:1:13f:157c:13e:820000:0:0:0:" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="custom_sid" name="custom_sid" value="<?php if (isset($rStream)) { echo $rStream["custom_sid"]; } ?>">
+                                                                <input type="text" class="form-control" id="custom_sid" name="custom_sid" value="<?php if (isset($rStream)) { echo htmlspecialchars($rStream["custom_sid"]); } ?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="delay_minutes">Minute Delay <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Delay stream by X minutes. Will not work with on demand streams." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
@@ -639,7 +642,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="custom_ffmpeg">Custom FFmpeg Command <i data-toggle="tooltip" data-placement="top" title="" data-original-title="In this field you can write your own custom FFmpeg command. Please note that this command will be placed after the input and before the output. If the command you will specify here is about to do changes in the output video or audio, it may require to transcode the stream. In this case, you have to use and change at least the Video/Audio Codecs using the transcoding attributes below. The custom FFmpeg command will only be used by the server(s) that take the stream from the Source." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="custom_ffmpeg" name="custom_ffmpeg" value="<?php if (isset($rStream)) { echo $rStream["custom_ffmpeg"]; } ?>">
+                                                                <input type="text" class="form-control" id="custom_ffmpeg" name="custom_ffmpeg" value="<?php if (isset($rStream)) { echo htmlspecialchars($rStream["custom_ffmpeg"]); } ?>">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="probesize_ondemand">On Demand Probesize <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Adjustable probesize for ondemand streams. Adjust this setting if you experience issues with no audio." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
@@ -649,13 +652,19 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="user_agent">User Agent</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="user_agent" name="user_agent" value="<?php if (isset($rStreamOptions[1])) { echo $rStreamOptions[1]["value"]; } else { echo $rStreamArguments["user_agent"]["argument_default_value"]; } ?>">
+                                                                <input type="text" class="form-control" id="user_agent" name="user_agent" value="<?php if (isset($rStreamOptions[1])) { echo htmlspecialchars($rStreamOptions[1]["value"]); } else { echo htmlspecialchars($rStreamArguments["user_agent"]["argument_default_value"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="http_proxy">HTTP Proxy <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Format: ip:port" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="http_proxy" name="http_proxy" value="<?php if (isset($rStreamOptions[2])) { echo $rStreamOptions[2]["value"]; } else { echo $rStreamArguments["proxy"]["argument_default_value"]; } ?>">
+                                                                <input type="text" class="form-control" id="http_proxy" name="http_proxy" value="<?php if (isset($rStreamOptions[2])) { echo htmlspecialchars($rStreamOptions[2]["value"]); } else { echo htmlspecialchars($rStreamArguments["proxy"]["argument_default_value"]); } ?>">
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="cookie">Cookie <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Format: key=value;" class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="cookie" name="cookie" value="<?php if (isset($rStreamOptions[17])) { echo htmlspecialchars($rStreamOptions[17]["value"]); } else { echo htmlspecialchars($rStreamArguments["cookie"]["argument_default_value"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -687,7 +696,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-3 col-form-label" for="custom_map">Custom Map</label>
                                                             <div class="col-md-9 input-group">
-                                                                <input type="text" class="form-control" id="custom_map" name="custom_map" value="<?php if (isset($rStream)) { echo $rStream["custom_map"]; } ?>">
+                                                                <input type="text" class="form-control" id="custom_map" name="custom_map" value="<?php if (isset($rStream)) { echo htmlspecialchars($rStream["custom_map"]); } ?>">
                                                                 <div class="input-group-append">
                                                                         <button class="btn btn-primary waves-effect waves-light" id="load_maps" type="button"><i class="mdi mdi-magnify"></i></button>
                                                                     </div>
@@ -836,7 +845,7 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="tv_archive_server_id">Timeshift Server</label>
                                                             <div class="col-md-8">
                                                                 <select name="tv_archive_server_id" id="tv_archive_server_id" class="form-control" data-toggle="select2">
-                                                                    <option value="">Timeshift Disabled</option>
+                                                                    <option value="0">Timeshift Disabled</option>
                                                                     <?php foreach ($rServers as $rServer) { ?>
                                                                     <option value="<?=$rServer["id"]?>"<?php if ((isset($rStream)) && ($rStream["tv_archive_server_id"] == $rServer["id"])) { echo " selected"; } ?>><?=$rServer["server_name"]?></option>
                                                                     <?php } ?>
@@ -1040,7 +1049,7 @@ if ($rSettings["sidebar"]) {
             }
         }
         $(document).ready(function() {
-            $('select').select2({width: '100%'})
+            $('select').select2({width: '100%'});
             var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
             elems.forEach(function(html) {
               var switchery = new Switchery(html);
@@ -1071,7 +1080,7 @@ if ($rSettings["sidebar"]) {
                 evaluateDirectSource();
             });
             function evaluateDirectSource() {
-                $(["read_native", "gen_timestamps", "stream_all", "allow_record", "rtmp_output", "delay_minutes", "custom_ffmpeg", "probesize_ondemand", "user_agent", "http_proxy", "transcode_profile_id", "custom_map", "days_to_restart", "time_to_restart", "epg_id", "epg_lang", "channel_id", "on_demand", "tv_archive_duration", "tv_archive_server_id", "restart_on_edit"]).each(function(rID, rElement) {
+                $(["read_native", "gen_timestamps", "stream_all", "allow_record", "rtmp_output", "delay_minutes", "custom_ffmpeg", "probesize_ondemand", "user_agent", "http_proxy", "cookie", "transcode_profile_id", "custom_map", "days_to_restart", "time_to_restart", "epg_id", "epg_lang", "channel_id", "on_demand", "tv_archive_duration", "tv_archive_server_id", "restart_on_edit"]).each(function(rID, rElement) {
                     if ($(rElement)) {
                         if ($("#direct_source").is(":checked")) {
                             if (window.rSwitches[rElement]) {

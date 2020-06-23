@@ -160,14 +160,18 @@ if ($rSettings["sidebar"]) {
 								</div>
 								<div class="card-box">
 									<div class="row">
-										<div class="col-md-6" align="center">
-											<h4 class="header-title">CPU Usage</h4>
-											<input id="s_<?=$rServer["id"]?>_cpu" data-plugin="knob" data-width="64" data-height="64" data-fgColor="<?=$rColours[$i][1]?>" data-bgColor="#e8e7f4" value="0" data-skin="tron" data-angleOffset="180" data-readOnly=true data-thickness=".15"/>
-										</div>
-										<div class="col-md-6" align="center">
-											<h4 class="header-title">Mem Usage</h4>
-											<input id="s_<?=$rServer["id"]?>_mem" data-plugin="knob" data-width="64" data-height="64" data-fgColor="<?=$rColours[$i][1]?>" data-bgColor="#e8e7f4" value="0" data-skin="tron" data-angleOffset="180" data-readOnly=true data-thickness=".15"/>
-										</div>
+                                        <div class="col-md-6" align="center">
+                                            <a href="./process_monitor.php?server=<?=$rServer["id"]?>">
+                                                <h4 class="header-title">CPU Usage</h4>
+                                                <input id="s_<?=$rServer["id"]?>_cpu" data-plugin="knob" data-width="64" data-height="64" data-fgColor="<?=$rColours[$i][1]?>" data-bgColor="#e8e7f4" value="0" data-skin="tron" data-angleOffset="180" data-readOnly=true data-thickness=".15"/>
+                                            </a>
+                                        </div>
+                                        <div class="col-md-6" align="center">
+                                            <a href="./process_monitor.php?server=<?=$rServer["id"]?>&mem">
+                                                <h4 class="header-title">Mem Usage</h4>
+                                                <input id="s_<?=$rServer["id"]?>_mem" data-plugin="knob" data-width="64" data-height="64" data-fgColor="<?=$rColours[$i][1]?>" data-bgColor="#e8e7f4" value="0" data-skin="tron" data-angleOffset="180" data-readOnly=true data-thickness=".15"/>
+                                            </a>
+                                        </div>
 									</div>
 								</div>
 							</div>

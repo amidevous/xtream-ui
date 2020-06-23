@@ -16,10 +16,10 @@ if (isset($_POST["categories"])) {
     }
 }
 
-$rCategories = Array(1 => getCategories(), 2 => getCategories("movie"), 3 => getCategories("series"));
-$rMainCategories = Array(1 => Array(), 2 => Array(), 3 => Array()); $rSubCategories = Array(1 => Array(), 2 => Array(), 3 => Array());
+$rCategories = Array(1 => getCategories(), 2 => getCategories("movie"), 3 => getCategories("series"), 4 => getCategories("radio"));
+$rMainCategories = Array(1 => Array(), 2 => Array(), 3 => Array()); $rSubCategories = Array(1 => Array(), 2 => Array(), 3 => Array(), 4 => Array());
 
-foreach (Array(1,2,3) as $rID) {
+foreach (Array(1,2,3,4) as $rID) {
     foreach ($rCategories[$rID] as $rCategoryID => $rCategoryData) {
         if ($rCategoryData["parent_id"] <> 0) {
             $rSubCategories[$rID][$rCategoryData["parent_id"]][] = $rCategoryData;
@@ -83,6 +83,12 @@ if ($rSettings["sidebar"]) {
                                                 <span class="d-none d-sm-inline">Series</span>
                                             </a>
                                         </li>
+                                        <li class="nav-item">
+                                            <a href="#category-order-4" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                <i class="mdi mdi-radio mr-1"></i>
+                                                <span class="d-none d-sm-inline">Radio</span>
+                                            </a>
+                                        </li>
                                     </ul>
                                     <div class="tab-content b-0 mb-0 pt-0">
                                         <div class="tab-pane" id="category-order-1">
@@ -138,7 +144,7 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <p class="sub-header">
-                                                            To re-order a category, drag it up or down the list using the <i class="mdi mdi-view-sequential"></i> icon. Categories can be added as a subcategory by dragging it right to offset it, then up or down to the category it belongs in. Click Save Changes at the bottom once finished.
+                                                            To re-order a category, drag it up or down the list using the <i class="mdi mdi-view-sequential"></i> icon. Click Save Changes at the bottom once finished.
                                                         </p>
                                                         <div class="custom-dd dd" id="category_order-2">
                                                             <ol class="dd-list">
@@ -185,7 +191,7 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <p class="sub-header">
-                                                            To re-order a category, drag it up or down the list using the <i class="mdi mdi-view-sequential"></i> icon. Categories can be added as a subcategory by dragging it right to offset it, then up or down to the category it belongs in. Click Save Changes at the bottom once finished.
+                                                            To re-order a category, drag it up or down the list using the <i class="mdi mdi-view-sequential"></i> icon. Click Save Changes at the bottom once finished.
                                                         </p>
                                                         <div class="custom-dd dd" id="category_order-3">
                                                             <ol class="dd-list">
@@ -201,6 +207,53 @@ if ($rSettings["sidebar"]) {
                                                                     <?php if (isset($rSubCategories[3][$rCategory["id"]])) { ?>
                                                                     <ol class="dd-list">
                                                                         <?php foreach ($rSubCategories[3][$rCategory["id"]] as $rSubCategory) { ?>
+                                                                        <li class="dd-item dd3-item category-<?=$rSubCategory["id"]?>" data-id="<?=$rSubCategory["id"]?>">
+                                                                            <div class="dd-handle dd3-handle"></div>
+                                                                            <div class="dd3-content"><?=$rSubCategory["category_name"]?>
+                                                                                <span style="float:right;">
+                                                                                    <a href="./stream_category.php?id=<?=$rSubCategory["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light"><i class="mdi mdi-pencil-outline"></i></button></a>
+                                                                                    <button type="button" class="btn btn-outline-danger waves-effect waves-light" onClick="deleteCategory(<?=$rSubCategory["id"]?>)"><i class="mdi mdi-close"></i></button>
+                                                                                </span>
+                                                                            </div>
+                                                                        </li>
+                                                                        <?php } ?>
+                                                                    </ol>
+                                                                <?php } ?>
+                                                                </li>
+                                                                <?php } ?>
+                                                            </ol>
+                                                        </div>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0 add-margin-top-20">
+                                                    <li class="next list-inline-item float-right">
+                                                        <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
+                                                    </li>
+                                                </ul>
+                                            </form>
+                                        </div>
+                                        <div class="tab-pane" id="category-order-4">
+                                            <form action="./stream_categories.php" method="POST" id="stream_categories_form-4">
+                                                <input type="hidden" id="categories_input-4" name="categories" value="" />
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <p class="sub-header">
+                                                            To re-order a category, drag it up or down the list using the <i class="mdi mdi-view-sequential"></i> icon. Click Save Changes at the bottom once finished.
+                                                        </p>
+                                                        <div class="custom-dd dd" id="category_order-4">
+                                                            <ol class="dd-list">
+                                                                <?php foreach ($rMainCategories[4] as $rCategory) { ?>
+                                                                <li class="dd-item dd3-item category-<?=$rCategory["id"]?>" data-id="<?=$rCategory["id"]?>">
+                                                                    <div class="dd-handle dd3-handle"></div>
+                                                                    <div class="dd3-content"><?=$rCategory["category_name"]?>
+                                                                        <span style="float:right;">
+                                                                            <a href="./stream_category.php?id=<?=$rCategory["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light"><i class="mdi mdi-pencil-outline"></i></button></a>
+                                                                            <button type="button" class="btn btn-outline-danger waves-effect waves-light" onClick="deleteCategory(<?=$rCategory["id"]?>)"><i class="mdi mdi-close"></i></button>
+                                                                        </span>
+                                                                    </div>
+                                                                    <?php if (isset($rSubCategories[4][$rCategory["id"]])) { ?>
+                                                                    <ol class="dd-list">
+                                                                        <?php foreach ($rSubCategories[4][$rCategory["id"]] as $rSubCategory) { ?>
                                                                         <li class="dd-item dd3-item category-<?=$rSubCategory["id"]?>" data-id="<?=$rSubCategory["id"]?>">
                                                                             <div class="dd-handle dd3-handle"></div>
                                                                             <div class="dd3-content"><?=$rSubCategory["category_name"]?>
@@ -284,6 +337,7 @@ if ($rSettings["sidebar"]) {
             $("#category_order-1").nestable({maxDepth: 1});
             $("#category_order-2").nestable({maxDepth: 2});
             $("#category_order-3").nestable({maxDepth: 2});
+            $("#category_order-4").nestable({maxDepth: 1});
             $("#stream_categories_form-1").submit(function(e){
                 $("#categories_input-1").val(JSON.stringify($('#category_order-1.dd').nestable('serialize')));
             });
@@ -292,6 +346,9 @@ if ($rSettings["sidebar"]) {
             });
             $("#stream_categories_form-3").submit(function(e){
                 $("#categories_input-3").val(JSON.stringify($('#category_order-3.dd').nestable('serialize')));
+            });
+            $("#stream_categories_form-4").submit(function(e){
+                $("#categories_input-4").val(JSON.stringify($('#category_order-4.dd').nestable('serialize')));
             });
         });
         </script>

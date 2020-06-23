@@ -103,12 +103,12 @@ if ($rSettings["sidebar"]) {
                                         <tr>
                                             <th class="text-center">ID</th>
                                             <th>Username</th>
-                                            <th>Email</th>
                                             <th>Owner</th>
                                             <th class="text-center">IP</th>
                                             <th class="text-center">Type</th>
                                             <th class="text-center">Status</th>
                                             <th class="text-center">Credits</th>
+                                            <th class="text-center">Users</th>
                                             <th class="text-center">Last Login</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
@@ -229,6 +229,12 @@ if ($rSettings["sidebar"]) {
             $("#datatable-users").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
+			$(window).keydown(function(event){
+				if(event.keyCode == 13) {
+					event.preventDefault();
+					return false;
+				}
+			});
             formCache.init();
             formCache.fetch();
             
@@ -260,9 +266,9 @@ if ($rSettings["sidebar"]) {
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [0,4,5,6,7,8,9]},
+                    {"className": "dt-center", "targets": [0,3,4,5,6,7,8,9]},
                     <?php if ($rPermissions["is_reseller"]) { ?>
-                    {"visible": false, "targets": [5]}
+                    {"visible": false, "targets": [4]}
                     <?php } ?>
                 ],
                 order: [[ 0, "desc" ]],

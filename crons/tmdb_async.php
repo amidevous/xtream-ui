@@ -46,16 +46,21 @@ if (($rResult) && ($rResult->num_rows > 0)) {
             $rResultB = $db->query("SELECT * FROM `streams` WHERE `id` = ".intval($rRow["stream_id"]).";");
             if (($rResultB) && ($rResultB->num_rows == 1)) {
                 $rStream = $rResultB->fetch_assoc();
-                $rFilename = pathinfo($rStream["stream_display_name"])["filename"];
-                $rRelease = new Release($rFilename);
-                $rTitle = $rRelease->getTitle();
+                $rFilename = pathinfo(json_decode($rStream["stream_source"], True)[0])["filename"];
+                if ($rAdminSettings["release_parser"] == "php") {
+                    $rRelease = new Release($rFilename);
+                    $rTitle = $rRelease->getTitle();
+                    $rYear = $rRelease->getYear();
+                } else {
+                    $rRelease = parseRelease($rFilename);
+                    $rTitle = $rRelease["title"];
+                    $rYear = $rRelease["year"];
+                }
                 if (!$rTitle) { $rTitle = $rFilename; }
-                $rYear = $rRelease->getYear();
                 $rResults = $rTMDB->searchMovie($rTitle);
                 $rMatch = null;
                 foreach ($rResults as $rResultArr) {
-                    similar_text($rTitle, $rResultArr->get("title") ?: $rResultArr->get("name"), $rPercentage);
-                    
+                    similar_text(strtoupper($rTitle), strtoupper($rResultArr->get("title") ?: $rResultArr->get("name")), $rPercentage);
                     if ($rPercentage >= $rWatchSettings["percentage_match"]) {
                         if ($rYear) {
                             $rResultYear = intval(substr($rResultArr->get("release_date"), 0, 4));
@@ -122,10 +127,16 @@ if (($rResult) && ($rResult->num_rows > 0)) {
             if (($rResultB) && ($rResultB->num_rows == 1)) {
                 $rStream = $rResultB->fetch_assoc();
                 $rFilename = $rStream["title"];
-                $rRelease = new Release($rFilename);
-                $rTitle = $rRelease->getTitle();
+                if ($rAdminSettings["release_parser"] == "php") {
+                    $rRelease = new Release($rFilename);
+                    $rTitle = $rRelease->getTitle();
+                    $rYear = $rRelease->getYear();
+                } else {
+                    $rRelease = parseRelease($rFilename);
+                    $rTitle = $rRelease["title"];
+                    $rYear = $rRelease["year"];
+                }
                 if (!$rTitle) { $rTitle = $rFilename; }
-                $rYear = $rRelease->getYear();
                 $rResults = $rTMDB->searchTVShow($rTitle);
                 $rMatch = null;
                 foreach ($rResults as $rResultArr) {
@@ -220,11 +231,26 @@ if (($rResult) && ($rResult->num_rows > 0)) {
                             $rShow = $rTMDB->getTVShow($rSeries["tmdb_id"]);
                             $rShowData = json_decode($rShow->getJSON(), True);
                             if (isset($rShowData["name"])) {
-                                $rTitle = $rShowData["name"]." - S".sprintf('%02d', intval($rSeriesEpisode["season_num"]))."E".sprintf('%02d', $rSeriesEpisode["sort"]);
-                                $rEpisodes = json_decode($rTMDB->getSeason($rShowData["id"], intval($rSeriesEpisode["season_num"]))->getJSON(), True);
+                                // Get season and episode from filename.
+                                $rFilename = pathinfo(json_decode($rStream["stream_source"], True)[0])["filename"];
+                                if ($rAdminSettings["release_parser"] == "php") {
+                                    $rRelease = new Release($rFilename);
+                                    $rReleaseSeason = $rRelease->getSeason();
+                                    $rReleaseEpisode = $rRelease->getEpisode();
+                                } else {
+                                    $rRelease = parseRelease($rFilename);
+                                    $rReleaseSeason = $rRelease["season"];
+                                    $rReleaseEpisode = $rRelease["episode"];
+                                }
+                                if ((!$rReleaseSeason) OR (!$rReleaseEpisode)) {
+                                    $rReleaseSeason = $rSeriesEpisode["season_num"];
+                                    $rReleaseEpisode = $rSeriesEpisode["sort"];
+                                }
+                                $rTitle = $rShowData["name"]." - S".sprintf('%02d', intval($rReleaseSeason))."E".sprintf('%02d', $rReleaseEpisode);
+                                $rEpisodes = json_decode($rTMDB->getSeason($rShowData["id"], intval($rReleaseSeason))->getJSON(), True);
                                 $rProperties = Array();
                                 foreach ($rEpisodes["episodes"] as $rEpisode) {
-                                    if (intval($rEpisode["episode_number"]) == $rSeriesEpisode["sort"]) {
+                                    if (intval($rEpisode["episode_number"]) == $rReleaseEpisode) {
                                         if (strlen($rEpisode["still_path"]) > 0) {
                                             $rImage = "https://image.tmdb.org/t/p/w300".$rEpisode["still_path"];
                                             if ($rAdminSettings["download_images"]) {
@@ -235,7 +261,7 @@ if (($rResult) && ($rResult->num_rows > 0)) {
                                             $rTitle .= " - ".$rEpisode["name"];
                                         }
                                         $rSeconds = intval($rShowData["episode_run_time"][0]) * 60;
-                                        $rProperties = Array("tmdb_id" => $rEpisode["id"], "releasedate" => $rEpisode["air_date"], "plot" => $rEpisode["overview"], "duration_secs" => $rSeconds, "duration" => sprintf('%02d:%02d:%02d', ($rSeconds/3600),($rSeconds/60%60), $rSeconds%60), "movie_image" => $rImage, "video" => Array(), "audio" => Array(), "bitrate" => 0, "rating" => $rEpisode["vote_average"], "season" => $rSeriesEpisode["season_num"]);
+                                        $rProperties = Array("tmdb_id" => $rEpisode["id"], "releasedate" => $rEpisode["air_date"], "plot" => $rEpisode["overview"], "duration_secs" => $rSeconds, "duration" => sprintf('%02d:%02d:%02d', ($rSeconds/3600),($rSeconds/60%60), $rSeconds%60), "movie_image" => $rImage, "video" => Array(), "audio" => Array(), "bitrate" => 0, "rating" => $rEpisode["vote_average"], "season" => $rReleaseSeason);
                                         if (strlen($rProperties["movie_image"][0]) == 0) {
                                             unset($rProperties["movie_image"]);
                                         }
@@ -244,6 +270,7 @@ if (($rResult) && ($rResult->num_rows > 0)) {
                                 }
                                 $db->query("UPDATE `tmdb_async` SET `status` = 1 WHERE `id` = ".intval($rRow["id"]).";");
                                 $db->query("UPDATE `streams` SET `stream_display_name` = '".$db->real_escape_string($rTitle)."', `movie_propeties` = '".$db->real_escape_string(json_encode($rProperties))."' WHERE `id` = ".intval($rRow["stream_id"]).";");
+                                $db->query("UPDATE `series_episodes` SET `season_num` = ".intval($rReleaseSeason).", `sort` = ".intval($rReleaseEpisode)." WHERE `stream_id` = ".intval($rRow["stream_id"]).";");
                                 if (!in_array($rSeries["id"], $rUpdateSeries)) {
                                     $rUpdateSeries[] = $rSeries["id"];
                                 }

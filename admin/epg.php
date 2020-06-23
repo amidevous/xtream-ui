@@ -118,19 +118,19 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="epg_name">EPG Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="epg_name" name="epg_name" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["epg_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="epg_name" name="epg_name" value="<?php if (isset($rEPGArr)) { echo htmlspecialchars($rEPGArr["epg_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="epg_file">Source</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="epg_file" name="epg_file" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["epg_file"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="epg_file" name="epg_file" value="<?php if (isset($rEPGArr)) { echo htmlspecialchars($rEPGArr["epg_file"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="days_keep">Days to Keep</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="days_keep" name="days_keep" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["days_keep"]; } else { echo "7"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="days_keep" name="days_keep" value="<?php if (isset($rEPGArr)) { echo htmlspecialchars($rEPGArr["days_keep"]); } else { echo "7"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->

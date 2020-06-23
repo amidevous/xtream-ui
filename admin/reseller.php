@@ -129,31 +129,28 @@ if ($rSettings["sidebar"]) {
                     <div class="col-xl-6">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="header-title mb-0">Recent Tickets</h4>
+                                <h4 class="header-title mb-0">Expiring Lines</h4>
                                 <div id="cardActivity" class="pt-3">
                                     <div class="slimscroll" style="height: 350px;">
-                                        <table class="table table-hover m-0 table-centered dt-responsive nowrap w-100" id="tickets-table">
+                                        <table class="table table-hover m-0 table-centered dt-responsive nowrap w-100" id="users-table">
                                             <thead>
                                                 <tr>
-                                                    <th>ID</th>
-                                                    <th>Reseller</th>
-                                                    <th>Subject</th>
-                                                    <th class="text-center">Status</th>
+                                                    <th class="text-center">Username</th>
+													<th class="text-center">Password</th>
+                                                    <th class="text-center">Reseller</th>
+                                                    <th class="text-center">Expiration</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <?php
-                                                $i = 0;
-                                                foreach (getTickets($rUserInfo["id"]) as $rTicket) { $i ++;
-                                                if ($i <= 10) { ?>
-                                                <tr id="ticket-<?=$rTicket["id"]?>">
-                                                    <td><a href="./ticket_view.php?id=<?=$rTicket["id"]?>"><?=$rTicket["id"]?></a></td>
-                                                    <td><?=$rTicket["username"]?></td>
-                                                    <td><?=$rTicket["title"]?></td>
-                                                    <td class="text-center"><span class="badge badge-<?=Array(0 => "secondary", 1 => "warning", 2 => "success", 3 => "warning")[$rTicket["status"]]?>"><?=$rStatusArray[$rTicket["status"]]?></span></td>
+                                                <?php $rRegisteredUsers = getRegisteredUsers();
+												foreach (getExpiring($rUserInfo["id"]) as $rUser) { ?>
+                                                <tr id="user-<?=$rUser["id"]?>">
+                                                    <td class="text-center"><a href="./user_reseller.php?id=<?=$rUser["id"]?>"><?=$rUser["username"]?></a></td>
+													<td class="text-center"><?=$rUser["password"]?></td>
+                                                    <td class="text-center"><?=$rRegisteredUsers[$rUser["member_id"]]["username"]?></td>
+                                                    <td class="text-center"><?=date("Y-m-d H:i:s", $rUser["exp_date"])?></td>
                                                 </tr>
-                                                <?php }
-                                                } ?>
+                                                <?php } ?>
                                             </tbody>
                                         </table>
                                     </div> <!-- end slimscroll -->

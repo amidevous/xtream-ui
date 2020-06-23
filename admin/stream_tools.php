@@ -27,6 +27,61 @@ if (isset($_POST["replace_dns"])) {
 	}
 	$db->query("UPDATE `streams_sys` SET `server_id` = ".intval($rReplacement)." WHERE `server_id` = ".intval($rSource).";");
 	$_STATUS = 2;
+} else if (isset($_POST["cleanup_streams"])) {
+    $rStreams = getStreamList();
+    $rStreamArray = Array();
+    foreach ($rStreams as $rStream) {
+        $rStreamArray[] = intval($rStream["id"]);
+    }
+    $rDelete = Array();
+    $result = $db->query("SELECT `server_stream_id`, `stream_id` FROM `streams_sys`;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            if (!in_array(intval($row["stream_id"]), $rStreamArray)) {
+                $rDelete[] = $row["server_stream_id"];
+            }
+        }
+    }
+    if (count($rDelete) > 0) {
+        $db->query("DELETE FROM `streams_sys` WHERE `server_stream_id` IN (".join(",", $rDelete).");");
+    }
+    $rDelete = Array();
+    $result = $db->query("SELECT `id`, `stream_id` FROM `client_logs`;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            if (!in_array(intval($row["stream_id"]), $rStreamArray)) {
+                $rDelete[] = $row["id"];
+            }
+        }
+    }
+    if (count($rDelete) > 0) {
+        $db->query("DELETE FROM `client_logs` WHERE `id` IN (".join(",", $rDelete).");");
+    }
+    $rDelete = Array();
+    $result = $db->query("SELECT `id`, `stream_id` FROM `stream_logs`;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            if (!in_array(intval($row["stream_id"]), $rStreamArray)) {
+                $rDelete[] = $row["id"];
+            }
+        }
+    }
+    if (count($rDelete) > 0) {
+        $db->query("DELETE FROM `stream_logs` WHERE `id` IN (".join(",", $rDelete).");");
+    }
+    $rDelete = Array();
+    $result = $db->query("SELECT `activity_id`, `stream_id` FROM `user_activity`;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            if (!in_array(intval($row["stream_id"]), $rStreamArray)) {
+                $rDelete[] = $row["activity_id"];
+            }
+        }
+    }
+    if (count($rDelete) > 0) {
+        $db->query("DELETE FROM `user_activity` WHERE `activity_id` IN (".join(",", $rDelete).");");
+    }
+    $_STATUS = 3;
 }
 
 if ($rSettings["sidebar"]) {
@@ -69,6 +124,13 @@ if ($rSettings["sidebar"]) {
                             </button>
                             Streams have been moved from the source server to the replacement server.
                         </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 3)) { ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            Stream cleanup was successful!
+                        </div>
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
@@ -84,6 +146,12 @@ if ($rSettings["sidebar"]) {
 											<a href="#move-streams" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
 												<i class="mdi mdi-folder-move mr-1"></i>
 												<span class="d-none d-sm-inline">Move Streams</span>
+											</a>
+										</li>
+                                        <li class="nav-item">
+											<a href="#cleanup" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+												<i class="mdi mdi-wrench mr-1"></i>
+												<span class="d-none d-sm-inline">Cleanup</span>
 											</a>
 										</li>
 									</ul>
@@ -164,6 +232,28 @@ if ($rSettings["sidebar"]) {
 												</ul>
 											</form>
 										</div>
+                                        <div class="tab-pane" id="cleanup">
+											<form action="./stream_tools.php" method="POST" id="tools_form" data-parsley-validate="">
+												<div class="row">
+													<div class="col-12">
+														<p class="sub-header">
+															This tool will clean up your streams database, removing invalid entries from the streams sys table and all logs. Xtream Codes monitors your streams sys table and will use resources doing so, it's best to clean this up periodically.
+														</p>
+													</div> <!-- end col -->
+												</div> <!-- end row -->
+												<ul class="list-inline wizard mb-0">
+													<li class="list-inline-item">
+														<div class="custom-control custom-checkbox">
+															<input type="checkbox" class="custom-control-input" id="confirmReplace3">
+															<label class="custom-control-label" for="confirmReplace3">I confirm that I want to clean up my streams database.</label>
+														</div>
+													</li>
+													<li class="list-inline-item float-right">
+														<input disabled name="cleanup_streams" id="cleanup_streams" type="submit" class="btn btn-primary" value="Cleanup" />
+													</li>
+												</ul>
+											</form>
+										</div>
 									</div> <!-- tab-content -->
 								</div> <!-- end #basicwizard-->
                             </div> <!-- end card-body -->
@@ -230,6 +320,13 @@ if ($rSettings["sidebar"]) {
 					$("#move_streams").attr("disabled", false);
 				} else {
 					$("#move_streams").attr("disabled", true);
+				}
+			});
+            $("#confirmReplace3").change(function() {
+				if ($(this).is(":checked")) {
+					$("#cleanup_streams").attr("disabled", false);
+				} else {
+					$("#cleanup_streams").attr("disabled", true);
 				}
 			});
             $("form").attr('autocomplete', 'off');

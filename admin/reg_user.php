@@ -70,12 +70,9 @@ if (isset($_POST["submit_user"])) {
             if (isset($rCreditsAdjustment)) {
                 $db->query("INSERT INTO `credits_log`(`target_id`, `admin_id`, `amount`, `date`, `reason`) VALUES(".$rInsertID.", ".intval($rUserInfo["id"]).", ".$db->real_escape_string($rCreditsAdjustment).", ".intval(time()).", '".$db->real_escape_string($rReason)."');");
             }
-            $_STATUS = 0;
+            header("Location: ./reg_user.php?id=".$rInsertID); exit;
         } else {
             $_STATUS = 2;
-        }
-        if (!isset($_GET["id"])) {
-            $_GET["id"] = $rInsertID;
         }
     }
 }
@@ -163,7 +160,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="username">Username</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["username"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -175,7 +172,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="email">Email Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="email" id="email" class="form-control" name="email" required value="<?php if (isset($rUser)) { echo $rUser["email"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="email" id="email" class="form-control" name="email" required value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["email"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -183,7 +180,7 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-8">
                                                                 <select name="member_group_id" id="member_group_id" class="form-control select2" data-toggle="select2">
                                                                     <?php foreach (getMemberGroups() as $rGroup) { ?>
-                                                                    <option <?php if (isset($rUser)) { if (intval($rUser["member_group_id"]) == intval($rGroup["group_id"])) { echo "selected "; } } ?>value="<?=$rGroup["group_id"]?>"><?=$rGroup["group_name"]?></option>
+                                                                    <option <?php if (isset($rUser)) { if (intval($rUser["member_group_id"]) == intval($rGroup["group_id"])) { echo "selected "; } } ?>value="<?=$rGroup["group_id"]?>"><?=htmlspecialchars($rGroup["group_name"])?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -206,7 +203,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="credits">Credits</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control text-center" id="credits" onkeypress="return isNumberKey(event)" name="credits" value="<?php if (isset($rUser)) { echo $rUser["credits"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control text-center" id="credits" onkeypress="return isNumberKey(event)" name="credits" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["credits"]); } else { echo "0"; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4" style="display: none;" id="credits_reason_div">
@@ -218,13 +215,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="reseller_dns">Reseller DNS</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="reseller_dns" name="reseller_dns" value="<?php if (isset($rUser)) { echo $rUser["reseller_dns"]; } ?>">
+                                                                <input type="text" class="form-control" id="reseller_dns" name="reseller_dns" value="<?php if (isset($rUser)) { echo htmlspecialchars($rUser["reseller_dns"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="notes">Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo $rUser["notes"]; } ?></textarea>
+                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rUser)) { echo htmlspecialchars($rUser["notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -264,7 +261,7 @@ if ($rSettings["sidebar"]) {
                                                                     <td><?=$rPackage["package_name"]?></td>
                                                                     <td class="text-center"><?=$rPackage["official_credits"]?></td>
                                                                     <td align="center">
-                                                                        <input onkeypress="return isNumberKey(event)" name="override_<?=$rPackage["id"]?>" type="text" value="<?php if (isset($rOverride[$rPackage["id"]])) { echo $rOverride[$rPackage["id"]]["official_credits"]; } ?>" style="width:100px;" class="text-center" />
+                                                                        <input onkeypress="return isNumberKey(event)" name="override_<?=$rPackage["id"]?>" type="text" value="<?php if (isset($rOverride[$rPackage["id"]])) { echo htmlspecialchars($rOverride[$rPackage["id"]]["official_credits"]); } ?>" style="width:100px;" class="text-center" />
                                                                     </td>
                                                                 </tr>
                                                                 <?php }

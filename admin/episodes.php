@@ -42,6 +42,11 @@ if ($rSettings["sidebar"]) {
                                             </button>
                                         </a>
                                         <?php } ?>
+                                        <a href="#" onClick="showModal()">
+                                            <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
+                                                <i class="mdi mdi-plus"></i> Add Episode
+                                            </button>
+                                        </a>
                                     </li>
                                 </ol>
                             </div>
@@ -149,6 +154,33 @@ if ($rSettings["sidebar"]) {
                 <!-- end row-->
             </div> <!-- end container -->
         </div>
+        <div class="modal fade addModal" tabindex="-1" role="dialog" aria-labelledby="addLabel" aria-hidden="true" style="display: none;" data-username="" data-password="">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="addModal">Select Series:</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="col-12">
+                            <select id="add_series_id" class="form-control" data-toggle="select2">
+                                <?php foreach (getSeriesList() as $rSeries) { ?>
+                                <option value="<?=$rSeries["id"]?>"><?=$rSeries["title"]?></option>
+                                <?php } ?>
+                            </select>
+                        </div>
+                        <div class="col-12 add-margin-top-20">
+                            <div class="input-group">
+                                <div class="input-group-append" style="width:100%">
+                                    <button style="width:50%" class="btn btn-success waves-effect waves-light" type="button" onClick="addEpisode();"><i class="mdi mdi-plus-circle-outline"></i> Add Episode</button>
+                                    <button style="width:50%" class="btn btn-info waves-effect waves-light" type="button" onClick="addEpisodes();"><i class="mdi mdi-plus-circle-multiple-outline"></i> Multiple Episodes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
         <!-- end wrapper -->
         <?php if ($rSettings["sidebar"]) { echo "</div>"; } ?>
         <!-- Footer Start -->
@@ -272,9 +304,26 @@ if ($rSettings["sidebar"]) {
             $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-streampage").DataTable().ajax.reload( null, false );
         }
+        function showModal() {
+            $('.addModal').modal('show');
+        }
+        function addEpisode() {
+            window.location.href = "./episode.php?sid=" + $("#add_series_id").val();
+        }
+        function addEpisodes() {
+            window.location.href = "./episode.php?sid=" + $("#add_series_id").val() + "&multi";
+        }
         $(document).ready(function() {
+			$(window).keydown(function(event){
+				if(event.keyCode == 13) {
+					event.preventDefault();
+					return false;
+				}
+			});
             formCache.init();
+            <?php if (!isset($_GET["series"])) { ?>
             formCache.fetch();
+            <?php } ?>
             
             $('select').select2({width: '100%'});
             $("#datatable-streampage").DataTable({

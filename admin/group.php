@@ -49,12 +49,9 @@ if (isset($_POST["submit_group"])) {
             } else {
                 $rInsertID = $db->insert_id;
             }
-            $_STATUS = 0;
+            header("Location: ./group.php?id=".$rInsertID); exit;
         } else {
             $_STATUS = 2;
-        }
-        if (!isset($_GET["id"])) {
-            $_GET["id"] = $rInsertID;
         }
     }
 }
@@ -129,13 +126,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="group_name">Group Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="group_name" name="group_name" value="<?php if (isset($rGroup)) { echo $rGroup["group_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="group_name" name="group_name" value="<?php if (isset($rGroup)) { echo htmlspecialchars($rGroup["group_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="total_allowed_gen_trials">Allowed Trials</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="total_allowed_gen_trials" name="total_allowed_gen_trials" value="<?php if (isset($rGroup)) { echo $rGroup["total_allowed_gen_trials"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="total_allowed_gen_trials" name="total_allowed_gen_trials" value="<?php if (isset($rGroup)) { echo intval($rGroup["total_allowed_gen_trials"]); } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="total_allowed_gen_in">Allowed Trials In</label>
                                                             <div class="col-md-2">
@@ -173,7 +170,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="create_sub_resellers_price">Subreseller Price</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="create_sub_resellers_price" name="create_sub_resellers_price" value="<?php if (isset($rGroup)) { echo $rGroup["create_sub_resellers_price"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="create_sub_resellers_price" name="create_sub_resellers_price" value="<?php if (isset($rGroup)) { echo htmlspecialchars($rGroup["create_sub_resellers_price"]); } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

@@ -46,6 +46,8 @@ if (isset($_POST["submit_server"])) {
     if (isset($_POST["timeshift_only"])) {
         $rArray["timeshift_only"] = true;
         unset($_POST["timeshift_only"]);
+    } else {
+        $rArray["timeshift_only"] = false;
     }
     if (isset($_POST["enable_geoip"])) {
         $rArray["enable_geoip"] = true;
@@ -101,9 +103,7 @@ if (isset($_POST["submit_server"])) {
 			$db->query("UPDATE `streaming_servers` SET `diff_time_main` = ".intval($rDifference)." WHERE `id` = ".intval($rInsertID).";");
             $_STATUS = 0;
             $rServers = getStreamingServers();
-            if (!isset($_GET["id"])) {
-                $_GET["id"] = $rInsertID;
-            }
+            header("Location: ./server.php?id=".$rInsertID); exit;
         } else {
             $_STATUS = 2;
         }
@@ -188,31 +188,31 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="server_name">Server Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="server_name" name="server_name" value="<?php if (isset($rServerArr)) { echo $rServerArr["server_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="server_name" name="server_name" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["server_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="domain_name">Domain Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="domain_name" name="domain_name" placeholder="www.example.com" value="<?php if (isset($rServerArr)) { echo $rServerArr["domain_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="domain_name" name="domain_name" placeholder="www.example.com" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["domain_name"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="server_ip">Server IP</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="server_ip" name="server_ip" value="<?php if (isset($rServerArr)) { echo $rServerArr["server_ip"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="server_ip" name="server_ip" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["server_ip"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="vpn_ip">VPN IP</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="vpn_ip" name="vpn_ip" value="<?php if (isset($rServerArr)) { echo $rServerArr["vpn_ip"]; } ?>">
+                                                                <input type="text" class="form-control" id="vpn_ip" name="vpn_ip" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["vpn_ip"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="total_clients">Max Clients</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="total_clients" name="total_clients" value="<?php if (isset($rServerArr)) { echo $rServerArr["total_clients"]; } else { echo "1000"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="total_clients" name="total_clients" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["total_clients"]); } else { echo "1000"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="timeshift_only">Timeshift Only</label>
                                                             <div class="col-md-2">
@@ -233,37 +233,37 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="http_broadcast_port">HTTP Port</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="http_broadcast_port" name="http_broadcast_port" value="<?php if (isset($rServerArr)) { echo $rServerArr["http_broadcast_port"]; } else { echo "25461"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="http_broadcast_port" name="http_broadcast_port" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["http_broadcast_port"]); } else { echo "25461"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="https_broadcast_port">HTTPS Port</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="https_broadcast_port" name="https_broadcast_port" value="<?php if (isset($rServerArr)) { echo $rServerArr["https_broadcast_port"]; } else { echo "25463"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="https_broadcast_port" name="https_broadcast_port" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["https_broadcast_port"]); } else { echo "25463"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="rtmp_port">RTMP Port</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="rtmp_port" name="rtmp_port" value="<?php if (isset($rServerArr)) { echo $rServerArr["rtmp_port"]; } else { echo "25462"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="rtmp_port" name="rtmp_port" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["rtmp_port"]); } else { echo "25462"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="diff_time_main">Time Difference - Seconds</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" disabled class="form-control" id="diff_time_main" name="diff_time_main" value="<?php if (isset($rServerArr)) { echo $rServerArr["diff_time_main"]; } else { echo "0"; } ?>">
+                                                                <input type="text" disabled class="form-control" id="diff_time_main" name="diff_time_main" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["diff_time_main"]); } else { echo "0"; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="network_interface">Network Interface</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="network_interface" name="network_interface" value="<?php if (isset($rServerArr)) { echo $rServerArr["network_interface"]; } else { echo "eth0"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="network_interface" name="network_interface" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["network_interface"]); } else { echo "eth0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="network_guaranteed_speed">Network Speed - Mbps</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="network_guaranteed_speed" name="network_guaranteed_speed" value="<?php if (isset($rServerArr)) { echo $rServerArr["network_guaranteed_speed"]; } else { echo "1000"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="network_guaranteed_speed" name="network_guaranteed_speed" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["network_guaranteed_speed"]); } else { echo "1000"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="system_os">Operating System</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="system_os" name="system_os" value="<?php if (isset($rServerArr)) { echo $rServerArr["system_os"]; } else { echo "Ubuntu 14.04.5 LTS"; } ?>">
+                                                                <input type="text" class="form-control" id="system_os" name="system_os" value="<?php if (isset($rServerArr)) { echo htmlspecialchars($rServerArr["system_os"]); } else { echo "Ubuntu 14.04.5 LTS"; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

@@ -65,8 +65,7 @@ if (isset($_POST["submit_series"])) {
         scanBouquets();
     }
     if (isset($rInsertID)) {
-        $_GET["id"] = $rInsertID;
-        $_STATUS = 0;
+        header("Location: ./serie.php?id=".$rInsertID); exit;
     } else {
         $_STATUS = 1;
     }
@@ -126,7 +125,7 @@ if ($rSettings["sidebar"]) {
                                     <?php if (isset($rSeries)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rSeries["id"]?>" />
                                     <?php } ?>
-                                    <input type="hidden" id="tmdb_id" name="tmdb_id" value="<?php if (isset($rSeries)) { echo $rSeries["tmdb_id"]; } ?>" />
+                                    <input type="hidden" id="tmdb_id" name="tmdb_id" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["tmdb_id"]); } ?>" />
                                     <div id="basicwizard">
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
@@ -149,7 +148,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="title">Series Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="title" name="title" value="<?php if (isset($rSeries)) { echo $rSeries["title"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="title" name="title" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["title"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -173,7 +172,7 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-8">
                                                                 <select name="bouquets[]" id="bouquets" class="form-control select2-multiple" data-toggle="select2" multiple="multiple" data-placeholder="Choose...">
                                                                     <?php foreach (getBouquets() as $rBouquet) { ?>
-                                                                    <option <?php if (isset($rSeries)) { if (in_array($rSeries["id"], json_decode($rBouquet["bouquet_series"], True))) { echo "selected "; } } ?>value="<?=$rBouquet["id"]?>"><?=$rBouquet["bouquet_name"]?></option>
+                                                                    <option <?php if (isset($rSeries)) { if (in_array($rSeries["id"], json_decode($rBouquet["bouquet_series"], True))) { echo "selected "; } } ?>value="<?=$rBouquet["id"]?>"><?=htmlspecialchars($rBouquet["bouquet_name"])?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -192,7 +191,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="cover">Poster URL</label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" class="form-control" id="cover" name="cover" value="<?php if (isset($rSeries)) { echo $rSeries["cover"]; } ?>">
+                                                                <input type="text" class="form-control" id="cover" name="cover" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["cover"]); } ?>">
                                                                 <div class="input-group-append">
                                                                     <a href="javascript:void(0)" onClick="openImage(this)" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-eye"></i></a>
                                                                 </div>
@@ -201,7 +200,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="backdrop_path">Backdrop URL</label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" class="form-control" id="backdrop_path" name="backdrop_path" value="<?php if (isset($rSeries)) { echo json_decode($rSeries["backdrop_path"], True)[0]; } ?>">
+                                                                <input type="text" class="form-control" id="backdrop_path" name="backdrop_path" value="<?php if (isset($rSeries)) { echo htmlspecialchars(json_decode($rSeries["backdrop_path"], True)[0]); } ?>">
                                                                 <div class="input-group-append">
                                                                     <a href="javascript:void(0)" onClick="openImage(this)" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-eye"></i></a>
                                                                 </div>
@@ -210,43 +209,43 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="plot">Plot</label>
                                                             <div class="col-md-8">
-                                                                <textarea rows="6" class="form-control" id="plot" name="plot"><?php if (isset($rSeries)) { echo $rSeries["plot"]; } ?></textarea>
+                                                                <textarea rows="6" class="form-control" id="plot" name="plot"><?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["plot"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="cast">Cast</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="cast" name="cast" value="<?php if (isset($rSeries)) { echo $rSeries["cast"]; } ?>">
+                                                                <input type="text" class="form-control" id="cast" name="cast" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["cast"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="director">Director</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="director" name="director" value="<?php if (isset($rSeries)) { echo $rSeries["director"]; } ?>">
+                                                                <input type="text" class="form-control" id="director" name="director" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["director"]); } ?>">
                                                             </div>
                                                             <label class="col-md-2 col-form-label" for="genre">Genres</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="genre" name="genre" value="<?php if (isset($rSeries)) { echo $rSeries["genre"]; } ?>">
+                                                                <input type="text" class="form-control" id="genre" name="genre" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["genre"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="releaseDate">Release Date</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="releaseDate" name="releaseDate" value="<?php if (isset($rSeries)) { echo $rSeries["releaseDate"]; } ?>">
+                                                                <input type="text" class="form-control" id="releaseDate" name="releaseDate" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["releaseDate"]); } ?>">
                                                             </div>
                                                             <label class="col-md-2 col-form-label" for="episode_run_time">Runtime</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="episode_run_time" name="episode_run_time" value="<?php if (isset($rSeries)) { echo $rSeries["episode_run_time"]; } ?>">
+                                                                <input type="text" class="form-control" id="episode_run_time" name="episode_run_time" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["episode_run_time"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="youtube_trailer">Youtube Trailer</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="youtube_trailer" name="youtube_trailer" value="<?php if (isset($rSeries)) { echo $rSeries["youtube_trailer"]; } ?>">
+                                                                <input type="text" class="form-control" id="youtube_trailer" name="youtube_trailer" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["youtube_trailer"]); } ?>">
                                                             </div>
                                                             <label class="col-md-2 col-form-label" for="rating">Rating</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="rating" name="rating" value="<?php if (isset($rSeries)) { echo $rSeries["rating"]; } ?>">
+                                                                <input type="text" class="form-control" id="rating" name="rating" value="<?php if (isset($rSeries)) { echo htmlspecialchars($rSeries["rating"]); } ?>">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->

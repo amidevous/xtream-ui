@@ -215,7 +215,7 @@ if (isset($_POST["submit_stream"])) {
         } else {
             $_STATUS = 1;
         }
-        $_GET["sid"] = $_POST["series"];
+        header("Location: ./episode.php?sid=".$_POST["series"]."&id=".$rInsertID); exit;
     }
 }
 
@@ -362,15 +362,11 @@ if ($rSettings["sidebar"]) {
                                     <input type="hidden" name="edit" value="<?=$rEpisode["id"]?>" />
                                     <?php }
                                     if (!isset($rMulti)) { ?>
-                                    <input type="hidden" id="tmdb_id" name="tmdb_id" value="<?php if (isset($rEpisode)) { echo $rEpisode["properties"]["tmdb_id"]; } ?>" />
-                                    <?php if (isset($rEpisode)) { ?>
-                                    <input type="hidden" name="episode" id="episode" value="<?=$rEpisode["episode"]?>" />
+                                    <input type="hidden" id="tmdb_id" name="tmdb_id" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["properties"]["tmdb_id"]); } ?>" />
                                     <?php } else { ?>
-                                    <input type="hidden" name="episode" id="episode" value="0" />
-                                    <?php } } else { ?>
                                     <input type="hidden" name="multi" id="multi" value="" />
                                     <input type="hidden" name="server" id="server" value="" />
-                                    <input type="hidden" id="tmdb_id" name="tmdb_id" value="<?php echo $rSeries["tmdb_id"]; ?>" />
+                                    <input type="hidden" id="tmdb_id" name="tmdb_id" value="<?php echo htmlspecialchars($rSeries["tmdb_id"]); ?>" />
                                     <?php } ?>
                                     <input type="hidden" name="series" value="<?=$rSeries["id"]?>" />
                                     <input type="hidden" name="server_tree_data" id="server_tree_data" value="" />
@@ -410,11 +406,18 @@ if ($rSettings["sidebar"]) {
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="series_name">Series Name</label>
-                                                            <div class="col-md-6">
+                                                            <div class="col-md-8">
                                                                 <input type="text" class="form-control" id="series_name" name="series_name" value="<?=$rSeries["title"]?>" readonly>
                                                             </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="season_num">Season Number</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control text-center" id="season_num" name="season_num" placeholder="Season" value="<?php if (isset($rEpisode)) { echo $rEpisode["season"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control text-center" id="season_num" name="season_num" placeholder="" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["season"]); } ?>" required data-parsley-trigger="change">
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="episode">Episode Number</label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control text-center" id="episode" name="episode" placeholder="" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["episode"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -426,7 +429,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_display_name">Episode Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rEpisode)) { echo $rEpisode["stream_display_name"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["stream_display_name"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <?php
@@ -447,7 +450,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="notes">Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rEpisode)) { echo $rEpisode["notes"]; } ?></textarea>
+                                                                <textarea id="notes" name="notes" class="form-control" rows="3" placeholder=""><?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -510,7 +513,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="movie_image">Image URL</label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" class="form-control" id="movie_image" name="movie_image" value="<?php if (isset($rEpisode)) { echo $rEpisode["properties"]["movie_image"]; } ?>">
+                                                                <input type="text" class="form-control" id="movie_image" name="movie_image" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["properties"]["movie_image"]); } ?>">
                                                                 <div class="input-group-append">
                                                                     <a href="javascript:void(0)" onClick="openImage(this)" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-eye"></i></a>
                                                                 </div>
@@ -519,13 +522,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="plot">Plot</label>
                                                             <div class="col-md-8">
-                                                                <textarea rows="6" class="form-control" id="plot" name="plot"><?php if (isset($rEpisode)) { echo $rEpisode["properties"]["plot"]; } ?></textarea>
+                                                                <textarea rows="6" class="form-control" id="plot" name="plot"><?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["properties"]["plot"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="releasedate">Release Date</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="releasedate" name="releasedate" value="<?php if (isset($rEpisode)) { echo $rEpisode["properties"]["releasedate"]; } ?>">
+                                                                <input type="text" class="form-control" id="releasedate" name="releasedate" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["properties"]["releasedate"]); } ?>">
                                                             </div>
                                                             <label class="col-md-2 col-form-label" for="episode_run_time">Runtime</label>
                                                             <div class="col-md-3">
@@ -535,7 +538,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="rating">Rating</label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="rating" name="rating" value="<?php if (isset($rEpisode)) { echo $rEpisode["properties"]["rating"]; } ?>">
+                                                                <input type="text" class="form-control" id="rating" name="rating" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["properties"]["rating"]); } ?>">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -559,7 +562,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="read_native">Native Frames</label>
                                                             <div class="col-md-2">
-                                                                <input name="read_native" id="read_native" type="checkbox" <?php if (isset($rEpisode)) { if ($rEpisode["read_native"] == 1) { echo "checked "; } } else { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input name="read_native" id="read_native" type="checkbox" <?php if (isset($rEpisode)) { if ($rEpisode["read_native"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -584,7 +587,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="custom_sid">Custom Channel SID <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Here you can specify the SID of the channel in order to work with the epg on the enigma2 devices. You have to specify the code with the ':' but without the first number, 1 or 4097 . Example: if we have this code:  '1:0:1:13f:157c:13e:820000:0:0:0:2097' then you have to add on this field:  ':0:1:13f:157c:13e:820000:0:0:0:" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="custom_sid" name="custom_sid" value="<?php if (isset($rEpisode)) { echo $rEpisode["custom_sid"]; } ?>">
+                                                                <input type="text" class="form-control" id="custom_sid" name="custom_sid" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rEpisode["custom_sid"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <?php }
@@ -600,7 +603,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="movie_subtitles"> Subtitle Location <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select a subtitle file to encoded into the output stream." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" id="movie_subtitles" name="movie_subtitles" class="form-control" value="<?php if (isset($rEpisode)) { echo $rSubFile; } ?>">
+                                                                <input type="text" id="movie_subtitles" name="movie_subtitles" class="form-control" value="<?php if (isset($rEpisode)) { echo htmlspecialchars($rSubFile); } ?>">
                                                                 <div class="input-group-append">
                                                                     <a href="#file-browser" id="filebrowser-sub" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-folder-open-outline"></i></a>
                                                                 </div>
@@ -665,7 +668,7 @@ if ($rSettings["sidebar"]) {
                                             <div class="col-md-8">
                                                 <select id="server_id" class="form-control" data-toggle="select2">
                                                     <?php foreach (getStreamingServers() as $rServer) { ?>
-                                                    <option value="<?=$rServer["id"]?>"<?php if ((isset($_GET["server"])) && ($_GET["server"] == $rServer["id"])) { echo " selected"; } ?>><?=$rServer["server_name"]?></option>
+                                                    <option value="<?=$rServer["id"]?>"<?php if ((isset($_GET["server"])) && ($_GET["server"] == $rServer["id"])) { echo " selected"; } ?>><?=htmlspecialchars($rServer["server_name"])?></option>
                                                     <?php } ?>
                                                 </select>
                                             </div>

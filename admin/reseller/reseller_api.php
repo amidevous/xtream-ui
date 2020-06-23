@@ -1,8 +1,14 @@
 <?php
+/////////////////////////////////////////////////////////////////////////////////////
+// Xtream UI Reseller API                                                          //
+/////////////////////////////////////////////////////////////////////////////////////
+//                                                                                 //
+// Disclaimer:                                                                     //
+// This is an externally developed API, not officially part of the Xtream UI base. //
+//                                                                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+
 include 'class.resellerapi.php';
-/**
- * Xtream UI Reseller API
- */ 
  
 foreach ($_GET as $rKey => $rValue) {
     $_POST[$rKey] = $rValue;

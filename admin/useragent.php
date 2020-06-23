@@ -114,7 +114,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="user_agent">User-Agent</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="user_agent" name="user_agent" value="<?php if (isset($rUAArr)) { echo $rUAArr["user_agent"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="user_agent" name="user_agent" value="<?php if (isset($rUAArr)) { echo htmlspecialchars($rUAArr["user_agent"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

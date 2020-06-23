@@ -43,7 +43,7 @@ if ($rSettings["sidebar"]) {
                                         <tr>
                                             <th class="text-center">ID</th>
                                             <th>Bouquet Name</th>
-                                            <th class="text-center">Channels</th>
+                                            <th class="text-center">Streams</th>
                                             <th class="text-center">Series</th>
                                             <th class="text-center">Actions</th>
                                         </tr>

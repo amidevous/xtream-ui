@@ -100,6 +100,25 @@ if ($_GET["id"] == "mag_events") {
             }
         )
     );
+} else if ($_GET["id"] == "radios_short") {
+    if (!$rPermissions["is_admin"]) { exit; }
+    $table = 'streams';
+    $get = $_GET["id"];
+    $primaryKey = 'id';
+    if ((isset($_GET["category_id"])) && (strlen($_GET["category_id"]) > 0)) {
+        $extraWhere = "`type` = 4 AND `category_id` = ".intval($_GET["category_id"]);
+    } else {
+        $extraWhere = "`type` = 4";
+    }
+    $columns = array(
+        array('db' => 'id', 'dt' => 0),
+        array('db' => 'stream_display_name', 'dt' => 1),
+        array('db' => 'id', 'dt' => 2,
+            'formatter' => function( $d, $row) {
+                return '<a href="./radio.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Station" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+            }
+        )
+    );
 } else if ($_GET["id"] == "series_short") {
     if (!$rPermissions["is_admin"]) { exit; }
     $table = 'series';
@@ -116,6 +135,50 @@ if ($_GET["id"] == "mag_events") {
         array('db' => 'id', 'dt' => 2,
             'formatter' => function( $d, $row) {
                 return '<a href="./series.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Series" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+            }
+        )
+    );
+} else if ($_GET["id"] == "vod_selection") {
+    if (!$rPermissions["is_admin"]) { exit; }
+    $rCategoriesVOD = getCategories("movie");
+    $rSeriesList = getEpisodeParents();
+    $table = 'streams';
+    $get = $_GET["id"];
+    $primaryKey = 'id';
+    if ((isset($_GET["category_id"])) && (strlen($_GET["category_id"]) > 0)) {
+        $rSplit = explode(":", $_GET["category_id"]);
+        if (intval($rSplit[0]) == 0) {
+            $extraWhere = "`type` = 2 AND `category_id` = ".intval($rSplit[1]);
+        } else {
+            $rEpisodeList = Array();
+            foreach ($rSeriesList as $rID => $rRow) {
+                if (intval($rSplit[1]) == intval($rRow["id"])) {
+                    $rEpisodeList[] = $rID;
+                }
+            }
+            $extraWhere = "`type` = 5 AND `id` IN (".join(",", $rEpisodeList).")";
+        }
+    } else {
+        $extraWhere = "`type` IN (2,5)";
+    }
+    $extraWhere .= " AND `stream_source` LIKE '%s:".intval($_GET["server_id"]).":%'";
+    $columns = array(
+        array('db' => 'id', 'dt' => 0),
+        array('db' => 'stream_display_name', 'dt' => 1),
+        array('db' => 'category_id', 'dt' => 2,
+            'formatter' => function( $d, $row) {
+                global $rCategoriesVOD, $rSeriesList;
+                if ($row["type"] == 5) {
+                    return $rSeriesList[$row["id"]]["title"];
+                } else {
+                    return $rCategoriesVOD[$d]["category_name"];
+                }
+            }
+        ),
+        array('db' => 'type', 'dt' => 3,
+            'formatter' => function( $d, $row) {
+                return '<button data-id="'.$row["id"].'" data-type="vod" type="button" style="display: none;" class="btn-remove btn btn-outline-danger waves-effect waves-light btn-xs" onClick="toggleSelection('.$row["id"].');"><i class="mdi mdi-minus"></i></button>
+                <button data-id="'.$row["id"].'" data-type="vod" type="button" style="display: none;" class="btn-add btn btn-outline-info waves-effect waves-light btn-xs" onClick="toggleSelection('.$row["id"].');"><i class="mdi mdi-plus"></i></button>';
             }
         )
     );
@@ -170,6 +233,33 @@ if ($_GET["id"] == "mag_events") {
             'formatter' => function( $d, $row) {
                 return '<button data-id="'.$d.'" data-type="series" type="button" style="display: none;" class="btn-remove btn btn-outline-danger waves-effect waves-light btn-xs" onClick="toggleBouquet('.$d.', \'series\', true);"><i class="mdi mdi-minus"></i></button>
                 <button data-id="'.$d.'" data-type="series" type="button" style="display: none;" class="btn-add btn btn-outline-info waves-effect waves-light btn-xs" onClick="toggleBouquet('.$d.', \'series\', true);"><i class="mdi mdi-plus"></i></button>';
+            }
+        )
+    );
+} else if ($_GET["id"] == "bouquets_radios") {
+    if (!$rPermissions["is_admin"]) { exit; }
+    $rCategoriesVOD = getCategories("radio");
+    $table = 'streams';
+    $get = $_GET["id"];
+    $primaryKey = 'id';
+    if ((isset($_GET["category_id"])) && (strlen($_GET["category_id"]) > 0)) {
+        $extraWhere = "`type` = 4 AND `category_id` = ".intval($_GET["category_id"]);
+    } else {
+        $extraWhere = "`type` = 4";
+    }
+    $columns = array(
+        array('db' => 'id', 'dt' => 0),
+        array('db' => 'stream_display_name', 'dt' => 1),
+        array('db' => 'category_id', 'dt' => 2,
+            'formatter' => function( $d, $row) {
+                global $rCategoriesVOD;
+                return $rCategoriesVOD[$d]["category_name"];
+            }
+        ),
+        array('db' => 'id', 'dt' => 3,
+            'formatter' => function( $d, $row) {
+                return '<button data-id="'.$d.'" data-type="radios" type="button" style="display: none;" class="btn-remove btn btn-outline-danger waves-effect waves-light btn-xs" onClick="toggleBouquet('.$d.', \'radios\', true);"><i class="mdi mdi-minus"></i></button>
+                <button data-id="'.$d.'" data-type="radios" type="button" style="display: none;" class="btn-add btn btn-outline-info waves-effect waves-light btn-xs" onClick="toggleBouquet('.$d.', \'radios\', true);"><i class="mdi mdi-plus"></i></button>';
             }
         )
     );

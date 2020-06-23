@@ -152,11 +152,11 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="scan_seconds">Scan Frequency <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Scan a folder every X seconds." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="scan_seconds" name="scan_seconds" value="<?php echo $rWatchSettings["scan_seconds"]; ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="scan_seconds" name="scan_seconds" value="<?php echo htmlspecialchars($rWatchSettings["scan_seconds"]); ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="percentage_match">Match Percentage <i data-toggle="tooltip" data-placement="top" title="" data-original-title="TMDb match tolerance. Will not accept match if below this percentage threshold." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="percentage_match" name="percentage_match" value="<?php echo $rWatchSettings["percentage_match"]; ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="percentage_match" name="percentage_match" value="<?php echo htmlspecialchars($rWatchSettings["percentage_match"]); ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

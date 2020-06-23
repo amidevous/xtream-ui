@@ -105,13 +105,13 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="ip">IP Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="ip" name="ip" value="<?php if (isset($rIPArr)) { echo $rIPArr["ip"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="ip" name="ip" value="<?php if (isset($rIPArr)) { echo htmlspecialchars($rIPArr["ip"]); } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="notes">Notes</label>
                                                             <div class="col-md-8">
-                                                                <textarea class="form-control" id="notes" name="notes" required data-parsley-trigger="change"><?php if (isset($rIPArr)) { echo $rIPArr["notes"]; } ?></textarea>
+                                                                <textarea class="form-control" id="notes" name="notes" required data-parsley-trigger="change"><?php if (isset($rIPArr)) { echo htmlspecialchars($rIPArr["notes"]); } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->

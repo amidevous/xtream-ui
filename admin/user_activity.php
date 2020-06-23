@@ -202,6 +202,12 @@ if ($rSettings["sidebar"]) {
             $("#datatable-activity").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
+			$(window).keydown(function(event){
+				if(event.keyCode == 13) {
+					event.preventDefault();
+					return false;
+				}
+			});
             $('#act_range').daterangepicker({
                 singleDatePicker: false,
                 showDropdowns: true,

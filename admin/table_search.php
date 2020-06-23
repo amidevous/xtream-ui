@@ -670,6 +670,205 @@ if ($rType == "users") {
         }
     }
     echo json_encode($rReturn);exit;
+} else if ($rType == "radios") {
+    if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    if ($rPermissions["is_admin"]) {
+        $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`streams_sys`.`current_source`", "`clients`", "`streams_sys`.`stream_started`", false, "`streams_sys`.`bitrate`");
+    } else {
+        $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`streams_sys`.`current_source`", "`streams_sys`.`bitrate`");
+    }
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    $rWhere[] = "`streams`.`type` = 4";
+    if (isset($_GET["stream_id"])) {
+        $rWhere[] = "`streams`.`id` = ".intval($_GET["stream_id"]);
+        $rOrderBy = "ORDER BY `streams_sys`.`server_stream_id` ASC";
+    } else {
+        if (strlen($_GET["search"]["value"]) > 0) {
+            $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+            $rWhere[] = "(`streams`.`id` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `streams`.`notes` LIKE '%{$rSearch}%' OR `streams_sys`.`current_source` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%' OR `streaming_servers`.`server_name` LIKE '%{$rSearch}%')";
+        }
+        if (strlen($_GET["filter"]) > 0) {
+            if ($_GET["filter"] == 1) {
+                $rWhere[] = "(`streams_sys`.`monitor_pid` > 0 AND `streams_sys`.`pid` > 0)";
+            } else if ($_GET["filter"] == 2) {
+                $rWhere[] = "((`streams_sys`.`monitor_pid` IS NOT NULL AND `streams_sys`.`monitor_pid` > 0) AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` <> 0)";
+            } else if ($_GET["filter"] == 3) {
+                $rWhere[] = "(`streams`.`direct_source` = 0 AND (`streams_sys`.`monitor_pid` IS NULL OR `streams_sys`.`monitor_pid` <= 0) AND `streams_sys`.`on_demand` = 0)";
+            } else if ($_GET["filter"] == 4) {
+                $rWhere[] = "((`streams_sys`.`monitor_pid` IS NOT NULL AND `streams_sys`.`monitor_pid` > 0) AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` = 0)";
+            } else if ($_GET["filter"] == 5) {
+                $rWhere[] = "`streams_sys`.`on_demand` = 1";
+            } else if ($_GET["filter"] == 6) {
+                $rWhere[] = "`streams`.`direct_source` = 1";
+            }
+        }
+        if (strlen($_GET["category"]) > 0) {
+            $rWhere[] = "`streams`.`category_id` = ".intval($_GET["category"]);
+        }
+        if (strlen($_GET["server"]) > 0) {
+            $rWhere[] = "`streams_sys`.`server_id` = ".intval($_GET["server"]);
+        }
+        if ($rOrder[$rOrderRow]) {
+            $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+        }
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `streams_sys`.`server_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `streams`.`id`, `streams`.`type`, `streams`.`cchannel_rsources`, `streams`.`stream_source`, `streams`.`stream_display_name`, `streams`.`tv_archive_duration`, `streams_sys`.`server_id`, `streams`.`notes`, `streams`.`direct_source`, `streams_sys`.`pid`, `streams_sys`.`monitor_pid`, `streams_sys`.`stream_status`, `streams_sys`.`stream_started`, `streams_sys`.`stream_info`, `streams_sys`.`current_source`, `streams_sys`.`bitrate`, `streams_sys`.`progress_info`, `streams_sys`.`on_demand`, `stream_categories`.`category_name`, `streaming_servers`.`server_name`, (SELECT COUNT(*) FROM `user_activity_now` WHERE `user_activity_now`.`server_id` = `streams_sys`.`server_id` AND `user_activity_now`.`stream_id` = `streams`.`id`) AS `clients` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `streams_sys`.`server_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                // Format Rows
+                $rCategory = $rRow["category_name"] ?: "No Category";
+                $rStreamName = "<b>".$rRow['stream_display_name']."</b><br><span style='font-size:11px;'>{$rCategory}</span>";
+                if ($rRow["server_name"]) {
+                    if ($rPermissions["is_admin"]) {
+                        $rServerName = $rRow["server_name"];
+                    } else {
+                        $rServerName = "Server #".$rRow["server_id"];
+                    }
+                } else {
+                    $rServerName = "No Server Selected";
+                }
+                $rStreamSource = "<br/><span style='font-size:11px;'>".parse_url($rRow["current_source"])['host']."</span>";
+				if ($rPermissions["is_admin"]) {
+					$rServerName .= $rStreamSource;
+				}
+                $rUptime = 0;
+                $rActualStatus = 0;
+                if (intval($rRow["direct_source"]) == 1) {
+                    // Direct
+                    $rActualStatus = 5;
+                } else if ($rRow["monitor_pid"]) {
+                    // Started
+                    if (($rRow["pid"]) && ($rRow["pid"] > 0)) {
+                        // Running
+                        $rActualStatus = 1;
+                        $rUptime = time() - intval($rRow["stream_started"]);
+                    } else {
+                        if (intval($rRow["stream_status"]) == 0) {
+                            // Starting
+                            $rActualStatus = 2;
+                        } else {
+                            // Stalled
+                            $rActualStatus = 3;
+                        }
+                    }
+                } else if (intval($rRow["on_demand"]) == 1) {
+                    // On Demand
+                    $rActualStatus = 4;
+                } else {
+                    // Stopped
+                    $rActualStatus = 0;
+                }
+                $rClients = "<a href=\"./live_connections.php?stream_id=".$rRow["id"]."&server_id=".$rRow["server_id"]."\">".$rRow["clients"]."</a>";
+                if ($rActualStatus == 1) {
+					if ($rUptime >= 86400) {
+						$rUptime = sprintf('%02dd %02dh %02dm %02ds', ($rUptime/86400), ($rUptime/3600%24),($rUptime/60%60), ($rUptime%60));
+					} else {
+						$rUptime = sprintf('%02dh %02dm %02ds', ($rUptime/3600),($rUptime/60%60), ($rUptime%60));
+					}
+					$rUptime = "<button type='button' class='btn btn-outline-success btn-rounded btn-xs waves-effect waves-light'>{$rUptime}</button>";
+                } else {
+                    $rUptime = $rStatusArray[$rActualStatus];
+                }
+                if (!$rRow["server_id"]) { $rRow["server_id"] = 0; }
+                if ($rPermissions["is_admin"]) {
+                    if (strlen($rRow["notes"]) > 0) {
+                        $rButtons = '<button type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs" data-toggle="tooltip" data-placement="left" title="" data-original-title="'.$rRow["notes"].'"><i class="mdi mdi-note"></i></button>
+                        ';
+                    } else {
+                        $rButtons = '<button disabled type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs"><i class="mdi mdi-note"></i></button>
+                        ';
+                    }
+                } else {
+                    $rButtons = "";
+                }
+                if ((intval($rActualStatus) == 1) OR (intval($rActualStatus) == 2) OR (intval($rActualStatus) == 3) OR ($rRow["on_demand"] == 1) OR ($rActualStatus == 5)) {
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Stop" type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'stop\');"><i class="mdi mdi-stop"></i></button>
+                    ';
+                    $rStatus = '';
+                } else {
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Start" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-play"></i></button>
+                    ';
+                    $rStatus = ' disabled';
+                }
+                $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Restart" type="button" class="btn btn-outline-pink waves-effect waves-light btn-xs api-restart" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'restart\');"'.$rStatus.'><i class="mdi mdi-refresh"></i></button>
+                ';
+                if ($rRow["type"] == 3) {
+                    $rButtons .= '<a href="./created_channel.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    ';
+                } else {
+                    $rButtons .= '<a href="./radio.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    ';
+                }
+                $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'delete\');"><i class="mdi mdi-close"></i></button>
+                ';
+                $rStreamInfoText = "<table style='font-size: 10px;' class='text-center' align='center'><tbody><tr><td colspan='5' class='col'>No information available</td></tr></tbody></table>";
+                $rStreamInfo = json_decode($rRow["stream_info"], True);
+                $rProgressInfo = json_decode($rRow["progress_info"], True);
+                if ($rActualStatus == 1) {
+                    if (!isset($rStreamInfo["codecs"]["video"])) {
+                        $rStreamInfo["codecs"]["video"] = "N/A";
+                    }
+                    if (!isset($rStreamInfo["codecs"]["audio"])) {
+                        $rStreamInfo["codecs"]["audio"] = "N/A";
+                    }
+                    if ($rRow['bitrate'] == 0) { 
+                        $rRow['bitrate'] = "?";
+                    }
+                    if (isset($rProgressInfo["speed"])) {
+                        $rSpeed = $rProgressInfo["speed"];
+                    } else {
+                        $rSpeed = "--";
+                    }
+                    if (isset($rProgressInfo["fps"])) {
+                        $rFPS = intval($rProgressInfo["fps"])." FPS";
+                    } else {
+                        $rFPS = "--";
+                    }
+                    $rStreamInfoText = "<table style='font-size: 12px;' class='text-center' align='center'>
+                        <tbody>
+                            <tr>
+                                <td class='col' style='color: #20a009;'><i class='mdi mdi-video' data-name='mdi-video'></i></td>
+                                <td class='col' style='color: #20a009;'><i class='mdi mdi-volume-high' data-name='mdi-volume-high'></i></td>
+                                <td class='col' style='color: #20a009;'><i class='mdi mdi-play-speed' data-name='mdi-play-speed'></i></td>
+                            </tr>
+                            <tr>
+                                <td class='col'>".$rRow['bitrate']." Kbps</td>
+                                <td class='col'>".$rStreamInfo["codecs"]["audio"]["codec_name"]."</td>
+                                <td class='col'>".$rSpeed."</td>
+                            </tr>
+                        </tbody>
+                    </table>";
+                }
+                if ($rPermissions["is_admin"]) {
+                    $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rClients, $rUptime, $rButtons, $rStreamInfoText);
+                } else {
+                    $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rStreamInfoText);
+                }
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
 } else if ($rType == "movies") {
     if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
@@ -831,6 +1030,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "episode_list") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`series`.`title`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -903,6 +1103,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "user_activity") {
+	if (($rPermissions["is_reseller"]) && (!$rPermissions["reseller_client_connection_logs"])) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`user_activity`.`activity_id`", "`users`.`username`", "`streams`.`stream_display_name`", "`streaming_servers`.`server_name`", "`user_activity`.`date_start`", "`user_activity`.`date_end`", "`user_activity`.`user_ip`", "`user_activity`.`geoip_country_code`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1003,6 +1204,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "live_connections") {
+	if (($rPermissions["is_reseller"]) && (!$rPermissions["reseller_client_connection_logs"])) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`user_activity_now`.`activity_id`", "`user_activity_now`.`divergence`", "`users`.`username`", "`streams`.`stream_display_name`", "`streaming_servers`.`server_name`", "`user_activity_now`.`date_start`", "`user_activity_now`.`user_ip`", "`user_activity_now`.`geoip_country_code`", false);
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1104,6 +1306,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "stream_list") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`stream_categories`.`category_name`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1166,6 +1369,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "movie_list") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`stream_categories`.`category_name`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1239,7 +1443,67 @@ if ($rType == "users") {
         }
     }
     echo json_encode($rReturn);exit;
+} else if ($rType == "radio_list") {
+	if (!$rPermissions["is_admin"]) { exit; }
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`stream_categories`.`category_name`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    $rWhere[] = "`streams`.`type` = 4";
+    if (strlen($_GET["category"]) > 0) {
+        $rWhere[] = "`streams`.`category_id` = ".intval($_GET["category"]);
+    }
+    if (strlen($_GET["filter"]) > 0) {
+        if ($_GET["filter"] == 1) {
+            $rWhere[] = "(`streams_sys`.`monitor_pid` > 0 AND `streams_sys`.`pid` > 0)";
+        } else if ($_GET["filter"] == 2) {
+            $rWhere[] = "((`streams_sys`.`monitor_pid` IS NOT NULL AND `streams_sys`.`monitor_pid` > 0) AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` <> 0)";
+        } else if ($_GET["filter"] == 3) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND (`streams_sys`.`monitor_pid` IS NULL OR `streams_sys`.`monitor_pid` <= 0) AND `streams_sys`.`on_demand` = 0)";
+        } else if ($_GET["filter"] == 4) {
+            $rWhere[] = "((`streams_sys`.`monitor_pid` IS NOT NULL AND `streams_sys`.`monitor_pid` > 0) AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` = 0)";
+        } else if ($_GET["filter"] == 5) {
+            $rWhere[] = "`streams_sys`.`on_demand` = 1";
+        } else if ($_GET["filter"] == 6) {
+            $rWhere[] = "`streams`.`direct_source` = 1";
+        }
+    }
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`streams`.`id` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%')";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id`  {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `streams`.`id`, `streams`.`stream_display_name`, `stream_categories`.`category_name` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], $rRow["stream_display_name"], $rRow["category_name"], $rStatus);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
 } else if ($rType == "series_list") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`series`.`id`", "`series`.`title`", "`stream_categories`.`category_name`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1286,6 +1550,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "credits_log") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`credits_log`.`id`", "`owner_username`", "`target_username`", "`credits_log`.`amount`", "`credits_log`.`reason`", "`date`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1341,6 +1606,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "client_logs") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`client_logs`.`id`", "`users`.`username`", "`streams`.`stream_display_name`", "`client_logs`,`client_status`", "`client_logs`.`user_agent`", "`client_logs`.`ip`", "`client_logs`.`date`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1396,6 +1662,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "reg_user_logs") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`reg_userlog`.`id`", "`reg_users`.`username`", "`reg_userlog`.`username`", "`reg_userlog`.`type`", "`reg_userlog`.`date`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1451,6 +1718,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "stream_logs") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`stream_logs`.`id`", "`streams`.`stream_display_name`", "`streaming_servers`.`server_name`", "`stream_logs`.`error`", "`stream_logs`.`date`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1506,6 +1774,7 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "stream_unique") {
+	if (!$rPermissions["is_admin"]) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
     $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`stream_categories`.`category_name`", "`active_count`", null);
     if (strlen($_GET["order"][0]["column"]) > 0) {
@@ -1550,9 +1819,10 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "reg_users") {
+	if (($rPermissions["is_reseller"]) && (!$rPermissions["create_sub_resellers"])) { exit; }
 	$rAvailableMembers = array_keys(getRegisteredUsers($rUserInfo["id"]));
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
-    $rOrder = Array("`reg_users`.`id`", "`reg_users`.`username`", "`reg_users`.`email`", "`r`.`username`", "`reg_users`.`ip`", "`member_groups`.`group_name`", "`reg_users`.`status`", "`reg_users`.`credits`", "`reg_users`.`last_login`", false);
+    $rOrder = Array("`reg_users`.`id`", "`reg_users`.`username`", "`r`.`username`", "`reg_users`.`ip`", "`member_groups`.`group_name`", "`reg_users`.`status`", "`reg_users`.`credits`", "`user_count`", "`reg_users`.`last_login`", false);
     if (strlen($_GET["order"][0]["column"]) > 0) {
         $rOrderRow = intval($_GET["order"][0]["column"]);
     } else {
@@ -1593,7 +1863,7 @@ if ($rType == "users") {
     }
     $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
     if ($rReturn["recordsTotal"] > 0) {
-        $rQuery = "SELECT `reg_users`.`id`, `reg_users`.`status`, `reg_users`.`notes`, `reg_users`.`credits`, `reg_users`.`username`, `reg_users`.`email`, `reg_users`.`ip`, FROM_UNIXTIME(`reg_users`.`date_registered`) AS `date_registered`, FROM_UNIXTIME(`reg_users`.`last_login`) AS `last_login`, `r`.`username` as `owner_username`, `member_groups`.`group_name`, `reg_users`.`verified`, `reg_users`.`status`  FROM `reg_users` LEFT JOIN `member_groups` ON `member_groups`.`group_id` = `reg_users`.`member_group_id` LEFT JOIN `reg_users` AS `r` on `r`.`id` = `reg_users`.`owner_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rQuery = "SELECT `reg_users`.`id`, `reg_users`.`status`, `reg_users`.`notes`, `reg_users`.`credits`, `reg_users`.`username`, `reg_users`.`email`, `reg_users`.`ip`, FROM_UNIXTIME(`reg_users`.`date_registered`) AS `date_registered`, FROM_UNIXTIME(`reg_users`.`last_login`) AS `last_login`, `r`.`username` as `owner_username`, `member_groups`.`group_name`, `reg_users`.`verified`, `reg_users`.`status`, (SELECT COUNT(`id`) FROM `users` WHERE `member_id` = `reg_users`.`id`) AS `user_count` FROM `reg_users` LEFT JOIN `member_groups` ON `member_groups`.`group_id` = `reg_users`.`member_group_id` LEFT JOIN `reg_users` AS `r` on `r`.`id` = `reg_users`.`owner_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
         $rResult = $db->query($rQuery);
         if (($rResult) && ($rResult->num_rows > 0)) {
             while ($rRow = $rResult->fetch_assoc()) {
@@ -1634,7 +1904,7 @@ if ($rType == "users") {
                     $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>
                     ';
                 }
-                $rReturn["data"][] = Array($rRow["id"], $rRow["username"], $rRow["email"], $rRow["owner_username"], $rRow["ip"], $rRow["group_name"], $rStatus, $rRow["credits"], $rRow["last_login"], $rButtons);
+                $rReturn["data"][] = Array($rRow["id"], $rRow["username"], $rRow["owner_username"], $rRow["ip"], $rRow["group_name"], $rStatus, $rRow["credits"], $rRow["user_count"], $rRow["last_login"], $rButtons);
             }
         }
     }
@@ -1862,14 +2132,18 @@ if ($rType == "users") {
     }
     echo json_encode($rReturn);exit;
 } else if ($rType == "backups") {
+	if (!$rPermissions["is_admin"]) { exit; }
 	$rBackups = getBackups();
 	$rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => count($rBackups), "recordsFiltered" => count($rBackups), "data" => Array());
 	foreach ($rBackups as $rBackup) {
 		$rButtons = '<button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Restore Backup" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api(\''.$rBackup["filename"].'\', \'restore\');"><i class="mdi mdi-folder-upload"></i></button>
-        <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download Backup" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="api(\''.$rBackup["filename"].'\', \'download\');"><i class="mdi mdi-download"></i></button>
 		<button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete Backup" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(\''.$rBackup["filename"].'\', \'delete\');"><i class="mdi mdi-close"></i></button>';
 		$rReturn["data"][] = Array($rBackup["date"], $rBackup["filename"], ceil($rBackup["filesize"]/1024/1024)." MB", $rButtons);
 	}
+	echo json_encode($rReturn);exit;
+} else if ($rType == "conn") {
+	if (!$rPermissions["is_admin"]) { exit; }
+	$rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 1, "recordsFiltered" => 1, "data" => Array($_INFO["host"], $_INFO["db_user"], $_INFO["db_pass"], $_INFO["db_name"], $_INFO["db_port"]));
 	echo json_encode($rReturn);exit;
 } else if ($rType == "watch_output") {
     if (!$rPermissions["is_admin"]) { exit; }

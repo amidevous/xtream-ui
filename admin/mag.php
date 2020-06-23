@@ -44,13 +44,12 @@ if (isset($_POST["submit_mag"])) {
                     $rEditID = $db->insert_id;
                 }
                 $db->query("INSERT INTO `user_output`(`user_id`, `access_output_id`) VALUES(".intval($rNewID).", 2);");
-                $_STATUS = 0;
+                header("Location: ./mag.php?id=".$rEditID); exit;
             }
         } else if ((isset($_POST["edit"])) && (strlen($_POST["edit"]))) {
             // Don't create a new user, legacy support for device.
             $db->query("UPDATE `mag_devices` SET `mac` = '".base64_encode($db->real_escape_string($_POST["mac"]))."' WHERE `mag_id` = ".intval($_POST["edit"]).";");
-            $rEditID = $_POST["edit"];
-            $_STATUS = 0;
+            header("Location: ./mag.php?id=".$_POST["edit"]); exit;
         }
     } else {
         $rMagArr = Array("mac" => base64_encode($_POST["mac"]), "paired_user" => $_POST["paired_user"]);
@@ -136,7 +135,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="mac">MAC Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="mac" name="mac" value="<?php if (isset($rMagArr)) { echo base64_decode($rMagArr["mac"]); } else { echo "00:1A:79:"; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="mac" name="mac" value="<?php if (isset($rMagArr)) { echo htmlspecialchars(base64_decode($rMagArr["mac"])); } else { echo "00:1A:79:"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
