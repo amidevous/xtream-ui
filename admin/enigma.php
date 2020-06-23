@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_GET["id"])) {
@@ -20,7 +19,7 @@ if (isset($_POST["submit_e2"])) {
             $rArray["pair_id"] = $rArray["id"];
             unset($rArray["id"]);
             // Create new user.
-            $rCols = implode(',', array_keys($rArray));
+            $rCols = $db->real_escape_string(implode(',', array_keys($rArray)));
             foreach (array_values($rArray) as $rValue) {
                 isset($rValues) ? $rValues .= ',' : $rValues = '';
                 if (is_array($rValue)) {
@@ -114,7 +113,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./enigma.php<?php if (isset($rEditID)) { echo "?id=".$rEditID; } ?>" method="POST" id="server_form">
+                                <form action="./enigma.php<?php if (isset($rEditID)) { echo "?id=".$rEditID; } ?>" method="POST" id="enigma_form" data-parsley-validate="">
                                     <?php if (isset($rE2Arr)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rEditID?>" />
                                     <?php } ?>
@@ -137,7 +136,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="mac">MAC Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="mac" name="mac" value="<?php if (isset($rE2Arr)) { echo $rE2Arr["mac"]; } ?>">
+                                                                <input type="text" class="form-control" id="mac" name="mac" value="<?php if (isset($rE2Arr)) { echo $rE2Arr["mac"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -180,7 +179,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -191,16 +189,11 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>

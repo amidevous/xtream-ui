@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 
 if ($rPermissions["is_admin"]) {
     $rRegisteredUsers = getRegisteredUsers();
@@ -25,6 +24,11 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
+                                        <a href="#" onClick="clearFilters();">
+                                            <button type="button" class="btn btn-warning waves-effect waves-light btn-sm">
+                                                <i class="mdi mdi-filter-remove"></i>
+                                            </button>
+                                        </a>
                                         <a href="#" onClick="changeZoom();">
                                             <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-magnify"></i>
@@ -54,44 +58,46 @@ if ($rSettings["sidebar"]) {
                             <h4 class="page-title">Users</h4>
                         </div>
                     </div>
-                </div>     
-                <!-- end page title --> 
+                </div>
+                <!-- end page title -->
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body" style="overflow-x:auto;">
-                                <div class="form-group row mb-4">
-                                    <div class="col-md-3">
-                                        <input type="text" class="form-control" id="user_search" value="" placeholder="Search Users...">
+                                <form id="users_search">
+                                    <div class="form-group row mb-4">
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control" id="user_search" value="" placeholder="Search Users...">
+                                        </div>
+                                        <label class="col-md-2 col-form-label text-center" for="user_reseller">Filter Results</label>
+                                        <div class="col-md-3">
+                                            <select id="user_reseller" class="form-control" data-toggle="select2">
+                                                <option value="" selected>All Resellers</option>
+                                                <?php foreach ($rRegisteredUsers as $rRegisteredUser) { ?>
+                                                <option value="<?=$rRegisteredUser["id"]?>"><?=$rRegisteredUser["username"]?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select id="user_filter" class="form-control" data-toggle="select2">
+                                                <option value="" selected>No Filter</option>
+                                                <option value="1">Active</option>
+                                                <option value="2">Disabled</option>
+                                                <option value="3">Banned</option>
+                                                <option value="4">Expired</option>
+                                                <option value="5">Trial</option>
+                                            </select>
+                                        </div>
+                                        <label class="col-md-1 col-form-label text-center" for="user_show_entries">Show</label>
+                                        <div class="col-md-1">
+                                            <select id="user_show_entries" class="form-control" data-toggle="select2">
+                                                <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
+                                                <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <label class="col-md-2 col-form-label text-center" for="reseller">Filter Results</label>
-                                    <div class="col-md-3">
-                                        <select id="reseller" class="form-control" data-toggle="select2">
-                                            <option value="" selected>All Resellers</option>
-                                            <?php foreach ($rRegisteredUsers as $rRegisteredUser) { ?>
-                                            <option value="<?=$rRegisteredUser["id"]?>"><?=$rRegisteredUser["username"]?></option>
-                                            <?php } ?>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <select id="filter" class="form-control" data-toggle="select2">
-                                            <option value="" selected>No Filter</option>
-                                            <option value="1">Active</option>
-                                            <option value="2">Disabled</option>
-                                            <option value="3">Banned</option>
-                                            <option value="4">Expired</option>
-                                            <option value="5">Trial</option>
-                                        </select>
-                                    </div>
-                                    <label class="col-md-1 col-form-label text-center" for="show_entries">Show</label>
-                                    <div class="col-md-1">
-                                        <select id="show_entries" class="form-control" data-toggle="select2">
-                                            <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
-                                            <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
-                                            <?php } ?>
-                                        </select>
-                                    </div>
-                                </div>
+                                </form>
                                 <table id="datatable-users" class="table dt-responsive nowrap font-normal">
                                     <thead>
                                         <tr>
@@ -226,11 +232,8 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/select2/select2.min.js"></script>
@@ -243,13 +246,13 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
-        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
-        <!-- third party js ends -->
+        <script src="assets/js/pages/form-remember.js"></script>
+        <script src="assets/js/app.min.js"></script>
 
         <!-- Datatables init -->
         <script>
         var autoRefresh = true;
+        var rClearing = false;
 
         function api(rID, rType) {
             if (rType == "delete") {
@@ -279,20 +282,19 @@ if ($rSettings["sidebar"]) {
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
                     });
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload(null, false);
                 } else {
                     $.toast("An error occured while processing your request.");
                 }
             });
         }
-        
         function download(username, password) {
             $("#download_type").val("");
             $('.downloadModal').data('username', username);
             $('.downloadModal').data('password', password);
             $('.downloadModal').modal('show');
         }
-        
         $("#download_type").change(function() {
             if ($("#download_type").val().length > 0) {
                 if ($("#download_type").val() == "type=enigma22_script&output=hls" || $("#download_type").val()=="type=enigma22_script&output=ts") {
@@ -314,18 +316,15 @@ if ($rSettings["sidebar"]) {
                 $("#download_url").val("");
             }
         });
-        
         function doDownload() {
             if ($("#download_url").val().length > 0) {
                 window.open($("#download_url").val());
             }
         }
-        
         function copyDownload() {
             $("#download_url").select();
             document.execCommand("copy");
         }
-        
         function toggleAuto() {
             if (autoRefresh == true) {
                 autoRefresh = false;
@@ -335,16 +334,15 @@ if ($rSettings["sidebar"]) {
                 $(".auto-text").html("Auto-Refresh");
             }
         }
-        
         function getFilter() {
-            return $("#filter").val();
+            return $("#user_filter").val();
         }
         function getReseller() {
-            return $("#reseller").val();
+            return $("#user_reseller").val();
         }
-        
         function reloadUsers() {
             if (autoRefresh == true) {
+                $('[data-toggle="tooltip"]').tooltip("hide");
                 $("#datatable-users").DataTable().ajax.reload(null, false);
             }
             setTimeout(reloadUsers, 10000);
@@ -360,9 +358,24 @@ if ($rSettings["sidebar"]) {
                 $("#datatable-users").removeClass("font-small");
                 $("#datatable-users").addClass("font-large");
             }
-            $("#datatable-users").draw();
+            $("#datatable-users").DataTable().draw();
+        }
+        function clearFilters() {
+            window.rClearing = true;
+            $("#user_search").val("").trigger('change');
+            $('#user_filter').val("").trigger('change');
+            $('#user_reseller').val("").trigger('change');
+            $('#user_show_entries').val("<?=$rAdminSettings["default_entries"] ?: 10?>").trigger('change');
+            window.rClearing = false;
+            $('#datatable-users').DataTable().search($("#user_search").val());
+            $('#datatable-users').DataTable().page.len($('#user_show_entries').val());
+            $("#datatable-users").DataTable().page(0).draw('page');
+            $("#datatable-users").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
+            formCache.init();
+            formCache.fetch();
+            
             $.fn.dataTable.ext.errMode = 'none';
             $('select').select2({width: '100%'});
             $("#datatable-users").DataTable({
@@ -400,25 +413,36 @@ if ($rSettings["sidebar"]) {
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>,
                 stateSave: true
             })
+            $("#datatable-users").css("width", "100%");
             $('#user_search').keyup(function(){
-                $('#datatable-users').DataTable().search($(this).val()).draw();
-            })
-            $('#show_entries').change(function(){
-                $('#datatable-users').DataTable().page.len($(this).val()).draw();
-            })
-            $('#filter').change(function(){
-                $("#datatable-users").DataTable().ajax.reload( null, false );
-            })
-            $('#reseller').change(function(){
-                $("#datatable-users").DataTable().ajax.reload( null, false );
-            })
+                if (!window.rClearing) {
+                    $('#datatable-users').DataTable().search($(this).val()).draw();
+                }
+            });
+            $('#user_show_entries').change(function(){
+                if (!window.rClearing) {
+                    $('#datatable-users').DataTable().page.len($(this).val()).draw();
+                }
+            });
+            $('#user_filter').change(function(){
+                if (!window.rClearing) {
+                    $("#datatable-users").DataTable().ajax.reload( null, false );
+                }
+            });
+            $('#user_reseller').change(function(){
+                if (!window.rClearing) {
+                    $("#datatable-users").DataTable().ajax.reload( null, false );
+                }
+            });
             <?php if (!$detect->isMobile()) { ?>
             setTimeout(reloadUsers, 10000);
             <?php } ?>
+            $('#datatable-users').DataTable().search($(this).val()).draw();
+        });
+        
+        $(window).bind('beforeunload', function() {
+            formCache.save();
         });
         </script>
-
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

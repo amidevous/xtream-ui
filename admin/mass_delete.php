@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_streams"])) {
@@ -36,6 +35,10 @@ if (isset($_POST["submit_users"])) {
         $db->query("DELETE FROM `mag_devices` WHERE `user_id` = ".intval($rUser).";");
     }
     $_STATUS = 2;
+}
+
+if ((isset($_POST["submit_streams"])) OR (isset($_POST["submit_movies"]))) {
+    scanBouquets();
 }
 
 if ($rSettings["sidebar"]) {
@@ -230,6 +233,8 @@ if ($rSettings["sidebar"]) {
                                                             <option value="3">Banned</option>
                                                             <option value="4">Expired</option>
                                                             <option value="5">Trial</option>
+															<option value="6">MAG Device</option>
+															<option value="7">Enigma Device</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-md-2 col-8">
@@ -292,7 +297,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-ui/jquery-ui.min.js"></script>
@@ -313,16 +317,10 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
         <script src="assets/js/app.min.js"></script>
         
         <script>
@@ -348,7 +346,7 @@ if ($rSettings["sidebar"]) {
         
         function toggleStreams() {
             $("#datatable-md1 tr").each(function() {
-                if ($(this).hasClass('selectedfilter')) {
+                if ($(this).hasClass('selected')) {
                     $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
                     if ($(this).find("td:eq(0)").html()) {
                         window.rStreams.splice($.inArray($(this).find("td:eq(0)").html(), window.rStreams), 1);
@@ -363,7 +361,7 @@ if ($rSettings["sidebar"]) {
         }
         function toggleMovies() {
             $("#datatable-md2 tr").each(function() {
-                if ($(this).hasClass('selectedfilter')) {
+                if ($(this).hasClass('selected')) {
                     $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
                     if ($(this).find("td:eq(0)").html()) {
                         window.rMovies.splice($.inArray($(this).find("td:eq(0)").html(), window.rMovies), 1);
@@ -378,7 +376,7 @@ if ($rSettings["sidebar"]) {
         }
         function toggleUsers() {
             $("#datatable-md3 tr").each(function() {
-                if ($(this).hasClass('selectedfilter')) {
+                if ($(this).hasClass('selected')) {
                     $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
                     if ($(this).find("td:eq(0)").html()) {
                         window.rUsers.splice($.inArray($(this).find("td:eq(0)").html(), window.rUsers), 1);
@@ -458,7 +456,7 @@ if ($rSettings["sidebar"]) {
                 ],
                 "rowCallback": function(row, data) {
                     if ($.inArray(data[0], window.rSelected) !== -1) {
-                        $(row).addClass("selected");
+                        $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>
@@ -497,7 +495,7 @@ if ($rSettings["sidebar"]) {
                 ],
                 "rowCallback": function(row, data) {
                     if ($.inArray(data[0], window.rSelected) !== -1) {
-                        $(row).addClass("selected");
+                        $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>
@@ -532,7 +530,8 @@ if ($rSettings["sidebar"]) {
                     "data": function(d) {
                         d.id = "users",
                         d.filter = getUserFilter(),
-                        d.reseller = getReseller()
+                        d.reseller = getReseller(),
+						d.showall = true
                     }
                 },
                 columnDefs: [
@@ -541,7 +540,7 @@ if ($rSettings["sidebar"]) {
                 ],
                 "rowCallback": function(row, data) {
                     if ($.inArray(data[0], window.rSelected) !== -1) {
-                        $(row).addClass("selected");
+                        $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>

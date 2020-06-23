@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if ((!$rPermissions["is_reseller"]) OR (!$rPermissions["create_sub_resellers"])) { exit; }
 
 if (isset($_POST["submit_user"])) {
@@ -47,7 +46,7 @@ if (isset($_POST["submit_user"])) {
         if (isset($_POST["notes"])) {
             $rArray["notes"] = $_POST["notes"];
         }
-        $rCols = "`".implode('`,`', array_keys($rArray))."`";
+        $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rArray))."`");
         foreach (array_values($rArray) as $rValue) {
             isset($rValues) ? $rValues .= ',' : $rValues = '';
             if (is_array($rValue)) {
@@ -162,7 +161,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./subreseller.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="user_form">
+                                <form action="./subreseller.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="user_form" data-parsley-validate="">
                                     <?php if (isset($_GET["id"])) { ?>
                                     <input type="hidden" name="edit" value="<?=$rUser["id"]?>" />
                                     <?php } ?>
@@ -190,19 +189,19 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="username">Username</label>
                                                             <div class="col-md-8">
-                                                                <input <?php if (isset($_GET["id"])) { echo "disabled "; } ?>type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>">
+                                                                <input <?php if (isset($_GET["id"])) { echo "disabled "; } ?>type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="password"><?php if (isset($_GET["id"])) { ?>Change <?php } ?>Password</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="password" name="password" value="">
+                                                                <input type="text" class="form-control" id="password" name="password" value="" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="email">Email Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="email" name="email" value="<?php if (isset($rUser)) { echo $rUser["email"]; } ?>">
+                                                                <input type="text" class="form-control" id="email" name="email" value="<?php if (isset($rUser)) { echo $rUser["email"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -290,7 +289,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -302,16 +300,11 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
         <script src="assets/js/pages/jquery.number.min.js"></script>
-        
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>

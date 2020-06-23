@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if ($rSettings["sidebar"]) {
@@ -101,11 +100,8 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
@@ -130,8 +126,8 @@ if ($rSettings["sidebar"]) {
             $.getJSON("./api.php?action=group&sub=" + rType + "&group_id=" + rID, function(data) {
                 if (data.result === true) {
                     if (rType == "delete") {
-                        $("#package-" + rID).remove();
-                        $.toast("Package successfully deleted.");
+                        $("#group-" + rID).remove();
+                        $.toast("Group successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
@@ -144,7 +140,7 @@ if ($rSettings["sidebar"]) {
         }
         $('input:checkbox').change(function() {
             $.getJSON("./api.php?action=group&sub=" + $(this).data("name") + "&group_id=" + $(this).data("id") + "&value=" + ($(this).is(":checked") ? 1 : 0), function(data) {
-                $.toast("Package has been modified.");
+                $.toast("Group has been modified.");
             });
         });
         $(document).ready(function() {
@@ -162,6 +158,7 @@ if ($rSettings["sidebar"]) {
                 paging: false,
                 bInfo: false
             });
+            $("#datatable").css("width", "100%");
         });
         </script>
 

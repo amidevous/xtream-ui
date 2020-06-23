@@ -2,7 +2,6 @@
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
-$rProfiles = getTranscodeProfiles();
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -20,15 +19,15 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
-                                        <a href="profile.php">
+                                        <a href="useragent.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-plus"></i> Add Profile
+                                                <i class="mdi mdi-plus"></i> Block User-Agent
                                             </button>
                                         </a>
                                     </li>
                                 </ol>
                             </div>
-                            <h4 class="page-title">Transcode Profiles</h4>
+                            <h4 class="page-title">Blocked User-Agents</h4>
                         </div>
                     </div>
                 </div>     
@@ -42,21 +41,23 @@ if ($rSettings["sidebar"]) {
                                     <thead>
                                         <tr>
                                             <th class="text-center">ID</th>
-                                            <th>Profile Name</th>
-                                            <th>Options</th>
+                                            <th>User-Agent</th>
+                                            <th class="text-center">Exact Match</th>
+                                            <th class="text-center">Attempts</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($rProfiles as $rProfile) {
+                                        <?php foreach (getUserAgents() as $rUserAgent) {
                                         ?>
-                                        <tr id="profile-<?=$rProfile["profile_id"]?>">
-                                            <td class="text-center"><?=$rProfile["profile_id"]?></td>
-                                            <td><?=$rProfile["profile_name"]?></td>
-                                            <td><?=(strlen($rProfile["profile_options"]) > 100 ? substr($rProfile["profile_options"],0,100)."..." : $rProfile["profile_options"])?></td>
+                                        <tr id="ua-<?=$rUserAgent["id"]?>">
+                                            <td class="text-center"><?=$rUserAgent["id"]?></td>
+                                            <td><?=$rUserAgent["user_agent"]?></td>
+                                            <td class="text-center"><?=$rUserAgent["exact_match"]?></td>
+                                            <td class="text-center"><?=$rUserAgent["attempts_blocked"]?></td>
                                             <td class="text-center">
-                                                <a href="./profile.php?id=<?=$rProfile["profile_id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                                                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rProfile["profile_id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
+                                                <a href="./useragent.php?id=<?=$rUserAgent["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                                                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rUserAgent["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
                                             </td>
                                         </tr>
                                         <?php } ?>
@@ -99,15 +100,15 @@ if ($rSettings["sidebar"]) {
         <script>
         function api(rID, rType) {
             if (rType == "delete") {
-                if (confirm('Are you sure you want to delete this profile? This cannot be undone!') == false) {
+                if (confirm('Are you sure you want to delete this user-agent? This cannot be undone!') == false) {
                     return;
                 }
             }
-            $.getJSON("./api.php?action=profile&sub=" + rType + "&profile_id=" + rID, function(data) {
+            $.getJSON("./api.php?action=useragent&sub=" + rType + "&ua_id=" + rID, function(data) {
                 if (data.result === true) {
                     if (rType == "delete") {
-                        $("#profile-" + rID).remove();
-                        $.toast("Profile successfully deleted.");
+                        $("#ua-" + rID).remove();
+                        $.toast("User-agent successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();

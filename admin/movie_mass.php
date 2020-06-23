@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 $rCategories = getCategories("movie");
@@ -112,6 +111,7 @@ if (isset($_POST["submit_stream"])) {
                         removeFromBouquet("stream", $rBouquet["id"], $rStreamID);
                     }
                 }
+                scanBouquets();
             }
         }
         if (isset($_POST["reencode_on_edit"])) {
@@ -123,7 +123,7 @@ if (isset($_POST["submit_stream"])) {
                     'content' => http_build_query($rPost)
                 )
             ));
-            $rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+            $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
             $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
         }
     }
@@ -426,7 +426,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-ui/jquery-ui.min.js"></script>
@@ -447,16 +446,10 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
         <script src="assets/js/app.min.js"></script>
         
         <script>
@@ -471,7 +464,7 @@ if ($rSettings["sidebar"]) {
         }
         function toggleStreams() {
             $("#datatable-mass tr").each(function() {
-                if ($(this).hasClass('selectedfilter')) {
+                if ($(this).hasClass('selected')) {
                     $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
                     if ($(this).find("td:eq(0)").html()) {
                         window.rSelected.splice($.inArray($(this).find("td:eq(0)").html(), window.rSelected), 1);
@@ -594,7 +587,7 @@ if ($rSettings["sidebar"]) {
                 ],
                 "rowCallback": function(row, data) {
                     if ($.inArray(data[0], window.rSelected) !== -1) {
-                        $(row).addClass("selected");
+                        $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>

@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if ($rSettings["sidebar"]) {
@@ -179,7 +178,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-ui/jquery-ui.min.js"></script>
@@ -201,16 +199,10 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/bootstrap-colorpicker/bootstrap-colorpicker.min.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
         <script src="assets/js/app.min.js"></script>
         
         <script>

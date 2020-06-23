@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if ((!$rPermissions["is_reseller"]) OR (!$rPermissions["create_sub_resellers"])) { exit; }
 
 if ((isset($_POST["submit_credits"])) && (isset($_POST["id"]))) {
@@ -14,8 +13,8 @@ if ((isset($_POST["submit_credits"])) && (isset($_POST["id"]))) {
         $_STATUS = 1;
     }
     if ((!isset($_STATUS)) && ($rUser)) {
-        $rNewCredits = $rUserInfo["credits"] - $rCost;
-        $rUpdCredits = $rUser["credits"] + $rCost;
+        $rNewCredits = floatval($rUserInfo["credits"]) - floatval($rCost);
+        $rUpdCredits = floatval($rUser["credits"]) + floatval($rCost);
         $db->query("UPDATE `reg_users` SET `credits` = ".$rNewCredits." WHERE `id` = ".intval($rUserInfo["id"]).";");
         $db->query("UPDATE `reg_users` SET `credits` = ".$rUpdCredits." WHERE `id` = ".intval($rUser["id"]).";");
         $db->query("INSERT INTO `reg_userlog`(`owner`, `username`, `password`, `date`, `type`) VALUES(".intval($rUserInfo["id"]).", '".$db->real_escape_string($rUser["username"])."', '', ".intval(time()).", '[<b>UserPanel</b> -> <u>Transfer Credits</u>] Credits: <font color=\"green\">".$rUserInfo["credits"]."</font> -> <font color=\"red\">".$rNewCredits."</font>');");
@@ -74,7 +73,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./credits_add.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="credits_form">
+                                <form action="./credits_add.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="credits_form" data-parsley-validate="">
                                     <input type="hidden" name="id" value="<?=$_GET["id"]?>" />
                                     <div id="basicwizard">
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
@@ -95,7 +94,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-8 col-form-label" for="credits">Credits to Transfer</label>
                                                             <div class="col-md-4">
-                                                                <input type="text" class="form-control" onkeypress="return isNumberKey(event)" id="credits" name="credits" value="0">
+                                                                <input type="text" class="form-control" onkeypress="return isNumberKey(event)" id="credits" name="credits" value="0" required data-parsley-trigger="change">
                                                             </div>
                                                             <table class="table" id="credits-cost" style="margin-top:30px;">
                                                                 <thead>
@@ -143,7 +142,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -155,16 +153,11 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
         <script src="assets/js/pages/jquery.number.min.js"></script>
-        
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>

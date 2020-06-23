@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_user"])) {
@@ -10,7 +9,12 @@ if (isset($_POST["submit_user"])) {
     } else {
         $rArray = Array("username" => "", "password" => "", "email" => "", "member_group_id" => 1, "verified" => 0, "credits" => 0, "notes" => "", "status" => 1, "owner_id" => 0);
     }
-    if ((strlen($_POST["username"]) == 0) OR ((strlen($_POST["password"]) == 0) AND (!isset($_POST["edit"])))) {
+    if ((strlen($_POST["username"]) == 0) OR ((strlen($_POST["email"]) == 0))) {
+        $_STATUS = 1;
+    }
+    if (strlen($_POST["password"]) > 0) {
+        $rArray["password"] = cryptPassword($_POST["password"]);
+    } else if (!isset($_POST["edit"])) {
         $_STATUS = 1;
     }
     if (!isset($_STATUS)) {
@@ -19,9 +23,6 @@ if (isset($_POST["submit_user"])) {
             unset($_POST["verified"]);
         } else {
             $rArray["verified"] = 0;
-        }
-        if (strlen($_POST["password"]) > 0) {
-            $rArray["password"] = cryptPassword($_POST["password"]);
         }
         unset($_POST["password"]);
         if ($rArray["credits"] <> $_POST["credits"]) {
@@ -33,7 +34,7 @@ if (isset($_POST["submit_user"])) {
                 $rArray[$rKey] = $rValue;
             }
         }
-        $rCols = "`".implode('`,`', array_keys($rArray))."`";
+        $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rArray))."`");
         foreach (array_values($rArray) as $rValue) {
             isset($rValues) ? $rValues .= ',' : $rValues = '';
             if (is_array($rValue)) {
@@ -108,7 +109,14 @@ if ($rSettings["sidebar"]) {
                             </button>
                             User operation was completed successfully.
                         </div>
-                        <?php } else if ((isset($_STATUS)) && ($_STATUS > 0)) { ?>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 1)) { ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            Please enter a username, password and email address for this user.
+                        </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 2)) { ?>
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -118,7 +126,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./reg_user.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="user_form">
+                                <form action="./reg_user.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="reg_user_form" data-parsley-validate="">
                                     <?php if (isset($rUser)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rUser["id"]?>" />
                                     <input type="hidden" name="status" value="<?=$rUser["status"]?>" />
@@ -139,19 +147,19 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="username">Username</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>">
+                                                                <input type="text" class="form-control" id="username" name="username" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="password"><?php if (isset($rUser)) { ?>Change <?php } ?>Password</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="password" name="password" value="">
+                                                                <input type="text" class="form-control" id="password" name="password" <?php if (!isset($rUser)) { echo 'value="'.generateString(10).'" required data-parsley-trigger="change"'; } else { echo 'value=""'; } ?>>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="email">Email Address</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="email" name="email" value="<?php if (isset($rUser)) { echo $rUser["email"]; } ?>">
+                                                                <input type="email" id="email" class="form-control" name="email" required value="<?php if (isset($rUser)) { echo $rUser["email"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -182,7 +190,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="credits">Credits</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="credits" onkeypress="return isNumberKey(event)" name="credits" value="<?php if (isset($rUser)) { echo $rUser["credits"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control text-center" id="credits" onkeypress="return isNumberKey(event)" name="credits" value="<?php if (isset($rUser)) { echo $rUser["credits"]; } else { echo "0"; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4" style="display: none;" id="credits_reason_div">
@@ -207,7 +215,7 @@ if ($rSettings["sidebar"]) {
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
                                                     <li class="next list-inline-item float-right">
-                                                        <input name="submit_user" type="submit" class="btn btn-primary" value="<?php if (isset($rUser)) { echo "Edit"; } else { echo "Add"; } ?>" />
+                                                        <input name="submit_user" type="submit" class="btn btn-primary" value="<?php if (isset($rUser)) { echo "Edit"; } else { echo "Add"; } ?> User" />
                                                     </li>
                                                 </ul>
                                             </div>
@@ -233,7 +241,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -244,16 +251,12 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/js/pages/form-remember.js"></script>
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>
@@ -337,6 +340,19 @@ if ($rSettings["sidebar"]) {
             
             $("#max_connections").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("form").attr('autocomplete', 'off');
+
+            formCache.init();
+            <?php if (isset($_STATUS)) {
+                if ($_STATUS == 0) {
+                    echo 'formCache.clear();';
+                } else {
+                    echo 'formCache.fetch();';
+                }
+            } ?>
+        });
+
+        $(window).bind('beforeunload', function() {
+            formCache.save();
         });
         </script>
     </body>

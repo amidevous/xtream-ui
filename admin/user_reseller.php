@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if ($rPermissions["is_admin"]) { exit; }
 
 $rRegisteredUsers = getRegisteredUsers($rUserInfo["id"]);
@@ -114,13 +113,53 @@ if (isset($_POST["submit_user"])) {
     }
     if ((($_POST["is_mag"]) && (!filter_var($_POST["mac_address_mag"], FILTER_VALIDATE_MAC))) OR ((strlen($_POST["mac_address_e2"]) > 0) && (!filter_var($_POST["mac_address_e2"], FILTER_VALIDATE_MAC)))) {
         $_STATUS = 7;
+    } else if ($_POST["is_mag"]) {
+        $result = $db->query("SELECT `user_id` FROM `mag_devices` WHERE mac = '".$db->real_escape_string(base64_encode($_POST["mac_address_mag"]))."' LIMIT 1;");
+        if (($result) && ($result->num_rows > 0)) {
+            if (isset($_POST["edit"])) {
+                if (intval($result->fetch_assoc()["user_id"]) <> intval($_POST["edit"])) {
+                    $_STATUS = 8; // MAC in use.
+                }
+            } else {
+                $_STATUS = 8; // MAC in use.
+            }
+        }
+    } else if ($_POST["is_e2"]) {
+        $result = $db->query("SELECT `user_id` FROM `enigma2_devices` WHERE mac = '".$db->real_escape_string($_POST["mac_address_e2"])."' LIMIT 1;");
+        if (($result) && ($result->num_rows > 0)) {
+            if (isset($_POST["edit"])) {
+                if (intval($result->fetch_assoc()["user_id"]) <> intval($_POST["edit"])) {
+                    $_STATUS = 8; // MAC in use.
+                }
+            } else {
+                $_STATUS = 8; // MAC in use.
+            }
+        }
+    }
+    if ($rAdminSettings["reseller_restrictions"]) {
+        if (isset($_POST["allowed_ips"])) {
+            if (!is_array($_POST["allowed_ips"])) {
+                $_POST["allowed_ips"] = Array($_POST["allowed_ips"]);
+            }
+            $rArray["allowed_ips"] = json_encode($_POST["allowed_ips"]);
+        } else {
+            $rArray["allowed_ips"] = "[]";
+        }
+        if (isset($_POST["allowed_ua"])) {
+            if (!is_array($_POST["allowed_ua"])) {
+                $_POST["allowed_ua"] = Array($_POST["allowed_ua"]);
+            }
+            $rArray["allowed_ua"] = json_encode($_POST["allowed_ua"]);
+        } else {
+            $rArray["allowed_ua"] = "[]";
+        }
     }
     if (!isset($_STATUS)) {
         $rArray["created_by"] = $rUserInfo["id"];
-        $rCols = "`".implode('`,`', array_keys($rArray))."`";
+        $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rArray))."`");
         foreach (array_values($rArray) as $rValue) {
             isset($rValues) ? $rValues .= ',' : $rValues = '';
-            if (is_array($rValue)) {
+            if (is_array($rValue)) {    
                 $rValue = json_encode($rValue);
             }
             if (is_null($rValue)) {
@@ -316,6 +355,13 @@ if ($rSettings["sidebar"]) {
                             </button>
                             An invalid MAC address was entered, please try again.
                         </div>
+                        <?php } else if ($_STATUS == 8) { ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            This MAC address is already in use. Please use another.
+                        </div>
                         <?php }
                         }
                         if ((isset($rUser)) AND ($rUser["is_trial"])) { ?>
@@ -343,6 +389,14 @@ if ($rSettings["sidebar"]) {
                                                     <span class="d-none d-sm-inline">Details</span>
                                                 </a>
                                             </li>
+                                            <?php if ($rAdminSettings["reseller_restrictions"]) { ?>
+											<li class="nav-item">
+                                                <a href="#restrictions" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
+                                                    <i class="mdi mdi-hazard-lights mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Restrictions</span>
+                                                </a>
+                                            </li>
+                                            <?php } ?>
                                             <li class="nav-item">
                                                 <a href="#review-purchase" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
                                                     <i class="mdi mdi-book-open-variant mr-1"></i>
@@ -439,6 +493,62 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
+                                            <?php if ($rAdminSettings["reseller_restrictions"]) { ?>
+											<div class="tab-pane" id="restrictions">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="ip_field">Allowed IP Addresses</label>
+                                                            <div class="col-md-8 input-group">
+                                                                <input type="text" id="ip_field" class="form-control" value="">
+                                                                <div class="input-group-append">
+                                                                    <a href="javascript:void(0)" id="add_ip" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-plus"></i></a>
+                                                                    <a href="javascript:void(0)" id="remove_ip" class="btn btn-danger waves-effect waves-light"><i class="mdi mdi-close"></i></a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="allowed_ips">&nbsp;</label>
+                                                            <div class="col-md-8">
+                                                                <select class="form-control" id="allowed_ips" name="allowed_ips" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ips"], True) as $rIP) { ?>
+                                                                <option value="<?=$rIP?>"><?=$rIP?></option>
+                                                                <?php } } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="ua_field">Allowed User-Agents</label>
+                                                            <div class="col-md-8 input-group">
+                                                                <input type="text" id="ua_field" class="form-control" value="">
+                                                                <div class="input-group-append">
+                                                                    <a href="javascript:void(0)" id="add_ua" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-plus"></i></a>
+                                                                    <a href="javascript:void(0)" id="remove_ua" class="btn btn-danger waves-effect waves-light"><i class="mdi mdi-close"></i></a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="allowed_ua">&nbsp;</label>
+                                                            <div class="col-md-8">
+                                                                <select class="form-control" id="allowed_ua" name="allowed_ua" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ua"], True) as $rUA) { ?>
+                                                                <option value="<?=$rUA?>"><?=$rUA?></option>
+                                                                <?php } } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="previous list-inline-item">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
+                                                    </li>
+                                                    <li class="next list-inline-item float-right">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <?php } ?>
                                             <div class="tab-pane" id="review-purchase">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -507,7 +617,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -532,8 +641,6 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
         <script src="assets/js/pages/jquery.number.min.js"></script>
-
-        <!-- App js-->
         <script src="assets/js/app.min.js"></script>
         
         <script>
@@ -561,6 +668,13 @@ if ($rSettings["sidebar"]) {
               var dNum = d.getTime();
               if(!dNum && dNum !== 0) return false; // NaN value, Invalid date
               return d.toISOString().slice(0,10) === dateString;
+        }
+		function isValidIP(rIP) {
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(rIP)) {
+                return true;
+            } else {
+                return false;
+            }
         }
         function evaluateForm() {
             if (($("#is_mag").is(":checked")) || ($("#is_e2").is(":checked"))) {
@@ -695,13 +809,40 @@ if ($rSettings["sidebar"]) {
                 searching: false,
                 paging: false
             });
+			$("#user_form").submit(function(e){
+                $("#allowed_ua option").prop('selected', true);
+                $("#allowed_ips option").prop('selected', true);
+            });
             
             $(document).keypress(function(event){
                 if (event.which == '13') {
                     event.preventDefault();
                 }
             });
-            
+            $("#add_ip").click(function() {
+                if (($("#ip_field").val().length > 0) && (isValidIP($("#ip_field").val()))) {
+                    var o = new Option($("#ip_field").val(), $("#ip_field").val());
+                    $("#allowed_ips").append(o);
+                    $("#ip_field").val("");
+                } else {
+                    $.toast("Please enter a valid IP address.");
+                }
+            });
+            $("#remove_ip").click(function() {
+                $('#allowed_ips option:selected').remove();
+            });
+            $("#add_ua").click(function() {
+                if ($("#ua_field").val().length > 0) {
+                    var o = new Option($("#ua_field").val(), $("#ua_field").val());
+                    $("#allowed_ua").append(o);
+                    $("#ua_field").val("");
+                } else {
+                    $.toast("Please enter a user-agent.");
+                }
+            });
+            $("#remove_ua").click(function() {
+                $('#allowed_ua option:selected').remove();
+            });
             $("#max_connections").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("form").attr('autocomplete', 'off');
             

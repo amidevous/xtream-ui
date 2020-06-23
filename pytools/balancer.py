@@ -44,9 +44,23 @@ def installBalancer(rDetails):
     except: writeDetails(rDetails)
     return True
 
+def rebootServer(rDetails):
+    rClient = paramiko.SSHClient()
+    rClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try: rClient.connect(rDetails["host"], rDetails["port"], "root", rDetails["password"])
+    except: return False
+    rClient.exec_command("sudo /home/xtreamcodes/iptv_xtream_codes/start_services.sh")
+    try: os.remove("%s%d.json" % (rPath, int(rDetails["id"])))
+    except: pass
+    return True
+
 if __name__ == "__main__":
     if rIP and rConfig:
         for rFile in os.listdir(rPath):
             try: rDetails = json.loads(open(rPath + rFile).read())
             except: rDetails = {"status": -1}
-            if rDetails["status"] == 0: installBalancer(rDetails)
+            try: rType = rDetails["type"]
+            except: rType = None
+            if rType == "reboot": rebootServer(rDetails)
+            else:
+                if rDetails["status"] == 0: installBalancer(rDetails)

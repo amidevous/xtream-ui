@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_GET["import"])) { exit; } // Not ready yet!
@@ -85,7 +84,7 @@ if (isset($_POST["submit_stream"])) {
         $rCols = "`id`,".$rCols;
         $rValues = $_POST["edit"].",".$rValues;
     }
-    $rQuery = "REPLACE INTO `streams`(".$rCols.") VALUES(".$rValues.");";
+    $rQuery = "REPLACE INTO `streams`(".$db->real_escape_string($rCols).") VALUES(".$rValues.");";
     if ($db->query($rQuery)) {
         if (isset($_POST["edit"])) {
             $rInsertID = intval($_POST["edit"]);
@@ -125,6 +124,7 @@ if (isset($_POST["submit_stream"])) {
                 removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
             }
         }
+        scanBouquets();
     }
     if (isset($rInsertID)) {
         $_GET["id"] = $rInsertID;
@@ -238,7 +238,7 @@ if ($rSettings["sidebar"]) {
                         <?php } } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form<?php if(isset($_GET["import"])) { echo " enctype=\"multipart/form-data\""; } ?> action="./movie.php<?php if (isset($_GET["import"])) { echo "?import"; } else if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="stream_form">
+                                <form<?php if(isset($_GET["import"])) { echo " enctype=\"multipart/form-data\""; } ?> action="./movie.php<?php if (isset($_GET["import"])) { echo "?import"; } else if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="stream_form" data-parsley-validate="">
                                     <?php if (isset($rMovie)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rMovie["id"]?>" />
                                     <?php } ?>
@@ -281,7 +281,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_display_name">Movie Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rMovie)) { echo $rMovie["stream_display_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rMovie)) { echo $rMovie["stream_display_name"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -299,7 +299,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4 stream-url">
                                                             <label class="col-md-4 col-form-label" for="stream_source"> Movie Path or URL</label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" id="stream_source" name="stream_source" class="form-control" value="<?=$rMovieSource?>">
+                                                                <input type="text" id="stream_source" name="stream_source" class="form-control" value="<?=$rMovieSource?>" required data-parsley-trigger="change">
                                                                 <div class="input-group-append">
                                                                     <a href="#file-browser" id="filebrowser" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-folder-open-outline"></i></a>
                                                                 </div>
@@ -648,7 +648,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -669,17 +668,12 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/magnific-popup/jquery.magnific-popup.min.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
         <script src="assets/libs/magnific-popup/jquery.magnific-popup.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>

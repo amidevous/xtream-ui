@@ -2,35 +2,52 @@
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
-if (isset($_POST["submit_server"])) {
-    $rArray = Array("server_name" => "", "domain_name" => "", "server_ip" => "", "vpn_ip" => "", "diff_time_main" => 0, "http_broadcast_port" => 25461, "total_clients" => 1000, "system_os" => "", "network_interface" => "eth0", "status" => 3, "enable_geoip" => 0, "can_delete" => 1, "rtmp_port" => 25462, "enable_isp" => 0, "boost_fpm" => 0, "network_guaranteed_speed" => 1000, "https_broadcast_port" => 25463, "whitelist_ips" => Array(), "timeshift_only" => 0);
-    if ((strlen($_POST["server_name"]) == 0) OR (strlen($_POST["server_ip"]) == 0) OR (strlen($_POST["ssh_port"]) == 0) OR (strlen($_POST["root_password"]) == 0)) {
+if (isset($_POST["submit_ua"])) {
+    $rArray = Array("user_agent" => "", "exact_match" => 0, "attempts_blocked" => 0);
+    if (isset($_POST["exact_match"])) {
+        $rArray["exact_match"] = true;
+        unset($_POST["exact_match"]);
+    }
+    foreach($_POST as $rKey => $rValue) {
+        if (isset($rArray[$rKey])) {
+            $rArray[$rKey] = $rValue;
+        }
+    }
+    $rCols = $db->real_escape_string(implode(',', array_keys($rArray)));
+    foreach (array_values($rArray) as $rValue) {
+        isset($rValues) ? $rValues .= ',' : $rValues = '';
+        if (is_array($rValue)) {
+            $rValue = json_encode($rValue);
+        }
+        if (is_null($rValue)) {
+            $rValues .= 'NULL';
+        } else {
+            $rValues .= '\''.$db->real_escape_string($rValue).'\'';
+        }
+    }
+    if (isset($_POST["edit"])) {
+        $rCols = "id,".$rCols;
+        $rValues = $_POST["edit"].",".$rValues;
+    }
+    $rQuery = "REPLACE INTO `blocked_user_agents`(".$rCols.") VALUES(".$rValues.");";
+    if ($db->query($rQuery)) {
+        if (isset($_POST["edit"])) {
+            $rInsertID = intval($_POST["edit"]);
+        } else {
+            $rInsertID = $db->insert_id;
+        }
+    }
+    if (isset($rInsertID)) {
+        header("Location: ./useragents.php");exit;
+    } else {
         $_STATUS = 1;
     }
-    if (!isset($_STATUS)) {
-        $rArray["server_ip"] = $_POST["server_ip"];
-        $rArray["server_name"] = $_POST["server_name"];
-        $rCols = $db->real_escape_string(implode(',', array_keys($rArray)));
-        foreach (array_values($rArray) as $rValue) {
-            isset($rValues) ? $rValues .= ',' : $rValues = '';
-            if (is_array($rValue)) {
-                $rValue = json_encode($rValue);
-            }
-            if (is_null($rValue)) {
-                $rValues .= 'NULL';
-            } else {
-                $rValues .= '\''.$db->real_escape_string($rValue).'\'';
-            }
-        }
-        $rQuery = "INSERT INTO `streaming_servers`(".$rCols.") VALUES(".$rValues.");";
-        if ($db->query($rQuery)) {
-            $rServerID = intval($db->insert_id);
-            $rJSON = Array("status" => 0, "port" => intval($_POST["ssh_port"]), "host" => $_POST["server_ip"], "password" => $_POST["root_password"], "time" => intval(time()), "id" => $rServerID, "type" => "install");
-            file_put_contents("/home/xtreamcodes/iptv_xtream_codes/adtools/balancer/".$rServerID.".json", json_encode($rJSON));
-            header("Location: ./servers.php");
-        } else {
-            $_STATUS = 2;
-        }
+}
+
+if (isset($_GET["id"])) {
+    $rUAArr = getUserAgent($_GET["id"]);
+    if (!$rUAArr) {
+        exit;
     }
 }
 
@@ -50,17 +67,24 @@ if ($rSettings["sidebar"]) {
                         <div class="page-title-box">
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
-                                    <a href="./servers.php"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Servers</li></a>
+                                    <a href="./useragents.php"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to User-Agents</li></a>
                                 </ol>
                             </div>
-                            <h4 class="page-title">Load Balancer Installation</h4>
+                            <h4 class="page-title"><?php if (isset($rUAArr)) { echo "Edit"; } else { echo "Block"; } ?> User-Agent</h4>
                         </div>
                     </div>
                 </div>     
                 <!-- end page title --> 
                 <div class="row">
                     <div class="col-xl-12">
-                        <?php if ((isset($_STATUS)) && ($_STATUS > 0)) { ?>
+                        <?php if ((isset($_STATUS)) && ($_STATUS == 0)) { ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            User-Agent operation was completed successfully.
+                        </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS > 0)) { ?>
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
@@ -70,47 +94,40 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./install_server.php" method="POST" id="server_form" data-parsley-validate="">
+                                <form action="./useragent.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="useragent_form" data-parsley-validate="">
+                                    <?php if (isset($rUAArr)) { ?>
+                                    <input type="hidden" name="edit" value="<?=$rUAArr["id"]?>" />
+                                    <?php } ?>
                                     <div id="basicwizard">
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
-                                                <a href="#server-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-creation mr-1"></i>
+                                                <a href="#useragent-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <i class="mdi mdi-account-card-details-outline mr-1"></i>
                                                     <span class="d-none d-sm-inline">Details</span>
                                                 </a>
                                             </li>
                                         </ul>
                                         <div class="tab-content b-0 mb-0 pt-0">
-                                            <div class="tab-pane" id="server-details">
+                                            <div class="tab-pane" id="useragent-details">
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="server_name">Server Name</label>
+                                                            <label class="col-md-4 col-form-label" for="user_agent">User-Agent</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="server_name" name="server_name" value="" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control" id="user_agent" name="user_agent" value="<?php if (isset($rUAArr)) { echo $rUAArr["user_agent"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="server_ip">Server IP</label>
-                                                            <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="server_ip" name="server_ip" value="" required data-parsley-trigger="change">
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="root_password">Root Password</label>
-                                                            <div class="col-md-4">
-                                                                <input type="text" class="form-control" id="root_password" name="root_password" value="" required data-parsley-trigger="change">
-                                                            </div>
-                                                            <label class="col-md-2 col-form-label" for="ssh_port">SSH Port</label>
+                                                            <label class="col-md-4 col-form-label" for="exact_match">Exact Match</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="ssh_port" name="ssh_port" value="22" required data-parsley-trigger="change">
+                                                                <input name="exact_match" id="exact_match" type="checkbox" <?php if (isset($rUAArr)) { if ($rUAArr["exact_match"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
                                                     <li class="next list-inline-item float-right">
-                                                        <input name="submit_server" type="submit" class="btn btn-primary" value="Install Server" />
+                                                        <input name="submit_ua" type="submit" class="btn btn-primary" value="<?php if (isset($rUAArr)) { echo "Edit"; } else { echo "Block"; } ?>" />
                                                     </li>
                                                 </ul>
                                             </div>
@@ -146,36 +163,33 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-        <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-        <script src="assets/libs/treeview/jstree.min.js"></script>
-        <script src="assets/js/pages/treeview.init.js"></script>
-        <script src="assets/js/pages/form-wizard.init.js"></script>
+        <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
+        <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
+        <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.buttons.min.js"></script>
+        <script src="assets/libs/datatables/buttons.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/buttons.html5.min.js"></script>
+        <script src="assets/libs/datatables/buttons.flash.min.js"></script>
+        <script src="assets/libs/datatables/buttons.print.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/parsleyjs/parsley.min.js"></script>
+        <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
+        <script src="assets/js/pages/form-wizard.init.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>
-        (function($) {
-          $.fn.inputFilter = function(inputFilter) {
-            return this.on("input keydown keyup mousedown mouseup select contextmenu drop", function() {
-              if (inputFilter(this.value)) {
-                this.oldValue = this.value;
-                this.oldSelectionStart = this.selectionStart;
-                this.oldSelectionEnd = this.selectionEnd;
-              } else if (this.hasOwnProperty("oldValue")) {
-                this.value = this.oldValue;
-                this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-              }
-            });
-          };
-        }(jQuery));
-        
         $(document).ready(function() {
+            var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
+            elems.forEach(function(html) {
+              var switchery = new Switchery(html);
+            });
             $(document).keypress(function(event){
                 if (event.which == '13') {
                     event.preventDefault();
                 }
             });
-            $("#ssh_port").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("form").attr('autocomplete', 'off');
         });
         </script>

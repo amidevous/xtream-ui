@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 
 if (isset($_POST["submit_ticket"])) {
     if (((strlen($_POST["title"]) == 0) && (!isset($_POST["respond"]))) OR ((strlen($_POST["message"]) == 0))) {
@@ -9,7 +8,7 @@ if (isset($_POST["submit_ticket"])) {
     if (!isset($_STATUS)) {
         if (!isset($_POST["respond"])) {
             $rArray = Array("member_id" => $rUserInfo["id"], "title" => $_POST["title"], "status" => 1, "admin_read" => 0, "user_read" => 1);
-            $rCols = "`".implode('`,`', array_keys($rArray))."`";
+            $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rArray))."`");
             foreach (array_values($rArray) as $rValue) {
                 isset($rValues) ? $rValues .= ',' : $rValues = '';
                 if (is_array($rValue)) {
@@ -20,7 +19,7 @@ if (isset($_POST["submit_ticket"])) {
                 } else {
                     $rValues .= '\''.$db->real_escape_string($rValue).'\'';
                 }
-            }
+            }   
             $rQuery = "INSERT INTO `tickets`(".$rCols.") VALUES(".$rValues.");";
             if ($db->query($rQuery)) {
                 $rInsertID = $db->insert_id;
@@ -96,7 +95,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./ticket.php" method="POST" id="ticket_form">
+                                <form action="./ticket.php" method="POST" id="ticket_form" data-parsley-validate="">
                                     <?php if (isset($rTicket)) { ?>
                                     <input type="hidden" name="respond" value="<?=$rTicket["id"]?>" />
                                     <?php } ?>
@@ -117,14 +116,14 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="title">Subject</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="title" name="title" value="">
+                                                                <input type="text" class="form-control" id="title" name="title" value="" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <?php } ?>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="message">Message</label>
                                                             <div class="col-md-8">
-                                                                <textarea id="message" name="message" class="form-control" rows="3" placeholder=""></textarea>
+                                                                <textarea id="message" name="message" class="form-control" rows="3" placeholder="" required data-parsley-trigger="change"></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -157,7 +156,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -168,16 +166,11 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>

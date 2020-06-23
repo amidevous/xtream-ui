@@ -1,12 +1,15 @@
 <?php
-$rRelease = 16;
+$rRelease = 17;             // Official Beta Release Number
+$rTimeout = 15;             // Seconds Timeout for Queries, Functions & Requests
 
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
+
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
-$rTimeout = 15;
 set_time_limit($rTimeout);
 ini_set('mysql.connect_timeout', $rTimeout);
 ini_set('max_execution_time', $rTimeout);
@@ -36,6 +39,20 @@ function sexec($rServerID, $rCommand) {
     global $rServers, $rSettings;
     $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=BackgroundCLI&cmds[]=".urlencode($rCommand);
     return file_get_contents($rAPI);
+}
+
+function getBackups() {
+    $rBackups = Array();
+    foreach (scandir(MAIN_DIR."adtools/backups/") as $rBackup) {
+        $rInfo = pathinfo(MAIN_DIR."adtools/backups/".$rBackup);
+        if ($rInfo["extension"] == "sql") {
+            $rBackups[] = Array("filename" => $rBackup, "timestamp" => filemtime(MAIN_DIR."adtools/backups/".$rBackup), "date" => date("Y-m-d H:i:s", filemtime(MAIN_DIR."adtools/backups/".$rBackup)), "filesize" => filesize(MAIN_DIR."adtools/backups/".$rBackup));
+        }
+    }
+    usort($rBackups, function($a, $b) {
+        return $a['timestamp'] <=> $b['timestamp'];
+    });
+    return $rBackups;
 }
 
 function listDir($rServerID, $rDirectory, $rAllowed=null) {
@@ -147,7 +164,7 @@ $db->set_charset("utf8");
 date_default_timezone_set(getTimezone());
 
 function getStreamingServers($rActive = false) {
-    global $db;
+    global $db, $rPermissions;
     $return = Array();
     if ($rActive) {
         $result = $db->query("SELECT * FROM `streaming_servers` WHERE `status` = 1 ORDER BY `id` ASC;");
@@ -156,6 +173,9 @@ function getStreamingServers($rActive = false) {
     }
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
+            if ($rPermissions["is_reseller"]) {
+                $row["server_name"] = "Server #".$row["id"];
+            }
             $return[$row["id"]] = $row;
         }
     }
@@ -377,13 +397,37 @@ function getTranscodeProfiles() {
     return $return;
 }
 
+function getUserAgents() {
+    global $db;
+    $return = Array();
+    $result = $db->query("SELECT * FROM `blocked_user_agents` ORDER BY `id` ASC;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $return[] = $row;
+        }
+    }
+    return $return;
+}
+
+function getBlockedIPs() {
+    global $db;
+    $return = Array();
+    $result = $db->query("SELECT * FROM `blocked_ips` ORDER BY `id` ASC;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $return[] = $row;
+        }
+    }
+    return $return;
+}
+
 function getStream($rID) {
     global $db;
     $result = $db->query("SELECT * FROM `streams` WHERE `id` = ".intval($rID).";");
     if (($result) && ($result->num_rows == 1)) {
         return $result->fetch_assoc();
     }
-    return False;
+    return null;
 }
 
 function getUser($rID) {
@@ -392,7 +436,7 @@ function getUser($rID) {
     if (($result) && ($result->num_rows == 1)) {
         return $result->fetch_assoc();
     }
-    return False;
+    return null;
 }
 
 function getRegisteredUser($rID) {
@@ -401,7 +445,7 @@ function getRegisteredUser($rID) {
     if (($result) && ($result->num_rows == 1)) {
         return $result->fetch_assoc();
     }
-    return False;
+    return null;
 }
 
 function getRegisteredUserHash($rHash) {
@@ -410,7 +454,7 @@ function getRegisteredUserHash($rHash) {
     if (($result) && ($result->num_rows == 1)) {
         return $result->fetch_assoc();
     }
-    return False;
+    return null;
 }
 
 function getEPG($rID) {
@@ -419,7 +463,7 @@ function getEPG($rID) {
     if (($result) && ($result->num_rows == 1)) {
         return $result->fetch_assoc();
     }
-    return False;
+    return null;
 }
 
 function getStreamOptions($rID) {
@@ -585,7 +629,7 @@ function addToBouquet($rType, $rBouquetID, $rID) {
         }
         $rChannels = json_decode($rBouquet[$rColumn], True);
         if (!in_array($rID, $rChannels)) {
-            array_unshift($rChannels, $rID);
+            $rChannels[] = $rID;
             if (count($rChannels) > 0) {
                 $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode(array_values($rChannels)))."' WHERE `id` = ".intval($rBouquetID).";");
             }
@@ -634,6 +678,24 @@ function getPackage($rID) {
 function getTranscodeProfile($rID) {
     global $db;
     $result = $db->query("SELECT * FROM `transcoding_profiles` WHERE `profile_id` = ".intval($rID).";");
+    if (($result) && ($result->num_rows == 1)) {
+        return $result->fetch_assoc();
+    }
+    return null;
+}
+
+function getUserAgent($rID) {
+    global $db;
+    $result = $db->query("SELECT * FROM `blocked_user_agents` WHERE `id` = ".intval($rID).";");
+    if (($result) && ($result->num_rows == 1)) {
+        return $result->fetch_assoc();
+    }
+    return null;
+}
+
+function getBlockedIP($rID) {
+    global $db;
+    $result = $db->query("SELECT * FROM `blocked_ips` WHERE `id` = ".intval($rID).";");
     if (($result) && ($result->num_rows == 1)) {
         return $result->fetch_assoc();
     }
@@ -962,28 +1024,94 @@ function getURL() {
     }
 }
 
-if (isset($_SESSION['hash'])) {
-    $rUserInfo = getRegisteredUserHash($_SESSION['hash']);
-    if ($rUserInfo) {
-        $rPermissions = getPermissions($rUserInfo['member_group_id']);
-        if ($rPermissions["is_admin"]) {
-            $rPermissions["is_reseller"] = 0; // Don't allow Admin & Reseller!
+function scanBouquets() {
+    global $db;
+    $rStreamIDs = Array(0 => Array(), 1 => Array());
+    $result = $db->query("SELECT `id` FROM `streams`;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $rStreamIDs[0][] = intval($row["id"]);
         }
-        $rAdminSettings = getAdminSettings();
-        $rSettings = getSettings();
-        $rSettings["sidebar"] = $rAdminSettings["sidebar"];
-        $rCategories = getCategories();
-        $rServers = getStreamingServers();
-        $rServerError = False;
-        foreach ($rServers as $rServer) {
-            if (((((time() - $rServer["last_check_ago"]) > 360)) OR ($rServer["status"] == 2)) AND ($rServer["can_delete"] == 1) AND ($rServer["status"] <> 3)) { $rServerError = True; }
-            if (($rServer["status"] == 3) && ($rServer["last_check_ago"] > 0)) {
-                $db->query("UPDATE `streaming_servers` SET `status` = 1 WHERE `id` = ".intval($rServer["id"]).";");
-                $rServers[intval($rServer["id"])]["status"] = 1;
+    }
+    $result = $db->query("SELECT `id` FROM `series`;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $rStreamIDs[1][] = intval($row["id"]);
+        }
+    }
+    foreach (getBouquets() as $rID => $rBouquet) {
+        $rUpdate = Array(0 => Array(), 1 => Array());
+        foreach (json_decode($rBouquet["bouquet_channels"], True) as $rID) {
+            if (in_array(intval($rID), $rStreamIDs[0])) {
+                $rUpdate[0][] = intval($rID);
             }
         }
-    } else {
+        foreach (json_decode($rBouquet["bouquet_series"], True) as $rID) {
+            if (in_array(intval($rID), $rStreamIDs[1])) {
+                $rUpdate[1][] = intval($rID);
+            }
+        }
+        $db->query("UPDATE `bouquets` SET `bouquet_channels` = '".$db->real_escape_string(json_encode($rUpdate[0]))."', `bouquet_series` = '".$db->real_escape_string(json_encode($rUpdate[1]))."' WHERE `id` = ".intval($rBouquet["id"]).";");
+    }
+}
+
+function scanBouquet($rID) {
+    global $db;
+    $rBouquet = getBouquet($rID);
+    if ($rBouquet) {
+        $rStreamIDs = Array();
+        $result = $db->query("SELECT `id` FROM `streams`;");
+        if (($result) && ($result->num_rows > 0)) {
+            while ($row = $result->fetch_assoc()) {
+                $rStreamIDs[0][] = intval($row["id"]);
+            }
+        }
+        $result = $db->query("SELECT `id` FROM `series`;");
+        if (($result) && ($result->num_rows > 0)) {
+            while ($row = $result->fetch_assoc()) {
+                $rStreamIDs[1][] = intval($row["id"]);
+            }
+        }
+        $rUpdate = Array(0 => Array(), 1 => Array());
+        foreach (json_decode($rBouquet["bouquet_channels"], True) as $rID) {
+            if (in_array(intval($rID), $rStreamIDs[0])) {
+                $rUpdate[0][] = intval($rID);
+            }
+        }
+        foreach (json_decode($rBouquet["bouquet_series"], True) as $rID) {
+            if (in_array(intval($rID), $rStreamIDs[1])) {
+                $rUpdate[1][] = intval($rID);
+            }
+        }
+        $db->query("UPDATE `bouquets` SET `bouquet_channels` = '".$db->real_escape_string(json_encode($rUpdate[0]))."', `bouquet_series` = '".$db->real_escape_string(json_encode($rUpdate[1]))."' WHERE `id` = ".intval($rBouquet["id"]).";");
+    }
+}
+
+if (isset($_SESSION['hash'])) {
+    $rUserInfo = getRegisteredUserHash($_SESSION['hash']);
+    $rPermissions = getPermissions($rUserInfo['member_group_id']);
+    if ($rPermissions["is_admin"]) {
+        $rPermissions["is_reseller"] = 0; // Don't allow Admin & Reseller!
+    }
+    if ((!$rUserInfo) or (!$rPermissions) or ((!$rPermissions["is_admin"]) && (!$rPermissions["is_reseller"]))) {
+        unset($rUserInfo);
+        unset($rPermissions);
+        session_unset();
         session_destroy();
+        header("Location: index.php");
+    }
+    $rAdminSettings = getAdminSettings();
+    $rSettings = getSettings();
+    $rSettings["sidebar"] = $rAdminSettings["sidebar"];
+    $rCategories = getCategories();
+    $rServers = getStreamingServers();
+    $rServerError = False;
+    foreach ($rServers as $rServer) {
+        if (((((time() - $rServer["last_check_ago"]) > 360)) OR ($rServer["status"] == 2)) AND ($rServer["can_delete"] == 1) AND ($rServer["status"] <> 3)) { $rServerError = True; }
+        if (($rServer["status"] == 3) && ($rServer["last_check_ago"] > 0)) {
+            $db->query("UPDATE `streaming_servers` SET `status` = 1 WHERE `id` = ".intval($rServer["id"]).";");
+            $rServers[intval($rServer["id"])]["status"] = 1;
+        }
     }
 }
 ?>

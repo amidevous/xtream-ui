@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_profile"])) {
@@ -10,7 +9,7 @@ if (isset($_POST["submit_profile"])) {
             $rArray[$rKey] = $rValue;
         }
     }
-    $rCols = implode(',', array_keys($rArray));
+    $rCols = $db->real_escape_string(implode(',', array_keys($rArray)));
     foreach (array_values($rArray) as $rValue) {
         isset($rValues) ? $rValues .= ',' : $rValues = '';
         if (is_array($rValue)) {
@@ -91,33 +90,33 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./profile.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="profile_form">
+                                <form action="./profile.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="profile_form" data-parsley-validate="">
                                     <?php if (isset($rProfileArr)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rProfileArr["profile_id"]?>" />
                                     <?php } ?>
                                     <div id="basicwizard">
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
-                                                <a href="#category-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                <a href="#profile-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                     <i class="mdi mdi-account-card-details-outline mr-1"></i>
                                                     <span class="d-none d-sm-inline">Details</span>
                                                 </a>
                                             </li>
                                         </ul>
                                         <div class="tab-content b-0 mb-0 pt-0">
-                                            <div class="tab-pane" id="category-details">
+                                            <div class="tab-pane" id="profile-details">
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="profile_name">Profile Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="profile_name" name="profile_name" value="<?php if (isset($rProfileArr)) { echo $rProfileArr["profile_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="profile_name" name="profile_name" value="<?php if (isset($rProfileArr)) { echo $rProfileArr["profile_name"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="profile_options">Profile Options</label>
                                                             <div class="col-md-8">
-                                                                <textarea class="form-control" id="profile_options" name="profile_options"><?php if (isset($rProfileArr)) { echo $rProfileArr["profile_options"]; } ?></textarea>
+                                                                <textarea class="form-control" id="profile_options" name="profile_options" required data-parsley-trigger="change"><?php if (isset($rProfileArr)) { echo $rProfileArr["profile_options"]; } ?></textarea>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -150,7 +149,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -161,8 +159,6 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
@@ -174,12 +170,10 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
-        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
-
-        <!-- Plugins js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
+        <script src="assets/js/app.min.js"></script>
         
         <script>
         $(document).ready(function() {
@@ -191,8 +185,5 @@ if ($rSettings["sidebar"]) {
             $("form").attr('autocomplete', 'off');
         });
         </script>
-        
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

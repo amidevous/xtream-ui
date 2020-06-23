@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 $rEPGs = getEPGs();
@@ -10,9 +9,9 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content"><div class="container-fluid">
+        <div class="content-page"><div class="content boxed-layout-ext"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper"><div class="container-fluid">
+        <div class="wrapper boxed-layout-ext"><div class="container-fluid">
         <?php } ?>
                 <!-- start page title -->
                 <div class="row">
@@ -21,11 +20,9 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
-                                        <button type="button" class="btn btn-dark waves-effect waves-light btn-sm" onClick="forceUpdate();" style="margin-right:10px;">
+                                        <button type="button" class="btn btn-dark waves-effect waves-light btn-sm" onClick="forceUpdate();">
                                             <i class="mdi mdi-refresh"></i> Force EPG Reload
                                         </button>
-                                    </li>
-                                    <li>
                                         <a href="epg.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add EPG
@@ -61,7 +58,7 @@ if ($rSettings["sidebar"]) {
                                         <tr id="server-<?=$rEPG["id"]?>">
                                             <td class="text-center"><?=$rEPG["id"]?></td>
                                             <td><?=$rEPG["epg_name"]?></td>
-                                            <td><?=$rEPG["epg_file"]?></td>
+                                            <td><?=parse_url($rEPG["epg_file"])['host']?></td>
                                             <td class="text-center"><?=$rEPG["days_keep"]?></td>
                                             <td class="text-center"><?php if ($rEPG["last_updated"]) { echo date("Y-m-d H:i:s", $rEPG["last_updated"]); } else { echo "Never"; } ?></td>
                                             <td class="text-center">
@@ -91,11 +88,8 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
@@ -107,9 +101,6 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
-        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
-        <!-- third party js ends -->
 
         <script>
         function api(rID, rType) {
@@ -154,6 +145,7 @@ if ($rSettings["sidebar"]) {
                 },
                 responsive: false
             });
+            $("#datatable").css("width", "100%");
         });
         </script>
 

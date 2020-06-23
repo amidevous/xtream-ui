@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_epg"])) {
@@ -10,7 +9,7 @@ if (isset($_POST["submit_epg"])) {
             $rArray[$rKey] = $rValue;
         }
     }
-    $rCols = implode(',', array_keys($rArray));
+    $rCols = $db->real_escape_string(implode(',', array_keys($rArray)));
     foreach (array_values($rArray) as $rValue) {
         isset($rValues) ? $rValues .= ',' : $rValues = '';
         if (is_array($rValue)) {
@@ -91,7 +90,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./epg.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="category_form">
+                                <form action="./epg.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="category_form" data-parsley-validate="">
                                     <?php if (isset($rEPGArr)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rEPGArr["id"]?>" />
                                     <?php } ?>
@@ -119,25 +118,25 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="epg_name">EPG Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="epg_name" name="epg_name" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["epg_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="epg_name" name="epg_name" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["epg_name"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="epg_file">Source</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="epg_file" name="epg_file" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["epg_file"]; } ?>">
+                                                                <input type="text" class="form-control" id="epg_file" name="epg_file" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["epg_file"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="days_keep">Days to Keep</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="days_keep" name="days_keep" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["days_keep"]; } else { echo "7"; } ?>">
+                                                                <input type="text" class="form-control" id="days_keep" name="days_keep" value="<?php if (isset($rEPGArr)) { echo $rEPGArr["days_keep"]; } else { echo "7"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
-                                                    <li class="next list-inline-item float-right">
+                                                    <li class="list-inline-item float-right">
                                                         <input name="submit_epg" type="submit" class="btn btn-primary" value="<?php if (isset($rEPGArr)) { echo "Edit"; } else { echo "Add"; } ?>" />
                                                     </li>
                                                 </ul>
@@ -192,7 +191,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -203,8 +201,6 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
@@ -216,12 +212,9 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
-        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         
         <script>
         (function($) {

@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_user"])) {
@@ -158,6 +157,8 @@ if ($rSettings["sidebar"]) {
                                                             <option value="3">Banned</option>
                                                             <option value="4">Expired</option>
                                                             <option value="5">Trial</option>
+															<option value="6">MAG Device</option>
+															<option value="7">Enigma Device</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-md-2 col-8">
@@ -374,9 +375,9 @@ if ($rSettings["sidebar"]) {
                                                                     <tr>
                                                                         <td class="text-center"><?=$rBouquet["id"]?></td>
                                                                         <td><?=$rBouquet["bouquet_name"]?></td>
-                                                                        <td class="text-center"><?=count(json_decode($rBouquet["bouquet_streams"], True))?></td>
+                                                                        <td class="text-center"><?=count(json_decode($rBouquet["bouquet_channels"], True))?></td>
                                                                         <td class="text-center"><?=count(json_decode($rBouquet["bouquet_series"], True))?></td>
-                                                                    </div>
+                                                                    </tr>
                                                                     <?php } ?>
                                                                 </tbody>
                                                             </table>
@@ -420,7 +421,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-ui/jquery-ui.min.js"></script>
@@ -443,16 +443,10 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-        
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
         <script src="assets/js/app.min.js"></script>
         
         <script>
@@ -468,7 +462,7 @@ if ($rSettings["sidebar"]) {
         }
         function toggleUsers() {
             $("#datatable-mass tr").each(function() {
-                if ($(this).hasClass('selectedfilter')) {
+                if ($(this).hasClass('selected')) {
                     $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
                     if ($(this).find("td:eq(0)").html()) {
                         window.rSelected.splice($.inArray($(this).find("td:eq(0)").html(), window.rSelected), 1);
@@ -484,7 +478,7 @@ if ($rSettings["sidebar"]) {
         }
         function toggleBouquets() {
             $("#datatable-bouquets tr").each(function() {
-                if ($(this).hasClass('selectedfilter')) {
+                if ($(this).hasClass('selected')) {
                     $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
                     if ($(this).find("td:eq(0)").html()) {
                         window.rBouquets.splice($.inArray($(this).find("td:eq(0)").html(), window.rBouquets), 1);
@@ -616,7 +610,8 @@ if ($rSettings["sidebar"]) {
                     "data": function(d) {
                         d.id = "users",
                         d.filter = getFilter(),
-                        d.reseller = getReseller()
+                        d.reseller = getReseller(),
+						d.showall = true
                     }
                 },
                 columnDefs: [
@@ -636,7 +631,7 @@ if ($rSettings["sidebar"]) {
                 ],
                 "rowCallback": function(row, data) {
                     if ($.inArray(data[0], window.rBouquets) !== -1) {
-                        $(row).addClass("selected");
+                        $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
                 paging: false,

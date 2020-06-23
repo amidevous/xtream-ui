@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 $rTMDBLanguages = Array("" => "Default - EN", "aa" => "Afar", "af" => "Afrikaans", "ak" => "Akan", "an" => "Aragonese", "as" => "Assamese", "av" => "Avaric", "ae" => "Avestan", "ay" => "Aymara", "az" => "Azerbaijani", "ba" => "Bashkir", "bm" => "Bambara", "bi" => "Bislama", "bo" => "Tibetan", "br" => "Breton", "ca" => "Catalan", "cs" => "Czech", "ce" => "Chechen", "cu" => "Slavic", "cv" => "Chuvash", "kw" => "Cornish", "co" => "Corsican", "cr" => "Cree", "cy" => "Welsh", "da" => "Danish", "de" => "German", "dv" => "Divehi", "dz" => "Dzongkha", "eo" => "Esperanto", "et" => "Estonian", "eu" => "Basque", "fo" => "Faroese", "fj" => "Fijian", "fi" => "Finnish", "fr" => "French", "fy" => "Frisian", "ff" => "Fulah", "gd" => "Gaelic", "ga" => "Irish", "gl" => "Galician", "gv" => "Manx", "gn" => "Guarani", "gu" => "Gujarati", "ht" => "Haitian", "ha" => "Hausa", "sh" => "Serbo-Croatian", "hz" => "Herero", "ho" => "Hiri Motu", "hr" => "Croatian", "hu" => "Hungarian", "ig" => "Igbo", "io" => "Ido", "ii" => "Yi", "iu" => "Inuktitut", "ie" => "Interlingue", "ia" => "Interlingua", "id" => "Indonesian", "ik" => "Inupiaq", "is" => "Icelandic", "it" => "Italian", "ja" => "Japanese", "kl" => "Kalaallisut", "kn" => "Kannada", "ks" => "Kashmiri", "kr" => "Kanuri", "kk" => "Kazakh", "km" => "Khmer", "ki" => "Kikuyu", "rw" => "Kinyarwanda", "ky" => "Kirghiz", "kv" => "Komi", "kg" => "Kongo", "ko" => "Korean", "kj" => "Kuanyama", "ku" => "Kurdish", "lo" => "Lao", "la" => "Latin", "lv" => "Latvian", "li" => "Limburgish", "ln" => "Lingala", "lt" => "Lithuanian", "lb" => "Letzeburgesch", "lu" => "Luba-Katanga", "lg" => "Ganda", "mh" => "Marshall", "ml" => "Malayalam", "mr" => "Marathi", "mg" => "Malagasy", "mt" => "Maltese", "mo" => "Moldavian", "mn" => "Mongolian", "mi" => "Maori", "ms" => "Malay", "my" => "Burmese", "na" => "Nauru", "nv" => "Navajo", "nr" => "Ndebele", "nd" => "Ndebele", "ng" => "Ndonga", "ne" => "Nepali", "nl" => "Dutch", "nn" => "Norwegian Nynorsk", "nb" => "Norwegian Bokmal", "no" => "Norwegian", "ny" => "Chichewa", "oc" => "Occitan", "oj" => "Ojibwa", "or" => "Oriya", "om" => "Oromo", "os" => "Ossetian; Ossetic", "pi" => "Pali", "pl" => "Polish", "pt" => "Portuguese", "qu" => "Quechua", "rm" => "Raeto-Romance", "ro" => "Romanian", "rn" => "Rundi", "ru" => "Russian", "sg" => "Sango", "sa" => "Sanskrit", "si" => "Sinhalese", "sk" => "Slovak", "sl" => "Slovenian", "se" => "Northern Sami", "sm" => "Samoan", "sn" => "Shona", "sd" => "Sindhi", "so" => "Somali", "st" => "Sotho", "es" => "Spanish", "sq" => "Albanian", "sc" => "Sardinian", "sr" => "Serbian", "ss" => "Swati", "su" => "Sundanese", "sw" => "Swahili", "sv" => "Swedish", "ty" => "Tahitian", "ta" => "Tamil", "tt" => "Tatar", "te" => "Telugu", "tg" => "Tajik", "tl" => "Tagalog", "th" => "Thai", "ti" => "Tigrinya", "to" => "Tonga", "tn" => "Tswana", "ts" => "Tsonga", "tk" => "Turkmen", "tr" => "Turkish", "tw" => "Twi", "ug" => "Uighur", "uk" => "Ukrainian", "ur" => "Urdu", "uz" => "Uzbek", "ve" => "Venda", "vi" => "Vietnamese", "vo" => "Volapük", "wa" => "Walloon", "wo" => "Wolof", "xh" => "Xhosa", "yi" => "Yiddish", "za" => "Zhuang", "zu" => "Zulu", "ab" => "Abkhazian", "zh" => "Mandarin", "ps" => "Pushto", "am" => "Amharic", "ar" => "Arabic", "bg" => "Bulgarian", "cn" => "Cantonese", "mk" => "Macedonian", "el" => "Greek", "fa" => "Persian", "he" => "Hebrew", "hi" => "Hindi", "hy" => "Armenian", "en" => "English", "ee" => "Ewe", "ka" => "Georgian", "pa" => "Punjabi", "bn" => "Bengali", "bs" => "Bosnian", "ch" => "Chamorro", "be" => "Belarusian", "yo" => "Yoruba");
@@ -8,7 +7,7 @@ checkTable("admin_settings");
 
 if (isset($_POST["submit_settings"])) {
     $rArray = getSettings();
-    foreach (Array("disallow_empty_user_agents", "show_all_category_mag", "show_not_on_air_video", "show_banned_video", "show_expired_video") as $rSetting) {
+    foreach (Array("disallow_empty_user_agents", "show_all_category_mag", "show_not_on_air_video", "show_banned_video", "show_expired_video", "new_sorting_bouquet") as $rSetting) {
         if (isset($_POST[$rSetting])) {
             $rArray[$rSetting] = 1;
             unset($_POST[$rSetting]);
@@ -33,6 +32,12 @@ if (isset($_POST["submit_settings"])) {
         unset($_POST["download_images"]);
     } else {
         $rAdminSettings["download_images"] = false;
+    }
+    if (isset($_POST["reseller_restrictions"])) {
+        $rAdminSettings["reseller_restrictions"] = true;
+        unset($_POST["reseller_restrictions"]);
+    } else {
+        $rAdminSettings["reseller_restrictions"] = false;
     }
     if (isset($_POST["google_2factor"])) {
         $rAdminSettings["google_2factor"] = true;
@@ -157,17 +162,17 @@ if ($rSettings["sidebar"]) {
                                                 </a>
                                             </li>
                                             <li class="nav-item">
+                                                <a href="#backups" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <i class="mdi mdi-floppy mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Backups</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
                                                 <a href="#database" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                     <i class="mdi mdi-database-edit mr-1"></i>
                                                     <span class="d-none d-sm-inline">Database</span>
                                                 </a>
                                             </li>
-                                            <!-- <li class="nav-item">
-                                                <a href="#mail" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-email mr-1"></i>
-                                                    <span class="d-none d-sm-inline">Mail</span>
-                                                </a>
-                                            </li> -->
                                         </ul>
                                         <div class="tab-content b-0 mb-0 pt-0">
                                             <div class="tab-pane" id="general-details">
@@ -272,6 +277,10 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-2">
                                                                 <input name="download_images" id="download_images" type="checkbox"<?php if ($rAdminSettings["download_images"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
+                                                            <label class="col-md-4 col-form-label" for="reseller_restrictions">Reseller Restrictions <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set this option to allow resellers to restrict by User-Agent and IP address." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="reseller_restrictions" id="reseller_restrictions" type="checkbox"<?php if ($rAdminSettings["reseller_restrictions"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -328,12 +337,35 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="split_clients">Split Clients <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Split equally to maintain a better balance." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="split_clients">Split Clients</label>
                                                             <div class="col-md-8">
                                                                 <select name="split_clients" id="split_clients" class="form-control" data-toggle="select2">
-                                                                    <option<?php if ($rSettings["split_clients"] == "equal") { echo " selected"; } ?> value="equal">Equally Between Servers</option>
-                                                                    <option<?php if ($rSettings["split_clients"] == "load") { echo " selected"; } ?> value="load">After Full Server is Reached</option>
+                                                                    <option<?php if ($rSettings["split_clients"] == "equal") { echo " selected"; } ?> value="equal">Equally</option>
+                                                                    <option<?php if ($rSettings["split_clients"] == "load") { echo " selected"; } ?> value="load">Load</option>
                                                                 </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="split_by">Split By</label>
+                                                            <div class="col-md-8">
+                                                                <select name="split_by" id="split_by" class="form-control" data-toggle="select2">
+                                                                    <option<?php if ($rSettings["split_by"] == "conn") { echo " selected"; } ?> value="conn">Total Connections</option>
+                                                                    <option<?php if ($rSettings["split_by"] == "maxclients") { echo " selected"; } ?> value="maxclients">Max Clients</option>
+                                                                    <option<?php if ($rSettings["split_by"] == "guar_band") { echo " selected"; } ?> value="guar_band">Network Speed</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="channel_number_type">Channel Sorting Type</label>
+                                                            <div class="col-md-2">
+                                                                <select name="channel_number_type" id="channel_number_type" class="form-control" data-toggle="select2">
+                                                                    <option<?php if ($rSettings["channel_number_type"] == "bouquet") { echo " selected"; } ?> value="bouquet">Bouquet</option>
+                                                                    <option<?php if ($rSettings["channel_number_type"] == "manual") { echo " selected"; } ?> value="manual">Manual</option>
+                                                                </select>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="new_sorting_bouquet">New Sorting Bouquet</label>
+                                                            <div class="col-md-2">
+                                                                <input name="new_sorting_bouquet" id="new_sorting_bouquet" type="checkbox"<?php if ($rSettings["new_sorting_bouquet"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -398,6 +430,28 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
+                                            <div class="tab-pane" id="backups">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <table class="table table-borderless mb-0" id="datatable-backups">
+                                                            <thead class="thead-light">
+                                                                <tr>
+                                                                    <th class="text-center">Date</th>
+                                                                    <th class="text-center">Filename</th>
+																	<th class="text-center">Filesize</th>
+                                                                    <th class="text-center">Actions</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0" style="margin-top:30px;">
+                                                    <li class="list-inline-item float-right">
+                                                        <button id="create_backup" onClick="api('', 'backup')" class="btn btn-primary">Create Backup</button>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                             <div class="tab-pane" id="database">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -449,7 +503,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -460,12 +513,65 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
+        <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
+        <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
+        <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.buttons.min.js"></script>
+        <script src="assets/libs/datatables/buttons.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/buttons.html5.min.js"></script>
+        <script src="assets/libs/datatables/buttons.flash.min.js"></script>
+        <script src="assets/libs/datatables/buttons.print.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.select.min.js"></script>
+        <script src="assets/js/app.min.js"></script>
         
         <script>
+        function api(rID, rType) {
+            if (rType == "delete") {
+                if (confirm('Are you sure you want to delete this backup? This cannot be undone!') == false) {
+                    return;
+                }
+            } else if (rType == "restore") {
+                if (confirm('Are you sure you want to restore from this backup? This will erase your current database.') == false) {
+                    return;
+                } else {
+					$.toast("Restoring backup... Please wait...");
+					$(".content-page").fadeOut();
+				}
+            } else if (rType == "backup") {
+                $("#create_backup").attr("disabled", true);
+            }
+            $.getJSON("./api.php?action=backup&sub=" + rType + "&filename=" + encodeURIComponent(rID), function(data) {
+                if (data.result === true) {
+                    if (rType == "delete") {
+                        $.each($('.tooltip'), function (index, element) {
+                            $(this).remove();
+                        });
+                        $('[data-toggle="tooltip"]').tooltip();
+                        $.toast("Backup successfully deleted.");
+                    } else if (rType == "restore") {
+                        $.toast("Restored from backup.");
+						$(".content-page").fadeIn();
+                    } else if (rType == "backup") {
+                        $.toast("Backup has been successfully generated.");
+                        $("#create_backup").attr("disabled", false);
+                    }
+					$("#datatable-backups").DataTable().ajax.reload(null, false);
+                } else {
+                    $.toast("An error occured while processing your request.");
+                    if (rType == "backup") {
+                        $("#create_backup").attr("disabled", false);
+                    }
+					if (!$(".content-page").is(":visible")) {
+						$(".content-page").fadeIn();
+					}
+                }
+            });
+        }
+        
         (function($) {
           $.fn.inputFilter = function(inputFilter) {
             return this.on("input keydown keyup mousedown mouseup select contextmenu drop", function() {
@@ -492,17 +598,45 @@ if ($rSettings["sidebar"]) {
                     event.preventDefault();
                 }
             });
+            
+            $("#datatable-backups").DataTable({
+                language: {
+                    paginate: {
+                        previous: "<i class='mdi mdi-chevron-left'>",
+                        next: "<i class='mdi mdi-chevron-right'>"
+                    }
+                },
+                drawCallback: function() {
+                    $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+                    $('[data-toggle="tooltip"]').tooltip();
+                },
+				bInfo: false,
+				paging: false,
+				searching: false,
+				bSort: false,
+                responsive: false,
+				processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "./table_search.php",
+                    "data": function(d) {
+                        d.id = "backups"
+                    }
+                },
+                order: [[ 0, "desc" ]],
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0,1,2,3]}
+                ],
+				
+            });
+            $("#datatable-backups").css("width", "100%");
             $("form").attr('autocomplete', 'off');
             $("#flood_limit").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#user_auto_kick_hours").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#probesize").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#stream_max_analyze").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#client_prebuffer").inputFilter(function(value) { return /^\d*$/.test(value); });
-            
         });
         </script>
-        
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

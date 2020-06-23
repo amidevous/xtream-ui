@@ -18,7 +18,17 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
-                                        <?php if (!$detect->isMobile()) { ?>
+                                        <a href="#" onClick="clearFilters();">
+                                            <button type="button" class="btn btn-warning waves-effect waves-light btn-sm">
+                                                <i class="mdi mdi-filter-remove"></i>
+                                            </button>
+                                        </a>
+                                        <?php if ($rPermissions["is_admin"]) { ?>
+                                        <button type="button" class="btn btn-info waves-effect waves-light btn-sm btn-clear-logs">
+                                            <i class="mdi mdi-minus"></i> Clear Logs
+                                        </button>
+                                        <?php }
+                                        if (!$detect->isMobile()) { ?>
                                         <a href="#" onClick="toggleAuto();" style="margin-right:10px;">
                                             <button type="button" class="btn btn-dark waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-refresh"></i> <span class="auto-text">Auto-Refresh</span>
@@ -43,32 +53,34 @@ if ($rSettings["sidebar"]) {
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body" style="overflow-x:auto;">
-                                <div class="form-group row mb-4">
-                                    <div class="col-md-3">
-                                        <input type="text" class="form-control" id="log_search" value="" placeholder="Search Logs...">
+                                <form id="user_activity_search">
+                                    <div class="form-group row mb-4">
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control" id="act_search" value="" placeholder="Search Logs...">
+                                        </div>
+                                        <label class="col-md-1 col-form-label text-center" for="act_filter">Filter</label>
+                                        <div class="col-md-3">
+                                            <select id="act_filter" class="form-control" data-toggle="select2">
+                                                <option value="" selected>All Servers</option>
+                                                <?php foreach (getStreamingServers() as $rServer) { ?>
+                                                <option value="<?=$rServer["id"]?>"><?=$rServer["server_name"]?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
+                                        <label class="col-md-1 col-form-label text-center" for="act_range">Dates</label>
+                                        <div class="col-md-2">
+                                            <input type="text" class="form-control text-center date" id="act_range" name="range" data-toggle="date-picker" data-single-date-picker="true">
+                                        </div>
+                                        <label class="col-md-1 col-form-label text-center" for="act_show_entries">Show</label>
+                                        <div class="col-md-1">
+                                            <select id="act_show_entries" class="form-control" data-toggle="select2">
+                                                <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
+                                                <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <label class="col-md-1 col-form-label text-center" for="server">Filter</label>
-                                    <div class="col-md-3">
-                                        <select id="server" class="form-control" data-toggle="select2">
-                                            <option value="" selected>All Servers</option>
-                                            <?php foreach (getStreamingServers() as $rServer) { ?>
-                                            <option value="<?=$rServer["id"]?>"><?=$rServer["server_name"]?></option>
-                                            <?php } ?>
-                                        </select>
-                                    </div>
-                                    <label class="col-md-1 col-form-label text-center" for="range">Dates</label>
-                                    <div class="col-md-2">
-                                        <input type="text" class="form-control text-center date" id="range" name="range" data-toggle="date-picker" data-single-date-picker="true" autocomplete="off">
-                                    </div>
-                                    <label class="col-md-1 col-form-label text-center" for="show_entries">Show</label>
-                                    <div class="col-md-1">
-                                        <select id="show_entries" class="form-control" data-toggle="select2">
-                                            <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
-                                            <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
-                                            <?php } ?>
-                                        </select>
-                                    </div>
-                                </div>
+                                </form>
                                 <table id="datatable-activity" class="table dt-responsive nowrap">
                                     <thead>
                                         <tr>
@@ -92,6 +104,32 @@ if ($rSettings["sidebar"]) {
                 <!-- end row-->
             </div> <!-- end container -->
         </div>
+        <?php if ($rPermissions["is_admin"]) { ?>
+        <div class="modal fade bs-logs-modal-center" tabindex="-1" role="dialog" aria-labelledby="clearLogsLabel" aria-hidden="true" style="display: none;" data-id="">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="clearLogsLabel">Clear Logs</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group row mb-4">
+                            <label class="col-md-4 col-form-label" for="range_clear">Date Range</label>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control text-center date" id="range_clear_from" name="range_clear_from" data-toggle="date-picker" data-single-date-picker="true" autocomplete="off" placeholder="From">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control text-center date" id="range_clear_to" name="range_clear_to" data-toggle="date-picker" data-single-date-picker="true" autocomplete="off" placeholder="To">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <input id="clear_logs" type="submit" class="btn btn-primary" value="Clear" style="width:100%" />
+                        </div>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+        <?php } ?>
         <!-- end wrapper -->
         <?php if ($rSettings["sidebar"]) { echo "</div>"; } ?>
         <!-- Footer Start -->
@@ -104,11 +142,8 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/select2/select2.min.js"></script>
@@ -123,11 +158,13 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-        <!-- third party js ends -->
+        <script src="assets/js/pages/form-remember.js"></script>
+        <script src="assets/js/app.min.js"></script>
 
         <!-- Datatables init -->
         <script>
         var autoRefresh = true;
+        var rClearing = false;
         
         function toggleAuto() {
             if (autoRefresh == true) {
@@ -147,15 +184,25 @@ if ($rSettings["sidebar"]) {
         }
         
         function getServer() {
-            return $("#server").val();
+            return $("#act_filter").val();
         }
         function getRange() {
-            return $("#range").val();
+            return $("#act_range").val();
         }
-
+        function clearFilters() {
+            window.rClearing = true;
+            $("#act_search").val("").trigger('change');
+            $('#act_filter').val("").trigger('change');
+            $('#act_range').val("").trigger('change');
+            $('#act_show_entries').val("<?=$rAdminSettings["default_entries"] ?: 10?>").trigger('change');
+            window.rClearing = false;
+            $('#datatable-activity').DataTable().search($("#act_search").val());
+            $('#datatable-activity').DataTable().page.len($('#act_show_entries').val());
+            $("#datatable-activity").DataTable().page(0).draw('page');
+            $("#datatable-activity").DataTable().ajax.reload( null, false );
+        }
         $(document).ready(function() {
-            $('select').select2({width: '100%'});
-            $('#range').daterangepicker({
+            $('#act_range').daterangepicker({
                 singleDatePicker: false,
                 showDropdowns: true,
                 locale: {
@@ -163,17 +210,69 @@ if ($rSettings["sidebar"]) {
                 },
                 autoUpdateInput: false
             }).val("");
-            $('#range').on('apply.daterangepicker', function(ev, picker) {
+            $('#act_range').on('apply.daterangepicker', function(ev, picker) {
                 $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
-                $("#datatable-activity").DataTable().ajax.reload( null, false );
+                if (!window.rClearing) {
+                    $("#datatable-activity").DataTable().ajax.reload( null, false );
+                }
             });
-            $('#range').on('cancel.daterangepicker', function(ev, picker) {
+            $('#act_range').on('cancel.daterangepicker', function(ev, picker) {
                 $(this).val('');
-                $("#datatable-activity").DataTable().ajax.reload( null, false );
+                if (!window.rClearing) {
+                    $("#datatable-activity").DataTable().ajax.reload( null, false );
+                }
             });
-            $('#range').on('change', function() {
-                $("#datatable-activity").DataTable().ajax.reload( null, false );
+            $('#act_range').on('change', function() {
+                if (!window.rClearing) {
+                    $("#datatable-activity").DataTable().ajax.reload( null, false );
+                }
             });
+            <?php if ($rPermissions["is_admin"]) { ?>
+            $('#range_clear_to').daterangepicker({
+                singleDatePicker: true,
+                showDropdowns: true,
+                locale: {
+                    format: 'YYYY-MM-DD'
+                },
+                autoUpdateInput: false
+            }).val("");
+            $('#range_clear_from').daterangepicker({
+                singleDatePicker: true,
+                showDropdowns: true,
+                locale: {
+                    format: 'YYYY-MM-DD'
+                },
+                autoUpdateInput: false
+            }).val("");
+            $('#range_clear_from').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD'));
+            });
+            $('#range_clear_from').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+            });
+            $('#range_clear_to').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD'));
+            });
+            $('#range_clear_to').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+            });
+            $(".btn-clear-logs").click(function() {
+                $(".bs-logs-modal-center").modal("show");
+            });
+            $("#clear_logs").click(function() {
+                if (confirm('Are you sure you want to clear logs for this period?') == false) {
+                    return;
+                }
+                $(".bs-logs-modal-center").modal("hide");
+                $.getJSON("./api.php?action=clear_logs&type=user_activity&from=" + encodeURIComponent($("#range_clear_from").val()) + "&to=" + encodeURIComponent($("#range_clear_to").val()), function(data) {
+                    $.toast("Logs have been cleared.");
+                    $("#datatable-activity").DataTable().ajax.reload( null, false );
+                });
+            });
+            <?php } ?>
+            formCache.init();
+            formCache.fetch();
+            $('select').select2({width: '100%'});
             $("#datatable-activity").DataTable({
                 language: {
                     paginate: {
@@ -204,22 +303,31 @@ if ($rSettings["sidebar"]) {
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>,
                 stateSave: true
             });
-            $('#log_search').keyup(function(){
-                $('#datatable-activity').DataTable().search($(this).val()).draw();
+            $("#datatable-activity").css("width", "100%");
+            $('#act_search').keyup(function(){
+                if (!window.rClearing) {
+                    $('#datatable-activity').DataTable().search($(this).val()).draw();
+                }
             })
-            $('#show_entries').change(function(){
-                $('#datatable-activity').DataTable().page.len($(this).val()).draw();
+            $('#act_show_entries').change(function(){
+                if (!window.rClearing) {
+                    $('#datatable-activity').DataTable().page.len($(this).val()).draw();
+                }
             })
-            $('#server').change(function(){
-                $("#datatable-activity").DataTable().ajax.reload( null, false );
+            $('#act_filter').change(function(){
+                if (!window.rClearing) {
+                    $("#datatable-activity").DataTable().ajax.reload( null, false );
+                }
             })
             <?php if (!$detect->isMobile()) { ?>
             setTimeout(reloadUsers, 5000);
             <?php } ?>
+            $('#datatable-activity').DataTable().search($(this).val()).draw();
+        });
+        
+        $(window).bind('beforeunload', function() {
+            formCache.save();
         });
         </script>
-
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

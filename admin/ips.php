@@ -1,8 +1,8 @@
 <?php
-include "session.php"; include "functions.php";
+include "functions.php";
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
-$rProfiles = getTranscodeProfiles();
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -20,20 +20,19 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
-                                        <a href="profile.php">
+                                        <a href="ip.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-plus"></i> Add Profile
+                                                <i class="mdi mdi-plus"></i> Block IP Address
                                             </button>
                                         </a>
                                     </li>
                                 </ol>
                             </div>
-                            <h4 class="page-title">Transcode Profiles</h4>
+                            <h4 class="page-title">Blocked IP Addresses</h4>
                         </div>
                     </div>
                 </div>     
                 <!-- end page title --> 
-
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -42,21 +41,25 @@ if ($rSettings["sidebar"]) {
                                     <thead>
                                         <tr>
                                             <th class="text-center">ID</th>
-                                            <th>Profile Name</th>
-                                            <th>Options</th>
+                                            <th class="text-center">IP Address</th>
+                                            <th>Notes</th>
+                                            <th class="text-center">Date</th>
+                                            <th class="text-center">Attempts</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($rProfiles as $rProfile) {
+                                        <?php foreach (getBlockedIPs() as $rIP) {
                                         ?>
-                                        <tr id="profile-<?=$rProfile["profile_id"]?>">
-                                            <td class="text-center"><?=$rProfile["profile_id"]?></td>
-                                            <td><?=$rProfile["profile_name"]?></td>
-                                            <td><?=(strlen($rProfile["profile_options"]) > 100 ? substr($rProfile["profile_options"],0,100)."..." : $rProfile["profile_options"])?></td>
+                                        <tr id="ip-<?=$rIP["id"]?>">
+                                            <td class="text-center"><?=$rIP["id"]?></td>
+                                            <td class="text-center"><?=$rIP["ip"]?></td>
+                                            <td><?=$rIP["notes"]?></td>
+                                            <td class="text-center"><?=date("Y-m-d", $rIP["date"])?></td>
+                                            <td class="text-center"><?=$rIP["attempts_blocked"]?></td>
                                             <td class="text-center">
-                                                <a href="./profile.php?id=<?=$rProfile["profile_id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                                                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rProfile["profile_id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
+                                                <a href="./useragent.php?id=<?=$rIP["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                                                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rIP["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
                                             </td>
                                         </tr>
                                         <?php } ?>
@@ -94,20 +97,21 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/js/app.min.js"></script>
+        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
+        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
 
         <script>
         function api(rID, rType) {
             if (rType == "delete") {
-                if (confirm('Are you sure you want to delete this profile? This cannot be undone!') == false) {
+                if (confirm('Are you sure you want to delete this IP? This cannot be undone!') == false) {
                     return;
                 }
             }
-            $.getJSON("./api.php?action=profile&sub=" + rType + "&profile_id=" + rID, function(data) {
+            $.getJSON("./api.php?action=ip&sub=" + rType + "&ip=" + rID, function(data) {
                 if (data.result === true) {
                     if (rType == "delete") {
-                        $("#profile-" + rID).remove();
-                        $.toast("Profile successfully deleted.");
+                        $("#ip-" + rID).remove();
+                        $.toast("IP successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
@@ -135,5 +139,8 @@ if ($rSettings["sidebar"]) {
             $("#datatable").css("width", "100%");
         });
         </script>
+
+        <!-- App js-->
+        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_package"])) {
@@ -29,14 +28,8 @@ if (isset($_POST["submit_package"])) {
         $rArray["groups"] = "[".join(",", $rArray["groups"])."]";
         unset($_POST["groups"]);
     }
-    if (isset($_POST["bouquets"])) {
-        $rArray["bouquets"] = Array();
-        foreach ($_POST["bouquets"] as $rBouquetID) {
-            $rArray["bouquets"][] = intval($rBouquetID);
-        }
-        $rArray["bouquets"] = "[".join(",", $rArray["bouquets"])."]";
-        unset($_POST["bouquets"]);
-    }
+    $rArray["bouquets"] = array_values(json_decode($_POST["bouquets_selected"], True));
+    unset($_POST["bouquets_selected"]);
     if (isset($_POST["output_formats"])) {
         $rArray["output_formats"] = Array();
         foreach ($_POST["output_formats"] as $rOutput) {
@@ -51,7 +44,7 @@ if (isset($_POST["submit_package"])) {
                 $rArray[$rKey] = $rValue;
             }
         }
-        $rCols = "`".implode('`,`', array_keys($rArray))."`";
+        $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rArray))."`");
         foreach (array_values($rArray) as $rValue) {
             isset($rValues) ? $rValues .= ',' : $rValues = '';
             if (is_array($rValue)) {
@@ -134,10 +127,11 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./package.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="user_form">
+                                <form action="./package.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="package_form" data-parsley-validate="">
                                     <?php if (isset($rPackage)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rPackage["id"]?>" />
                                     <?php } ?>
+                                    <input type="hidden" name="bouquets_selected" id="bouquets_selected" value="" />
                                     <div id="basicwizard">
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
@@ -166,7 +160,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="package_name">Package Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="package_name" name="package_name" value="<?php if (isset($rPackage)) { echo $rPackage["package_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="package_name" name="package_name" value="<?php if (isset($rPackage)) { echo $rPackage["package_name"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -176,13 +170,13 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="trial_credits">Trial Credits</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="trial_credits" name="trial_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo $rPackage["trial_credits"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="trial_credits" name="trial_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo $rPackage["trial_credits"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="trial_duration">Trial Duration</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="trial_duration" name="trial_duration" value="<?php if (isset($rPackage)) { echo $rPackage["trial_duration"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="trial_duration" name="trial_duration" value="<?php if (isset($rPackage)) { echo $rPackage["trial_duration"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="trial_duration_in">Trial Duration In</label>
                                                             <div class="col-md-2">
@@ -200,13 +194,13 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="official_credits">Official Credits</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="official_credits" name="official_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo $rPackage["official_credits"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="official_credits" name="official_credits" onkeypress="return isNumberKey(event)" value="<?php if (isset($rPackage)) { echo $rPackage["official_credits"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="official_duration">Official Duration</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="official_duration" name="official_duration" value="<?php if (isset($rPackage)) { echo $rPackage["official_duration"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="official_duration" name="official_duration" value="<?php if (isset($rPackage)) { echo $rPackage["official_duration"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="official_duration_in">Official Duration In</label>
                                                             <div class="col-md-2">
@@ -250,7 +244,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="max_connections">Max Connections</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rPackage)) { echo $rPackage["max_connections"]; } else { echo "1"; } ?>">
+                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rPackage)) { echo $rPackage["max_connections"]; } else { echo "1"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -304,14 +298,26 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4">
-                                                            <?php foreach (getBouquets() as $rBouquet) { ?>
-                                                            <div class="col-md-6">
-                                                                <div class="custom-control custom-checkbox mt-1">
-                                                                    <input type="checkbox" class="custom-control-input bouquet-checkbox" id="bouquet-<?=$rBouquet["id"]?>" name="bouquets[]" value="<?=$rBouquet["id"]?>"<?php if(isset($rPackage)) { if(in_array($rBouquet["id"], json_decode($rPackage["bouquets"], True))) { echo " checked"; } } ?>>
-                                                                    <label class="custom-control-label" for="bouquet-<?=$rBouquet["id"]?>"><?=$rBouquet["bouquet_name"]?></label>
-                                                                </div>
-                                                            </div>
-                                                            <?php } ?>
+                                                            <table id="datatable-bouquets" class="table table-borderless mb-0">
+                                                                <thead class="bg-light">
+                                                                    <tr>
+                                                                        <th class="text-center">ID</th>
+                                                                        <th>Bouquet Name</th>
+                                                                        <th class="text-center">Streams</th>
+                                                                        <th class="text-center">Series</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php foreach (getBouquets() as $rBouquet) { ?>
+                                                                    <tr<?php if ((isset($rPackage)) & (in_array($rBouquet["id"], json_decode($rPackage["bouquets"], True)))) { echo " class='selected selectedfilter ui-selected'"; } ?>>
+                                                                        <td class="text-center"><?=$rBouquet["id"]?></td>
+                                                                        <td><?=$rBouquet["bouquet_name"]?></td>
+                                                                        <td class="text-center"><?=count(json_decode($rBouquet["bouquet_channels"], True))?></td>
+                                                                        <td class="text-center"><?=count(json_decode($rBouquet["bouquet_series"], True))?></td>
+                                                                    </tr>
+                                                                    <?php } ?>
+                                                                </tbody>
+                                                            </table>
                                                         </div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
@@ -319,11 +325,8 @@ if ($rSettings["sidebar"]) {
                                                     <li class="previous list-inline-item">
                                                         <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
                                                     </li>
-                                                    <li class="list-inline-item">
-                                                        <a href="javascript: void(0);" onClick="selectAllBq()" class="btn btn-secondary">Select All</a>
-                                                        <a href="javascript: void(0);" onClick="selectNoneBq()" class="btn btn-secondary">Deselect All</a>
-                                                    </li>
-                                                    <li class="next list-inline-item float-right">
+                                                    <li class="list-inline-item float-right">
+                                                        <a href="javascript: void(0);" onClick="toggleBouquets()" class="btn btn-info">Toggle Bouquets</a>
                                                         <input name="submit_package" type="submit" class="btn btn-primary" value="<?php if (isset($rPackage)) { echo "Edit"; } else { echo "Add"; } ?>" />
                                                     </li>
                                                 </ul>
@@ -350,9 +353,9 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
+        <script src="assets/libs/jquery-ui/jquery-ui.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
         <script src="assets/libs/switchery/switchery.min.js"></script>
         <script src="assets/libs/select2/select2.min.js"></script>
@@ -361,19 +364,31 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- Plugins js-->
+        <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
+        <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
+        <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.buttons.min.js"></script>
+        <script src="assets/libs/datatables/buttons.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/buttons.html5.min.js"></script>
+        <script src="assets/libs/datatables/buttons.flash.min.js"></script>
+        <script src="assets/libs/datatables/buttons.print.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>
+        <?php if (isset($rPackage)) { ?>
+        var rBouquets = <?=$rPackage["bouquets"];?>;
+        <?php } else { ?>
+        var rBouquets = [];
+        <?php } ?>
+        
         (function($) {
           $.fn.inputFilter = function(inputFilter) {
             return this.on("input keydown keyup mousedown mouseup select contextmenu drop", function() {
@@ -388,31 +403,31 @@ if ($rSettings["sidebar"]) {
             });
           };
         }(jQuery));
-        
+        function toggleBouquets() {
+            $("#datatable-bouquets tr").each(function() {
+                if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rBouquets.splice(parseInt($.inArray($(this).find("td:eq(0)").html()), window.rBouquets), 1);
+                    }
+                } else {            
+                    $(this).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rBouquets.push(parseInt($(this).find("td:eq(0)").html()));
+                    }
+                }
+            });
+        }
         function selectAll() {
             $(".group-checkbox").each(function() {
                 $(this).prop('checked', true);
             });
         }
-        
         function selectNone() {
             $(".group-checkbox").each(function() {
                 $(this).prop('checked', false);
             });
         }
-        
-        function selectAllBq() {
-            $(".bouquet-checkbox").each(function() {
-                $(this).prop('checked', true);
-            });
-        }
-        
-        function selectNoneBq() {
-            $(".bouquet-checkbox").each(function() {
-                $(this).prop('checked', false);
-            });
-        }
-        
         function isNumberKey(evt) {
             var charCode = (evt.which) ? evt.which : evt.keyCode;
             if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57)) {
@@ -421,19 +436,44 @@ if ($rSettings["sidebar"]) {
                 return true;
             }
         }
-        
         $(document).ready(function() {
             $('select.select2').select2({width: '100%'})
             $(".js-switch").each(function (index, element) {
                 var init = new Switchery(element);
             });
-            
             $(document).keypress(function(event){
                 if (event.which == '13') {
                     event.preventDefault();
                 }
             });
-
+            $("#datatable-bouquets").DataTable({
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0,2,3]}
+                ],
+                "rowCallback": function(row, data) {
+                    if ($.inArray(data[0], window.rBouquets) !== -1) {
+                        $(row).addClass("selected");
+                    }
+                },
+                paging: false,
+                bInfo: false,
+                searching: false
+            });
+            $("#datatable-bouquets").selectable({
+                filter: 'tr',
+                selected: function (event, ui) {
+                    if ($(ui.selected).hasClass('selectedfilter')) {
+                        $(ui.selected).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                        window.rBouquets.splice(parseInt($.inArray($(ui.selected).find("td:eq(0)").html()), window.rBouquets), 1);
+                    } else {            
+                        $(ui.selected).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                        window.rBouquets.push(parseInt($(ui.selected).find("td:eq(0)").html()));
+                    }
+                }
+            });
+            $("#package_form").submit(function(e){
+                $("#bouquets_selected").val(JSON.stringify(window.rBouquets));
+            });
             $("#max_connections").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#trial_duration").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#official_duration").inputFilter(function(value) { return /^\d*$/.test(value); });

@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_bouquet"])) {
@@ -17,7 +16,7 @@ if (isset($_POST["submit_bouquet"])) {
             $rArray[$rKey] = $rValue;
         }
     }
-    $rCols = implode(',', array_keys($rArray));
+    $rCols = $db->real_escape_string(implode(',', array_keys($rArray)));
     foreach (array_values($rArray) as $rValue) {
         isset($rValues) ? $rValues .= ',' : $rValues = '';
         if (is_array($rValue)) {
@@ -40,10 +39,9 @@ if (isset($_POST["submit_bouquet"])) {
         } else {
             $rInsertID = $db->insert_id;
         }
-    }
-    if (isset($rInsertID)) {
         $_STATUS = 0;
         $_GET["id"] = $rInsertID;
+        scanBouquet($rInsertID);
     } else {
         $_STATUS = 1;
     }
@@ -100,7 +98,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./bouquet.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="bouquet_form">
+                                <form action="./bouquet.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="bouquet_form" data-parsley-validate="">
                                     <?php if (isset($rBouquetArr)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rBouquetArr["id"]?>" />
                                     <input type="hidden" id="bouquet_data" name="bouquet_data" value="" />
@@ -147,7 +145,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="bouquet_name">Bouquet Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="bouquet_name" name="bouquet_name" value="<?php if (isset($rBouquetArr)) { echo $rBouquetArr["bouquet_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="bouquet_name" name="bouquet_name" value="<?php if (isset($rBouquetArr)) { echo $rBouquetArr["bouquet_name"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -361,7 +359,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -383,16 +380,11 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>
@@ -426,13 +418,13 @@ if ($rSettings["sidebar"]) {
         
         function toggleBouquet(rID, rType, rReview = false) {
             if (rType == "vod") { rType = "stream"; }
-            var rIndex = rBouquet[rType].indexOf(String(rID));
+            var rIndex = rBouquet[rType].indexOf(parseInt(rID));
             if (rIndex > -1) {
                 rBouquet[rType] = jQuery.grep(rBouquet[rType], function(rValue) {
-                    return String(rValue) != String(rID);
+                    return parseInt(rValue) != parseInt(rID);
                 });
             } else {
-                rBouquet[rType].push(String(rID));
+                rBouquet[rType].push(parseInt(rID));
             }
             if (rReview == true) {
                 if (rType == "stream") {
@@ -468,7 +460,7 @@ if ($rSettings["sidebar"]) {
                 },
                 createdRow: function(row, data, index) {
                     $(row).addClass('stream-' + data[0]);
-                    var rIndex = rBouquet["stream"].indexOf(String(data[0]));
+                    var rIndex = rBouquet["stream"].indexOf(parseInt(data[0]));
                     if (rIndex > -1) {
                         $(row).find(".btn-remove").show();
                     } else {
@@ -505,7 +497,7 @@ if ($rSettings["sidebar"]) {
                 },
                 createdRow: function(row, data, index) {
                     $(row).addClass('vod-' + data[0]);
-                    var rIndex = rBouquet["stream"].indexOf(String(data[0]));
+                    var rIndex = rBouquet["stream"].indexOf(parseInt(data[0]));
                     if (rIndex > -1) {
                         $(row).find(".btn-remove").show();
                     } else {
@@ -542,7 +534,7 @@ if ($rSettings["sidebar"]) {
                 },
                 createdRow: function(row, data, index) {
                     $(row).addClass('series-' + data[0]);
-                    var rIndex = rBouquet["series"].indexOf(String(data[0]));
+                    var rIndex = rBouquet["series"].indexOf(parseInt(data[0]));
                     if (rIndex > -1) {
                         $(row).find(".btn-remove").show();
                     } else {

@@ -5,10 +5,7 @@
         <title>Xtream UI</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <!-- App favicon -->
         <link rel="shortcut icon" href="assets/images/favicon.ico">
-
-        <!-- third party css -->
         <link href="assets/libs/jquery-nice-select/nice-select.css" rel="stylesheet" type="text/css" />
         <link href="assets/libs/switchery/switchery.min.css" rel="stylesheet" type="text/css" />
         <link href="assets/libs/select2/select2.min.css" rel="stylesheet" type="text/css" />
@@ -25,13 +22,9 @@
         <link href="assets/libs/nestable2/jquery.nestable.min.css" rel="stylesheet" />
         <link href="assets/libs/magnific-popup/magnific-popup.css" rel="stylesheet" type="text/css" />
         <link href="assets/libs/bootstrap-colorpicker/bootstrap-colorpicker.min.css" rel="stylesheet" type="text/css" />
-        <!-- third party css end -->
-
-        <!-- App css -->
         <link href="assets/css/bootstrap.css" rel="stylesheet" type="text/css" />
         <link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
         <link href="assets/css/app_sidebar.css" rel="stylesheet" type="text/css" />
-
     </head>
     <body class="enlarged topbar-dark left-side-menu-light" data-keep-enlarged="true">
         <!-- Begin page -->
@@ -73,6 +66,8 @@
                             <a href="./stream_categories.php" class="dropdown-item notify-item"><span>Stream Categories</span></a>
                             <a href="./movie_categories.php" class="dropdown-item notify-item"><span>Movie Categories</span></a>
                             <a href="#" class="dropdown-item notify-item"><span><span>Series Categories <i class="la la-exclamation-triangle"></i></span></a>
+                            <a href="./useragents.php" class="dropdown-item notify-item"><span>Blocked User Agents</span></a>
+                            <a href="./ips.php" class="dropdown-item notify-item"><span>Blocked IP's</span></a>
                             <a href="./mass_delete.php" class="dropdown-item notify-item"><span>Mass Delete</span></a>
                         </div>
                     </li>
@@ -178,10 +173,10 @@
                                     <li><a href="./user.php?mag">Add MAG User</a></li>
                                     <li><a href="./mag.php">Link MAG User</a></li>
                                     <li><a href="./mags.php">Manage MAG Devices</a></li>
-                                    <li><a href="./mag_events.php">MAG Events</a></li>
                                     <li class="separator"></li>
                                     <li><a href="./user.php?e2">Add Enigma User</a></li>
                                     <li><a href="./enigma.php">Link Enigma User</a></li>
+                                    <li><a href="./enigmas.php">Manage Enigma Devices</a></li>
                                     <li class="separator"></li>
                                     <li><a href="./mag_events.php">MAG Event Logs</a></li>
                                     <?php } else { ?>

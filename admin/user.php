@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_user"])) {
@@ -65,14 +64,8 @@ if (isset($_POST["submit_user"])) {
             $rArray[$rSelection] = 0;
         }
     }
-    $rArray["bouquet"] = Array();
-    if (isset($_POST["bouquet"])) {
-        foreach ($_POST["bouquet"] as $rBouquetID) {
-            $rArray["bouquet"][] = intval($rBouquetID);
-        }
-        $rArray["bouquet"] = "[".join(",", $rArray["bouquet"])."]";
-        unset($_POST["bouquet"]);
-    }
+    $rArray["bouquet"] = array_values(json_decode($_POST["bouquets_selected"], True));
+    unset($_POST["bouquets_selected"]);
     if ((isset($_POST["exp_date"])) && (!isset($_POST["no_expire"]))) {
         if ((strlen($_POST["exp_date"]) > 0) AND ($_POST["exp_date"] <> "1970-01-01")) {
             try {
@@ -87,6 +80,22 @@ if (isset($_POST["submit_user"])) {
     } else {
         $rArray["exp_date"] = null;
     }
+    if (isset($_POST["allowed_ips"])) {
+		if (!is_array($_POST["allowed_ips"])) {
+			$_POST["allowed_ips"] = Array($_POST["allowed_ips"]);
+		}
+		$rArray["allowed_ips"] = json_encode($_POST["allowed_ips"]);
+	} else {
+		$rArray["allowed_ips"] = "[]";
+	}
+	if (isset($_POST["allowed_ua"])) {
+		if (!is_array($_POST["allowed_ua"])) {
+			$_POST["allowed_ua"] = Array($_POST["allowed_ua"]);
+		}
+		$rArray["allowed_ua"] = json_encode($_POST["allowed_ua"]);
+	} else {
+		$rArray["allowed_ua"] = "[]";
+	}
     if (!isset($_STATUS)) {
         foreach($_POST as $rKey => $rValue) {
             if (isset($rArray[$rKey])) {
@@ -94,7 +103,7 @@ if (isset($_POST["submit_user"])) {
             }
         }
         $rArray["created_by"] = $rArray["member_id"];
-        $rCols = "`".implode('`,`', array_keys($rArray))."`";
+        $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rArray))."`");
         foreach (array_values($rArray) as $rValue) {
             isset($rValues) ? $rValues .= ',' : $rValues = '';
             if (is_array($rValue)) {
@@ -242,12 +251,13 @@ if ($rSettings["sidebar"]) {
                         } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./user.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="user_form">
+                                <form action="./user.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="user_form" data-parsley-validate="">
                                     <?php if (isset($rUser)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rUser["id"]?>" />
                                     <input type="hidden" name="admin_enabled" value="<?=$rUser["admin_enabled"]?>" />
                                     <input type="hidden" name="enabled" value="<?=$rUser["enabled"]?>" />
                                     <?php } ?>
+                                    <input type="hidden" name="bouquets_selected" id="bouquets_selected" value="" />
                                     <div id="basicwizard">
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
@@ -260,6 +270,12 @@ if ($rSettings["sidebar"]) {
                                                 <a href="#advanced-options" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
                                                     <i class="mdi mdi-folder-alert-outline mr-1"></i>
                                                     <span class="d-none d-sm-inline">Advanced</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="#restrictions" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
+                                                    <i class="mdi mdi-hazard-lights mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Restrictions</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
@@ -298,7 +314,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="max_connections">Max Connections</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rUser)) { echo $rUser["max_connections"]; } else { echo "1"; } ?>">
+                                                                <input type="text" class="form-control" id="max_connections" name="max_connections" value="<?php if (isset($rUser)) { echo $rUser["max_connections"]; } else { echo "1"; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                             <label class="col-md-2 col-form-label" for="exp_date">Expiry <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Leave blank for unlimited." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
@@ -415,19 +431,48 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
-                                            
-                                            <div class="tab-pane" id="bouquets">
+                                            <div class="tab-pane" id="restrictions">
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4">
-                                                            <?php foreach (getBouquets() as $rBouquet) { ?>
-                                                            <div class="col-md-6">
-                                                                <div class="custom-control custom-checkbox mt-1">
-                                                                    <input type="checkbox" class="custom-control-input bouquet-checkbox" id="bouquet-<?=$rBouquet["id"]?>" name="bouquet[]" value="<?=$rBouquet["id"]?>"<?php if(isset($rUser)) { if(in_array($rBouquet["id"], json_decode($rUser["bouquet"], True))) { echo " checked"; } } ?>>
-                                                                    <label class="custom-control-label" for="bouquet-<?=$rBouquet["id"]?>"><?=$rBouquet["bouquet_name"]?></label>
+                                                            <label class="col-md-4 col-form-label" for="ip_field">Allowed IP Addresses</label>
+                                                            <div class="col-md-8 input-group">
+                                                                <input type="text" id="ip_field" class="form-control" value="">
+                                                                <div class="input-group-append">
+                                                                    <a href="javascript:void(0)" id="add_ip" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-plus"></i></a>
+                                                                    <a href="javascript:void(0)" id="remove_ip" class="btn btn-danger waves-effect waves-light"><i class="mdi mdi-close"></i></a>
                                                                 </div>
                                                             </div>
-                                                            <?php } ?>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="allowed_ips">&nbsp;</label>
+                                                            <div class="col-md-8">
+                                                                <select class="form-control" id="allowed_ips" name="allowed_ips" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ips"], True) as $rIP) { ?>
+                                                                <option value="<?=$rIP?>"><?=$rIP?></option>
+                                                                <?php } } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="ua_field">Allowed User-Agents</label>
+                                                            <div class="col-md-8 input-group">
+                                                                <input type="text" id="ua_field" class="form-control" value="">
+                                                                <div class="input-group-append">
+                                                                    <a href="javascript:void(0)" id="add_ua" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-plus"></i></a>
+                                                                    <a href="javascript:void(0)" id="remove_ua" class="btn btn-danger waves-effect waves-light"><i class="mdi mdi-close"></i></a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="allowed_ua">&nbsp;</label>
+                                                            <div class="col-md-8">
+                                                                <select class="form-control" id="allowed_ua" name="allowed_ua" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ua"], True) as $rUA) { ?>
+                                                                <option value="<?=$rUA?>"><?=$rUA?></option>
+                                                                <?php } } ?>
+                                                                </select>
+                                                            </div>
                                                         </div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
@@ -436,8 +481,43 @@ if ($rSettings["sidebar"]) {
                                                         <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
                                                     </li>
                                                     <li class="next list-inline-item float-right">
-                                                        <a href="javascript: void(0);" onClick="selectAll()" class="btn btn-secondary">Select All</a>
-                                                        <a href="javascript: void(0);" onClick="selectNone()" class="btn btn-secondary">Deselect All</a>
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="bouquets">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <table id="datatable-bouquets" class="table table-borderless mb-0">
+                                                                <thead class="bg-light">
+                                                                    <tr>
+                                                                        <th class="text-center">ID</th>
+                                                                        <th>Bouquet Name</th>
+                                                                        <th class="text-center">Streams</th>
+                                                                        <th class="text-center">Series</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <?php foreach (getBouquets() as $rBouquet) { ?>
+                                                                    <tr<?php if ((isset($rUser)) & (in_array($rBouquet["id"], json_decode($rUser["bouquet"], True)))) { echo " class='selected selectedfilter ui-selected'"; } ?>>
+                                                                        <td class="text-center"><?=$rBouquet["id"]?></td>
+                                                                        <td><?=$rBouquet["bouquet_name"]?></td>
+                                                                        <td class="text-center"><?=count(json_decode($rBouquet["bouquet_channels"], True))?></td>
+                                                                        <td class="text-center"><?=count(json_decode($rBouquet["bouquet_series"], True))?></td>
+                                                                    </tr>
+                                                                    <?php } ?>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="previous list-inline-item">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
+                                                    </li>
+                                                    <li class="list-inline-item float-right">
+                                                        <a href="javascript: void(0);" onClick="toggleBouquets()" class="btn btn-info">Toggle Bouquets</a>
                                                         <input name="submit_user" type="submit" class="btn btn-primary" value="<?php if (isset($rUser)) { echo "Edit"; } else { echo "Add"; } ?>" />
                                                     </li>
                                                 </ul>
@@ -445,7 +525,6 @@ if ($rSettings["sidebar"]) {
                                         </div> <!-- tab-content -->
                                     </div> <!-- end #basicwizard-->
                                 </form>
-
                             </div> <!-- end card-body -->
                         </div> <!-- end card-->
                     </div> <!-- end col -->
@@ -463,32 +542,42 @@ if ($rSettings["sidebar"]) {
             </div>
         </footer>
         <!-- end Footer -->
-
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
+        <script src="assets/libs/jquery-ui/jquery-ui.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
         <script src="assets/libs/switchery/switchery.min.js"></script>
         <script src="assets/libs/select2/select2.min.js"></script>
         <script src="assets/libs/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
         <script src="assets/libs/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
+        <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
+        <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
+        <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.buttons.min.js"></script>
+        <script src="assets/libs/datatables/buttons.bootstrap4.min.js"></script>
+        <script src="assets/libs/datatables/buttons.html5.min.js"></script>
+        <script src="assets/libs/datatables/buttons.flash.min.js"></script>
+        <script src="assets/libs/datatables/buttons.print.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
+        <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>
         var swObjs = {};
+        <?php if (isset($rUser)) { ?>
+        var rBouquets = <?=$rUser["bouquet"];?>;
+        <?php } else { ?>
+        var rBouquets = [];
+        <?php } ?>
         
         (function($) {
           $.fn.inputFilter = function(inputFilter) {
@@ -505,15 +594,19 @@ if ($rSettings["sidebar"]) {
           };
         }(jQuery));
         
-        function selectAll() {
-            $(".bouquet-checkbox").each(function() {
-                $(this).prop('checked', true);
-            });
-        }
-        
-        function selectNone() {
-            $(".bouquet-checkbox").each(function() {
-                $(this).prop('checked', false);
+        function toggleBouquets() {
+            $("#datatable-bouquets tr").each(function() {
+                if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rBouquets.splice(parseInt($.inArray($(this).find("td:eq(0)").html()), window.rBouquets), 1);
+                    }
+                } else {            
+                    $(this).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rBouquets.push(parseInt($(this).find("td:eq(0)").html()));
+                    }
+                }
             });
         }
         function isValidDate(dateString) {
@@ -523,6 +616,13 @@ if ($rSettings["sidebar"]) {
               var dNum = d.getTime();
               if(!dNum && dNum !== 0) return false; // NaN value, Invalid date
               return d.toISOString().slice(0,10) === dateString;
+        }
+        function isValidIP(rIP) {
+            if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(rIP)) {
+                return true;
+            } else {
+                return false;
+            }
         }
         function evaluateForm() {
             if (($("#is_mag").is(":checked")) || ($("#is_e2").is(":checked"))) {
@@ -556,6 +656,32 @@ if ($rSettings["sidebar"]) {
                 }
             });
             
+            $("#datatable-bouquets").DataTable({
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0,2,3]}
+                ],
+                "rowCallback": function(row, data) {
+                    if ($.inArray(data[0], window.rBouquets) !== -1) {
+                        $(row).addClass("selected");
+                    }
+                },
+                paging: false,
+                bInfo: false,
+                searching: false
+            });
+            $("#datatable-bouquets").selectable({
+                filter: 'tr',
+                selected: function (event, ui) {
+                    if ($(ui.selected).hasClass('selectedfilter')) {
+                        $(ui.selected).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                        window.rBouquets.splice(parseInt($.inArray($(ui.selected).find("td:eq(0)").html()), window.rBouquets), 1);
+                    } else {            
+                        $(ui.selected).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                        window.rBouquets.push(parseInt($(ui.selected).find("td:eq(0)").html()));
+                    }
+                }
+            });
+            
             $("#no_expire").change(function() {
                 if ($(this).prop("checked")) {
                     $("#exp_date").prop("disabled", true);
@@ -568,12 +694,41 @@ if ($rSettings["sidebar"]) {
                 evaluateForm();
             });
             
+            $("#user_form").submit(function(e){
+                $("#bouquets_selected").val(JSON.stringify(window.rBouquets));
+                $("#allowed_ua option").prop('selected', true);
+                $("#allowed_ips option").prop('selected', true);
+            });
+            
             $(document).keypress(function(event){
                 if (event.which == '13') {
                     event.preventDefault();
                 }
             });
-            
+            $("#add_ip").click(function() {
+                if (($("#ip_field").val().length > 0) && (isValidIP($("#ip_field").val()))) {
+                    var o = new Option($("#ip_field").val(), $("#ip_field").val());
+                    $("#allowed_ips").append(o);
+                    $("#ip_field").val("");
+                } else {
+                    $.toast("Please enter a valid IP address.");
+                }
+            });
+            $("#remove_ip").click(function() {
+                $('#allowed_ips option:selected').remove();
+            });
+            $("#add_ua").click(function() {
+                if ($("#ua_field").val().length > 0) {
+                    var o = new Option($("#ua_field").val(), $("#ua_field").val());
+                    $("#allowed_ua").append(o);
+                    $("#ua_field").val("");
+                } else {
+                    $.toast("Please enter a user-agent.");
+                }
+            });
+            $("#remove_ua").click(function() {
+                $('#allowed_ua option:selected').remove();
+            });
             $("#max_connections").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("form").attr('autocomplete', 'off');
             

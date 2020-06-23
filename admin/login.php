@@ -121,15 +121,15 @@ if ((isset($_POST["username"])) && (isset($_POST["password"]))) {
                                     <p class="text-muted mb-4 mt-3"></p>
                                 </div>
                                 <h5 class="auth-title">Admin & Reseller Interface</h5>
-                                <form action="./login.php" method="POST">
+                                <form action="./login.php" method="POST" data-parsley-validate="">
                                     <?php if (!isset($rQR)) { ?>
                                     <div class="form-group mb-3">
                                         <label for="username">Username</label>
-                                        <input class="form-control" autocomplete="off" type="text" id="username" name="username" required="" placeholder="Enter your username">
+                                        <input class="form-control" autocomplete="off" type="text" id="username" name="username" required data-parsley-trigger="change" placeholder="Enter your username">
                                     </div>
                                     <div class="form-group mb-3">
                                         <label for="password">Password</label>
-                                        <input class="form-control" autocomplete="off" type="password" required="" id="password" name="password" placeholder="Enter your password">
+                                        <input class="form-control" autocomplete="off" type="password" required data-parsley-trigger="change" id="password" name="password" placeholder="Enter your password">
                                     </div>
                                     <?php } else { ?>
                                     <input type="hidden" name="hash" value="<?=md5($rUserInfo["username"])?>" />
@@ -155,6 +155,7 @@ if ((isset($_POST["username"])) && (isset($_POST["password"]))) {
             </div>
         </div>
         <script src="assets/js/vendor.min.js"></script>
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
     </body>
 </html>

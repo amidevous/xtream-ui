@@ -1,7 +1,13 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (((!$rPermissions["is_reseller"]) OR (!$rPermissions["create_sub_resellers"])) && (!$rPermissions["is_admin"])) { exit; }
+
+if ($rPermissions["is_admin"]) {
+    $rRegisteredUsers = getRegisteredUsers();
+} else {
+    $rRegisteredUsers = getRegisteredUsers($rUserInfo["id"]);
+}
+
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -19,6 +25,11 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
+                                        <a href="#" onClick="clearFilters();">
+                                            <button type="button" class="btn btn-warning waves-effect waves-light btn-sm">
+                                                <i class="mdi mdi-filter-remove"></i>
+                                            </button>
+                                        </a>
                                         <a href="#" onClick="changeZoom();">
                                             <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-magnify"></i>
@@ -54,12 +65,46 @@ if ($rSettings["sidebar"]) {
                     <div class="col-12">
                         <div class="card">
                             <div class="card-body" style="overflow-x:auto;">
-                                <table id="datatable" class="table dt-responsive nowrap font-normal">
+                                <form id="reg_users_search">
+                                    <div class="form-group row mb-4">
+                                        <div class="col-md-3">
+                                            <input type="text" class="form-control" id="reg_search" value="" placeholder="Search Users...">
+                                        </div>
+                                        <label class="col-md-2 col-form-label text-center" for="reg_reseller">Filter Results</label>
+                                        <div class="col-md-3">
+                                            <select id="reg_reseller" class="form-control" data-toggle="select2">
+                                                <option value="" selected>All Owners</option>
+                                                <?php if ($rPermissions["is_admin"]) { ?>
+                                                <option value="0">No Owner</option>
+                                                <?php } foreach ($rRegisteredUsers as $rRegisteredUser) { ?>
+                                                <option value="<?=$rRegisteredUser["id"]?>"><?=$rRegisteredUser["username"]?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <select id="reg_filter" class="form-control" data-toggle="select2">
+                                                <option value="" selected>No Filter</option>
+                                                <option value="1">Active</option>
+                                                <option value="2">Disabled</option>
+                                            </select>
+                                        </div>
+                                        <label class="col-md-1 col-form-label text-center" for="reg_show_entries">Show</label>
+                                        <div class="col-md-1">
+                                            <select id="reg_show_entries" class="form-control" data-toggle="select2">
+                                                <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
+                                                <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
+                                                <?php } ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </form>
+                                <table id="datatable-users" class="table dt-responsive nowrap font-normal">
                                     <thead>
                                         <tr>
                                             <th class="text-center">ID</th>
                                             <th>Username</th>
                                             <th>Email</th>
+                                            <th>Owner</th>
                                             <th class="text-center">IP</th>
                                             <th class="text-center">Type</th>
                                             <th class="text-center">Status</th>
@@ -90,13 +135,11 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
+        <script src="assets/libs/select2/select2.min.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
         <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
         <script src="assets/libs/datatables/dataTables.buttons.min.js"></script>
@@ -106,13 +149,12 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
-        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
-        <!-- third party js ends -->
+        <script src="assets/js/pages/form-remember.js"></script>
+        <script src="assets/js/app.min.js"></script>
 
-        <!-- Datatables init -->
         <script>
         var autoRefresh = true;
+        var rClearing = false;
         
         function api(rID, rType) {
             if (rType == "delete") {
@@ -129,16 +171,13 @@ if ($rSettings["sidebar"]) {
                     } else if (rType == "disable") {
                         $.toast("User has been disabled.");
                     }
-                    $.each($('.tooltip'), function (index, element) {
-                        $(this).remove();
-                    });
-                    $("#datatable").DataTable().ajax.reload(null, false);
+                    $('[data-toggle="tooltip"]').tooltip("hide");
+                    $("#datatable-users").DataTable().ajax.reload(null, false);
                 } else {
                     $.toast("An error occured while processing your request.");
                 }
             });
         }
-        
         function toggleAuto() {
             if (autoRefresh == true) {
                 autoRefresh = false;
@@ -148,28 +187,51 @@ if ($rSettings["sidebar"]) {
                 $(".auto-text").html("Auto-Refresh");
             }
         }
-        
+        function getFilter() {
+            return $("#reg_filter").val();
+        }
+        function getReseller() {
+            return $("#reg_reseller").val();
+        }
         function reloadUsers() {
             if (autoRefresh == true) {
-                $("#datatable").DataTable().ajax.reload(null, false);
+                $('[data-toggle="tooltip"]').tooltip("hide");
+                $("#datatable-users").DataTable().ajax.reload(null, false);
             }
             setTimeout(reloadUsers, 5000);
         }
         function changeZoom() {
-            if ($("#datatable").hasClass("font-large")) {
-                $("#datatable").removeClass("font-large");
-                $("#datatable").addClass("font-normal");
-            } else if ($("#datatable").hasClass("font-normal")) {
-                $("#datatable").removeClass("font-normal");
-                $("#datatable").addClass("font-small");
+            if ($("#datatable-users").hasClass("font-large")) {
+                $("#datatable-users").removeClass("font-large");
+                $("#datatable-users").addClass("font-normal");
+            } else if ($("#datatable-users").hasClass("font-normal")) {
+                $("#datatable-users").removeClass("font-normal");
+                $("#datatable-users").addClass("font-small");
             } else {
-                $("#datatable").removeClass("font-small");
-                $("#datatable").addClass("font-large");
+                $("#datatable-users").removeClass("font-small");
+                $("#datatable-users").addClass("font-large");
             }
-            $("#datatable").draw();
+            $("#datatable-users").DataTable().draw();
+        }
+        function clearFilters() {
+            window.rClearing = true;
+            $("#reg_search").val("").trigger('change');
+            $('#reg_filter').val("").trigger('change');
+            $('#reg_reseller').val("").trigger('change');
+            $('#reg_show_entries').val("<?=$rAdminSettings["default_entries"] ?: 10?>").trigger('change');
+            window.rClearing = false;
+            $('#datatable-users').DataTable().search($("#reg_search").val());
+            $('#datatable-users').DataTable().page.len($('#reg_show_entries').val());
+            $("#datatable-users").DataTable().page(0).draw('page');
+            $("#datatable-users").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
-            $("#datatable").DataTable({
+            formCache.init();
+            formCache.fetch();
+            
+            $.fn.dataTable.ext.errMode = 'none';
+            $('select').select2({width: '100%'});
+            $("#datatable-users").DataTable({
                 language: {
                     paginate: {
                         previous: "<i class='mdi mdi-chevron-left'>",
@@ -187,29 +249,52 @@ if ($rSettings["sidebar"]) {
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: "./table.php",
+                    url: "./table_search.php",
                     "data": function(d) {
-                        d.id = "reg_users";
+                        d.id = "reg_users",
+                        d.filter = getFilter(),
+                        d.reseller = getReseller()
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [0,3,4,5,6,7,8]},
-                    <?php if ($rPermissions["is_admin"]) { ?>
-                    {"visible": false, "targets": [9]}
-                    <?php } else { ?>
-                    {"visible": false, "targets": [4,9]}
+                    {"className": "dt-center", "targets": [0,4,5,6,7,8,9]},
+                    <?php if ($rPermissions["is_reseller"]) { ?>
+                    {"visible": false, "targets": [5]}
                     <?php } ?>
                 ],
                 order: [[ 0, "desc" ]],
                 stateSave: true
             });
+            $("#datatable-users").css("width", "100%");
+            $('#reg_search').keyup(function(){
+                if (!window.rClearing) {
+                    $('#datatable-users').DataTable().search($(this).val()).draw();
+                }
+            });
+            $('#reg_show_entries').change(function(){
+                if (!window.rClearing) {
+                    $('#datatable-users').DataTable().page.len($(this).val()).draw();
+                }
+            });
+            $('#reg_filter').change(function(){
+                if (!window.rClearing) {
+                    $("#datatable-users").DataTable().ajax.reload( null, false );
+                }
+            });
+            $('#reg_reseller').change(function(){
+                if (!window.rClearing) {
+                    $("#datatable-users").DataTable().ajax.reload( null, false );
+                }
+            });
             <?php if (!$detect->isMobile()) { ?>
             setTimeout(reloadUsers, 5000);
             <?php } ?>
+            $('#datatable-users').DataTable().search($(this).val()).draw();
+        });
+        
+        $(window).bind('beforeunload', function() {
+            formCache.save();
         });
         </script>
-
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -446,10 +445,7 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
-
-        <!-- Third Party js-->
         <script src="assets/libs/jquery-knob/jquery.knob.min.js"></script>
         <script src="assets/libs/peity/jquery.peity.min.js"></script>
         <script src="assets/libs/apexcharts/apexcharts.min.js"></script>
@@ -458,12 +454,7 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
         <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
-        <!-- third party js ends -->
-
-        <!-- Dashboard init -->
         <script src="assets/js/pages/dashboard.init.js"></script>
-
-        <!-- App js-->
         <script src="assets/js/app.min.js"></script>
         
         <script>

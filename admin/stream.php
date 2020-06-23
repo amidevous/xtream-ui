@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_stream"])) {
@@ -8,7 +7,7 @@ if (isset($_POST["submit_stream"])) {
         $rArray = getStream($_POST["edit"]);
         unset($rArray["id"]);
     } else {
-        $rArray = Array("type" => 1, "added" => time(), "read_native" => 0, "stream_all" => 0, "redirect_stream" => 1, "direct_source" => 0, "gen_timestamps" => 1, "transcode_attributes" => Array(), "stream_display_name" => "", "stream_source" => Array(), "category_id" => 0, "stream_icon" => "", "notes" => "", "custom_sid" => "", "custom_ffmpeg" => "", "transcode_profile_id" => 0, "enable_transcode" => 0, "auto_restart" => "[]", "allow_record" => 1, "rtmp_output" => 0, "epg_id" => null, "channel_id" => null, "epg_lang" => null, "tv_archive_server_id" => 0, "tv_archive_duration" => 0, "delay_minutes" => 0, "external_push" => Array(), "probesize_ondemand" => 128000);
+        $rArray = Array("type" => 1, "added" => time(), "read_native" => 0, "stream_all" => 0, "redirect_stream" => 1, "direct_source" => 0, "gen_timestamps" => 1, "transcode_attributes" => Array(), "stream_display_name" => "", "stream_source" => Array(), "category_id" => 0, "stream_icon" => "", "notes" => "", "custom_sid" => "", "custom_ffmpeg" => "", "custom_map" => "", "transcode_profile_id" => 0, "enable_transcode" => 0, "auto_restart" => "[]", "allow_record" => 1, "rtmp_output" => 0, "epg_id" => null, "channel_id" => null, "epg_lang" => null, "tv_archive_server_id" => 0, "tv_archive_duration" => 0, "delay_minutes" => 0, "external_push" => Array(), "probesize_ondemand" => 128000);
     }
     if ((isset($_POST["days_to_restart"])) && (preg_match("/^(?:2[0-3]|[01][0-9]):[0-5][0-9]$/", $_POST["time_to_restart"]))) {
         $rTimeArray = Array("days" => Array(), "at" => $_POST["time_to_restart"]);
@@ -25,6 +24,9 @@ if (isset($_POST["submit_stream"])) {
             $rOnDemandArray[] = $rID;
         }
     }
+    $rArray["custom_map"] = $_POST["custom_map"];
+    $rArray["custom_ffmpeg"] = $_POST["custom_ffmpeg"];
+    $rArray["custom_sid"] = $_POST["custom_sid"];
     if (isset($_POST["gen_timestamps"])) {
         $rArray["gen_timestamps"] = 1;
         unset($_POST["gen_timestamps"]);
@@ -109,7 +111,7 @@ if (isset($_POST["submit_stream"])) {
         } else if ((!empty($_FILES['m3u_file']['tmp_name'])) && (strtolower(pathinfo($_FILES['m3u_file']['name'], PATHINFO_EXTENSION)) == "m3u")) {
             $rFile = file_get_contents($_FILES['m3u_file']['tmp_name']);
         }
-        preg_match_all('/(?P<tag>#EXTINF:-1)|(?:(?P<prop_key>[-a-z]+)=\"(?P<prop_val>[^"]+)")|(?<name>,[^\r\n]+)|(?<url>http[^\s]+)/', $rFile, $rMatches);
+        preg_match_all('/(?P<tag>#EXTINF:[-1,0])|(?:(?P<prop_key>[-a-z]+)=\"(?P<prop_val>[^"]+)")|(?<name>,[^\r\n]+)|(?<url>http[^\s]+)/', $rFile, $rMatches);
         $rResults = [];
         $rIndex = -1;
         for ($i = 0; $i < count($rMatches[0]); $i++) {
@@ -125,16 +127,21 @@ if (isset($_POST["submit_stream"])) {
             }
         }
         foreach ($rResults as $rResult) {
-            $rImportArray = Array("stream_source" => Array($rResult["url"]), "stream_icon" => $rResult["tvg-logo"] ?: "", "stream_display_name" => $rResult["name"] ?: "", "epg_id" => 0, "epg_lang" => "NULL", "channel_id" => "");
-            $rEPG = findEPG($rResult["tvg-id"]);
-            if (isset($rEPG)) {
-                $rImportArray["epg_id"] = $rEPG["epg_id"];
-                $rImportArray["channel_id"] = $rEPG["channel_id"];
-                if (!empty($rEPG["epg_lang"])) {
-                    $rImportArray["epg_lang"] = $rEPG["epg_lang"];
+            $rImportArray = Array("stream_source" => Array($rResult["url"]), "stream_icon" => $rResult["tvg-logo"] ?: "", "stream_display_name" => $rResult["name"] ?: "", "epg_id" => null, "epg_lang" => null, "channel_id" => null);
+            if ($rResult["tvg-id"]) {
+                $rEPG = findEPG($rResult["tvg-id"]);
+                if (isset($rEPG)) {
+                    $rImportArray["epg_id"] = $rEPG["epg_id"];
+                    $rImportArray["channel_id"] = $rEPG["channel_id"];
+                    if (!empty($rEPG["epg_lang"])) {
+                        $rImportArray["epg_lang"] = $rEPG["epg_lang"];
+                    }
                 }
             }
-            $rImportStreams[] = $rImportArray;
+			$rResult = $db->query("SELECT COUNT(`id`) AS `count` FROM `streams` WHERE `stream_display_name` = '".$db->real_escape_string($rImportArray["stream_display_name"])."';");
+			if ($rResult->fetch_assoc()["count"] == 0) {
+				$rImportStreams[] = $rImportArray;
+			}
         }
     } else {
         $rImportArray = Array("stream_source" => Array(), "stream_icon" => $rArray["stream_icon"], "stream_display_name" => $rArray["stream_display_name"], "epg_id" => $rArray["epg_id"], "epg_lang" => $rArray["epg_lang"], "channel_id" => $rArray["channel_id"]);
@@ -145,7 +152,17 @@ if (isset($_POST["submit_stream"])) {
                 }
             }
         }
-        $rImportStreams[] = $rImportArray;
+		if (isset($_POST["edit"])) {
+			$rImportStreams[] = $rImportArray;
+		} else {
+			$rResult = $db->query("SELECT COUNT(`id`) AS `count` FROM `streams` WHERE `stream_display_name` = '".$db->real_escape_string($rImportArray["stream_display_name"])."';");
+			if ($rResult->fetch_assoc()["count"] == 0) {
+				$rImportStreams[] = $rImportArray;
+			} else {
+				$_STATUS = 2;
+				$rStream = $rArray;
+			}
+		}
     }
     if (count($rImportStreams) > 0) {
         foreach ($rImportStreams as $rImportStream) {
@@ -153,7 +170,7 @@ if (isset($_POST["submit_stream"])) {
             foreach (array_keys($rImportStream) as $rKey) {
                 $rImportArray[$rKey] = $rImportStream[$rKey];
             }
-            $rCols = "`".implode('`,`', array_keys($rImportArray))."`";
+            $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rImportArray))."`");
             $rValues = null;
             foreach (array_values($rImportArray) as $rValue) {
                 isset($rValues) ? $rValues .= ',' : $rValues = '';
@@ -234,9 +251,11 @@ if (isset($_POST["submit_stream"])) {
                         removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
                     }
                 }
+                scanBouquets();
                 $_STATUS = 0;
             } else {
                 $_STATUS = 1;
+				$rStream = $rArray;
             }
         }
         if ((isset($_FILES["m3u_file"])) OR (isset($_POST["m3u_url"]))) {
@@ -245,8 +264,19 @@ if (isset($_POST["submit_stream"])) {
             $_GET["id"] = $rInsertID;
         }
     } else {
-        $_STATUS = 1;
+		if (!isset($_STATUS)) {
+			$_STATUS = 3;
+			$rStream = $rArray;
+		}
     }
+}
+
+if (isset($_STATUS)) {
+	foreach ($rStream as $rKey => $rValue) {
+		if (is_array($rValue)) {
+			$rStream[$rKey] = json_encode($rValue);
+		}
+	}
 }
 
 $rEPGSources = getEPGSources();
@@ -310,7 +340,7 @@ if ($rSettings["sidebar"]) {
                                     <a href="./streams.php<?php if (isset($_GET["category"])) { echo "?category=".$_GET["category"]; } ?>"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Streams</li></a>
                                 </ol>
                             </div>
-                            <h4 class="page-title"><?php if (isset($rStream)) { echo $rStream["stream_display_name"].' &nbsp;<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rStream["id"].');"><i class="mdi mdi-play"></i></button>'; } else if (isset($_GET["import"])) { echo "Import Streams"; } else { echo "Add Stream"; } ?></h4>
+                            <h4 class="page-title"><?php if (isset($rStream["id"])) { echo $rStream["stream_display_name"].' &nbsp;<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rStream["id"].');"><i class="mdi mdi-play"></i></button>'; } else if (isset($_GET["import"])) { echo "Import Streams"; } else { echo "Add Stream"; } ?></h4>
                         </div>
                     </div>
                 </div>     
@@ -324,15 +354,29 @@ if ($rSettings["sidebar"]) {
                             </button>
                             Stream operation was completed successfully.
                         </div>
-                        <?php } else if ((isset($_STATUS)) && ($_STATUS > 0)) { ?>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 1)) { ?>
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
-                            There was an error performing this operation! Please check the form entry and try again.
+                            An error occured while inserting into the database, please check the form.
+                        </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 2)) { ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            The stream name is already in use, please select another.
+                        </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 3)) { ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            No new streams were imported from the M3U. Please check the input.
                         </div>
                         <?php }
-                        if (isset($rStream)) { ?>
+                        if (isset($rStream["id"])) { ?>
                         <div class="card text-xs-center">
                             <div class="table">
                                 <table id="datatable" class="table table-borderless mb-0">
@@ -359,8 +403,8 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form<?php if(isset($_GET["import"])) { echo " enctype=\"multipart/form-data\""; } ?> action="./stream.php<?php if (isset($_GET["import"])) { echo "?import"; } else if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="stream_form">
-                                    <?php if (isset($rStream)) { ?>
+                                <form<?php if(isset($_GET["import"])) { echo " enctype=\"multipart/form-data\""; } ?> action="./stream.php<?php if (isset($_GET["import"])) { echo "?import"; } else if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="stream_form" data-parsley-validate="">
+                                    <?php if (isset($rStream["id"])) { ?>
                                     <input type="hidden" name="edit" value="<?=$rStream["id"]?>" />
                                     <?php } ?>
                                     <input type="hidden" name="server_tree_data" id="server_tree_data" value="" />
@@ -378,6 +422,14 @@ if ($rSettings["sidebar"]) {
                                                     <span class="d-none d-sm-inline">Advanced</span>
                                                 </a>
                                             </li>
+											<?php if (!isset($_GET["import"])) { ?>
+                                            <li class="nav-item">
+                                                <a href="#stream-map" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
+                                                    <i class="mdi mdi-map mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Map</span>
+                                                </a>
+                                            </li>
+											<?php } ?>
                                             <li class="nav-item">
                                                 <a href="#auto-restart" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
                                                     <i class="mdi mdi-clock-outline mr-1"></i>
@@ -407,7 +459,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="stream_display_name">Stream Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rStream)) { echo $rStream["stream_display_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rStream)) { echo $rStream["stream_display_name"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <span class="streams">
@@ -493,7 +545,6 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
-
                                             <div class="tab-pane" id="advanced-options">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -581,7 +632,44 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
-                                            
+											<?php if (!isset($_GET["import"])) { ?>
+                                            <div class="tab-pane" id="stream-map">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-3 col-form-label" for="custom_map">Custom Map</label>
+                                                            <div class="col-md-9 input-group">
+                                                                <input type="text" class="form-control" id="custom_map" name="custom_map" value="<?php if (isset($rStream)) { echo $rStream["custom_map"]; } ?>">
+                                                                <div class="input-group-append">
+                                                                        <button class="btn btn-primary waves-effect waves-light" id="load_maps" type="button"><i class="mdi mdi-magnify"></i></button>
+                                                                    </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="alert alert-warning bg-warning text-white border-0" role="alert">
+                                                            Custom maps are advanced features and you should only modify these if you know what you're doing. Hit the search icon to map the streams. Once mapped, you can select them from the table below.
+                                                        </div>
+                                                        <table id="datatable-map" class="table table-borderless mb-0">
+                                                            <thead class="bg-light">
+                                                                <tr>
+                                                                    <th>#</th>
+                                                                    <th>Type</th>
+                                                                    <th>Information</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="previous list-inline-item">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
+                                                    </li>
+                                                    <li class="next list-inline-item float-right">
+                                                        <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+											<?php } ?>
                                             <div class="tab-pane" id="auto-restart">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -721,14 +809,13 @@ if ($rSettings["sidebar"]) {
                                                         <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
                                                     </li>
                                                     <li class="next list-inline-item float-right">
-                                                        <input name="submit_stream" type="submit" class="btn btn-primary" value="<?php if (isset($rStream)) { echo "Edit"; } else { echo "Add"; } ?>" />
+                                                        <input name="submit_stream" type="submit" class="btn btn-primary" value="<?php if (isset($rStream["id"])) { echo "Edit"; } else { echo "Add"; } ?>" />
                                                     </li>
                                                 </ul>
                                             </div>
                                         </div> <!-- tab-content -->
                                     </div> <!-- end #basicwizard-->
                                 </form>
-
                             </div> <!-- end card-body -->
                         </div> <!-- end card-->
                     </div> <!-- end col -->
@@ -770,7 +857,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -791,16 +877,11 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/magnific-popup/jquery.magnific-popup.min.js"></script>
-
-        <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
-
-        <!-- Tree view js -->
         <script src="assets/libs/treeview/jstree.min.js"></script>
         <script src="assets/js/pages/treeview.init.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
-
-        <!-- App js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/js/app.min.js"></script>
         
         <script>
@@ -926,6 +1007,85 @@ if ($rSettings["sidebar"]) {
             }, "plugins" : [ "dnd" ]
             });
             
+            $("#load_maps").click(function() {
+                rURL = $("#stream_source:eq(0)").val();
+                if (rURL.length > 0) {
+                    $.toast("Stream map has started, this can take a while depending on how many streams are present.");
+                    $("#datatable-map").DataTable().clear().draw();
+                    $.getJSON("./api.php?action=map_stream&stream=" + encodeURIComponent(rURL), function(data) {
+                        $(data.streams).each(function(id, array) {
+                            if (array.codec_type == "video") {
+                                rString = array.codec_name.toUpperCase();
+                                if (array.profile) {
+                                    rString += " (" + array.profile + ")";
+                                }
+                                if (array.pix_fmt) {
+                                    rString += " - " + array.pix_fmt;
+                                }
+                                if ((array.width) && (array.height)) {
+                                    rString += " - " + array.width + "x" + array.height;
+                                }
+                                if ((array.avg_frame_rate) && (array.avg_frame_rate.split("/")[0] > 0)) {
+                                    rString += " - " + array.avg_frame_rate.split("/")[0] + " fps";
+                                }
+                                $("#datatable-map").DataTable().row.add([array.index, "Video", rString]);
+                            } else if (array.codec_type == "audio") {
+                                rString = array.codec_name.toUpperCase();
+                                if (array.tags.language) {
+                                    rString += " - " + array.tags.language.toUpperCase();
+                                }
+                                if ((array.sample_rate) && (array.sample_rate > 0)) {
+                                    rString += " - " + array.sample_rate + " Hz";
+                                }
+                                if (array.channel_layout) {
+                                    rString += " - " + array.channel_layout;
+                                }
+                                if (array.sample_fmt) {
+                                    rString += " - " + array.sample_fmt;
+                                }
+                                if ((array.bit_rate) || (array.tags.variant_bitrate)) {
+                                    if (array.bit_rate) {
+                                        rString += " - " + Math.ceil(array.bit_rate / 1000) + " kb/s";
+                                    } else {
+                                        rString += " - " + Math.ceil(array.tags.variant_bitrate / 1000) + " vbr";
+                                    }
+                                }
+                                if (array.disposition.visual_impaired) {
+                                    rString += " - Visual Impaired";
+                                }
+                                if (array.disposition.hearing_impaired) {
+                                    rString += " - Hearing Impaired";
+                                }
+                                if (array.disposition.dub) {
+                                    rString += " - Dub";
+                                }
+                                $("#datatable-map").DataTable().row.add([array.index, "Audio", rString]);
+                            } else if (array.codec_type == "subtitle") {
+                                rString = array.codec_long_name.toUpperCase();
+                                if (array.tags.language) {
+                                    rString += " - " + array.tags.language.toUpperCase();
+                                }
+                                $("#datatable-map").DataTable().row.add([array.index, "Subtitle", rString]);
+                            } else {
+                                rString = array.codec_long_name.toUpperCase();
+                                if (array.tags.variant_bitrate) {
+                                    rString += " - " + Math.ceil(array.tags.variant_bitrate / 1000) + " vbr";
+                                }
+                                $("#datatable-map").DataTable().row.add([array.index, "Data", rString]);
+                            }
+                        });
+                        $("#datatable-map").DataTable().draw();
+                        if (data.streams.length > 0) {
+                            $.toast("Stream map complete. Please select relevant streams from the table.");
+                        } else {
+                            $.toast("Stream mapping didn't return any information.");
+                        }
+                    }).fail(function() {
+                        $.toast("An error occured while mapping streams.");
+                    });
+                }
+            });
+            
             $("#stream_form").submit(function(e){
                 <?php if (!isset($_GET["import"])) { ?>
                 if ($("#stream_display_name").val().length == 0) {
@@ -939,16 +1099,6 @@ if ($rSettings["sidebar"]) {
                 }
                 <?php } ?>
                 $("#server_tree_data").val(JSON.stringify($('#server_tree').jstree(true).get_json('#', {flat:true})));
-                rPass = false;
-                $.each($('#server_tree').jstree(true).get_json('#', {flat:true}), function(k,v) {
-                    if (v.parent == "source") {
-                        rPass = true;
-                    }
-                });
-                if (rPass == false) {
-                    e.preventDefault();
-                    $.toast("Select at least one server.");
-                }
             });
             
             $(document).keypress(function(event){
@@ -961,7 +1111,7 @@ if ($rSettings["sidebar"]) {
             $("#delay_minutes").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#tv_archive_duration").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("form").attr('autocomplete', 'off');
-            <?php if (isset($rStream)) { ?>
+            <?php if (isset($rStream["id"])) { ?>
             $("#datatable").DataTable({
                 ordering: false,
                 paging: false,
@@ -983,6 +1133,23 @@ if ($rSettings["sidebar"]) {
             });
             setTimeout(reloadStream, 5000);
             <?php } ?>
+            $("#datatable-map").DataTable({
+                paging: false,
+                searching: false,
+                bInfo: false,
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0,1]},
+                ],
+                select: {
+                    style: 'multi'
+                }
+            }).on('select', function (e, dt, type, indexes) {
+                var i; var rMap = "";
+                for (i = 0; i < $("#datatable-map").DataTable().rows('.selected').data().length; i++) {
+                    rMap += "-map 0:" + $("#datatable-map").DataTable().rows('.selected').data()[i][0] + " ";
+                }
+                $("#custom_map").val(rMap.trim());
+            });
         });
         </script>
     </body>

@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if ($rSettings["sidebar"]) {
@@ -17,6 +16,15 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
+                            <div class="page-title-right">
+                                <ol class="breadcrumb m-0">
+                                    <li>
+                                        <button type="button" class="btn btn-info waves-effect waves-light btn-sm btn-clear-logs">
+                                            <i class="mdi mdi-minus"></i> Clear Logs
+                                        </button>
+                                    </li>
+                                </ol>
+                            </div>
                             <h4 class="page-title">Reseller Logs</h4>
                         </div>
                     </div>
@@ -72,6 +80,30 @@ if ($rSettings["sidebar"]) {
                 <!-- end row-->
             </div> <!-- end container -->
         </div>
+        <div class="modal fade bs-logs-modal-center" tabindex="-1" role="dialog" aria-labelledby="clearLogsLabel" aria-hidden="true" style="display: none;" data-id="">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="clearLogsLabel">Clear Logs</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group row mb-4">
+                            <label class="col-md-4 col-form-label" for="range_clear">Date Range</label>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control text-center date" id="range_clear_from" name="range_clear_from" data-toggle="date-picker" data-single-date-picker="true" autocomplete="off" placeholder="From">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control text-center date" id="range_clear_to" name="range_clear_to" data-toggle="date-picker" data-single-date-picker="true" autocomplete="off" placeholder="To">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <input id="clear_logs" type="submit" class="btn btn-primary" value="Clear" style="width:100%" />
+                        </div>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
         <!-- end wrapper -->
         <?php if ($rSettings["sidebar"]) { echo "</div>"; } ?>
         <!-- Footer Start -->
@@ -84,11 +116,8 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/select2/select2.min.js"></script>
@@ -103,9 +132,8 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-        <!-- third party js ends -->
+        <script src="assets/js/app.min.js"></script>
 
-        <!-- Datatables init -->
         <script>
         function getReseller() {
             return $("#reseller").val();
@@ -135,6 +163,47 @@ if ($rSettings["sidebar"]) {
             $('#range').on('change', function() {
                 $("#datatable-activity").DataTable().ajax.reload( null, false );
             });
+            $('#range_clear_to').daterangepicker({
+                singleDatePicker: true,
+                showDropdowns: true,
+                locale: {
+                    format: 'YYYY-MM-DD'
+                },
+                autoUpdateInput: false
+            }).val("");
+            $('#range_clear_from').daterangepicker({
+                singleDatePicker: true,
+                showDropdowns: true,
+                locale: {
+                    format: 'YYYY-MM-DD'
+                },
+                autoUpdateInput: false
+            }).val("");
+            $('#range_clear_from').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD'));
+            });
+            $('#range_clear_from').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+            });
+            $('#range_clear_to').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('YYYY-MM-DD'));
+            });
+            $('#range_clear_to').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+            });
+            $(".btn-clear-logs").click(function() {
+                $(".bs-logs-modal-center").modal("show");
+            });
+            $("#clear_logs").click(function() {
+                if (confirm('Are you sure you want to clear logs for this period?') == false) {
+                    return;
+                }
+                $(".bs-logs-modal-center").modal("hide");
+                $.getJSON("./api.php?action=clear_logs&type=reg_userlog&from=" + encodeURIComponent($("#range_clear_from").val()) + "&to=" + encodeURIComponent($("#range_clear_to").val()), function(data) {
+                    $.toast("Logs have been cleared.");
+                    $("#datatable-activity").DataTable().ajax.reload( null, false );
+                });
+            });
             $("#datatable-activity").DataTable({
                 language: {
                     paginate: {
@@ -162,9 +231,9 @@ if ($rSettings["sidebar"]) {
                     {"className": "dt-center", "targets": [0,4]}
                 ],
                 "order": [[ 0, "desc" ]],
-                pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>,
-                stateSave: true
+                pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>
             });
+            $("#datatable-activity").css("width", "100%");
             $('#log_search').keyup(function(){
                 $('#datatable-activity').DataTable().search($(this).val()).draw();
             })
@@ -176,8 +245,5 @@ if ($rSettings["sidebar"]) {
             })
         });
         </script>
-
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

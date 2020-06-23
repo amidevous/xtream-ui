@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_category"])) {
@@ -10,7 +9,7 @@ if (isset($_POST["submit_category"])) {
             $rArray[$rKey] = $rValue;
         }
     }
-    $rCols = implode(',', array_keys($rArray));
+    $rCols = $db->real_escape_string(implode(',', array_keys($rArray)));
     foreach (array_values($rArray) as $rValue) {
         isset($rValues) ? $rValues .= ',' : $rValues = '';
         if (is_array($rValue)) {
@@ -92,7 +91,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./stream_category.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="category_form">
+                                <form action="./stream_category.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="category_form" data-parsley-validate="">
                                     <?php if (isset($rCategoryArr)) { ?>
                                     <input type="hidden" name="edit" value="<?=$rCategoryArr["id"]?>" />
                                     <input type="hidden" name="cat_order" value="<?=$rCategoryArr["cat_order"]?>" />
@@ -121,7 +120,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="category_name">Category Name</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="category_name" name="category_name" value="<?php if (isset($rCategoryArr)) { echo $rCategoryArr["category_name"]; } ?>">
+                                                                <input type="text" class="form-control" id="category_name" name="category_name" value="<?php if (isset($rCategoryArr)) { echo $rCategoryArr["category_name"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -170,7 +169,6 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/jquery-nice-select/jquery.nice-select.min.js"></script>
@@ -181,8 +179,6 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>
-
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
@@ -194,12 +190,10 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
-        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
-
-        <!-- Plugins js-->
+        <script src="assets/libs/parsleyjs/parsley.min.js"></script>
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
         <script src="assets/js/pages/form-wizard.init.js"></script>
+        <script src="assets/js/app.min.js"></script>
         
         <script>
         $(document).ready(function() {
@@ -241,8 +235,5 @@ if ($rSettings["sidebar"]) {
             <?php } ?>
         });
         </script>
-        
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

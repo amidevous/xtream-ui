@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -98,10 +97,15 @@ if ($rSettings["sidebar"]) {
                                             <td class="text-center"><?=intval($rWatchDog["cpu_avg"])?>%</td>
                                             <td class="text-center"><?=intval($rWatchDog["total_mem_used_percent"])?>%</td>
                                             <td class="text-center">
+                                                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Restart Services" class="btn btn-outline-primary waves-effect waves-light btn-xs btn-reboot-server" data-id="<?=$rServer["id"]?>"><i class="mdi mdi-restart"></i></button>
+                                                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Start All Streams" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'start');"><i class="mdi mdi-play"></i></button>
+                                                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Stop All Streams" class="btn btn-outline-pink waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'stop');"><i class="mdi mdi-stop"></i></button>
                                                 <a href="./server.php?id=<?=$rServer["id"]?>"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Server" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                                                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Kill All Connections" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'kill');""><i class="fas fa-hammer"></i></button>
+                                                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Kill All Connections" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'kill');"><i class="fas fa-hammer"></i></button>
                                                 <?php if ($rServer["can_delete"] == 1) { ?>
-                                                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete Server" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'delete');""><i class="mdi mdi-close"></i></button>
+                                                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete Server" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
+                                                <?php } else { ?>
+                                                <button disabled type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs"><i class="mdi mdi-close"></i></button>
                                                 <?php } ?>
                                             </td>
                                         </tr>
@@ -115,6 +119,31 @@ if ($rSettings["sidebar"]) {
                 <!-- end row-->
             </div> <!-- end container -->
         </div>
+        <div class="modal fade bs-server-modal-center" tabindex="-1" role="dialog" aria-labelledby="restartServicesLabel" aria-hidden="true" style="display: none;" data-id="">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="restartServicesLabel">Restart Services</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group row mb-4">
+                            <label class="col-md-3 col-form-label" for="root_password">Password</label>
+                            <div class="col-md-5">
+                                <input type="text" class="form-control" id="root_password" value="">
+                            </div>
+                            <label class="col-md-2 col-form-label" for="ssh_port">SSH Port</label>
+                            <div class="col-md-2">
+                                <input type="text" class="form-control" id="ssh_port" value="22">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <input id="restart_services" type="submit" class="btn btn-primary" value="Restart" style="width:100%" />
+                        </div>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
         <!-- end wrapper -->
         <?php if ($rSettings["sidebar"]) { echo "</div>"; } ?>
         <!-- Footer Start -->
@@ -127,11 +156,8 @@ if ($rSettings["sidebar"]) {
         </footer>
         <!-- end Footer -->
 
-        <!-- Vendor js -->
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
@@ -143,9 +169,7 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
-        <script src="assets/libs/pdfmake/pdfmake.min.js"></script>
-        <script src="assets/libs/pdfmake/vfs_fonts.js"></script>
-        <!-- third party js ends -->
+        <script src="assets/js/app.min.js"></script>
 
         <script>
         function api(rID, rType) {
@@ -157,25 +181,53 @@ if ($rSettings["sidebar"]) {
                 if (confirm('Are you sure you want to kill all connections to this server?') == false) {
                     return;
                 }
+            } else if (rType == "start") {
+                if (confirm('Are you sure you want to start all streams on this server? This will restart already running streams.') == false) {
+                    return;
+                }
+            } else if (rType == "stop") {
+                if (confirm('Are you sure you want to stop all streams on this sterver?') == false) {
+                    return;
+                }
             }
             $.getJSON("./api.php?action=server&sub=" + rType + "&server_id=" + rID, function(data) {
                 if (data.result === true) {
                     if (rType == "delete") {
                         $("#server-" + rID).remove();
+                        $.each($('.tooltip'), function (index, element) {
+                            $(this).remove();
+                        });
+                        $('[data-toggle="tooltip"]').tooltip();
                         $.toast("Server successfully deleted.");
                     } else if (rType == "kill") {
                         $.toast("All server connections have been killed.");
+                    } else if (rType == "start") {
+                        $.toast("All streams on this server have been started.");
+                    } else if (rType == "stop") {
+                        $.toast("All streams on this server have been stopped.");
                     }
-                    $.each($('.tooltip'), function (index, element) {
-                        $(this).remove();
-                    });
-                    $('[data-toggle="tooltip"]').tooltip();
                 } else {
                     $.toast("An error occured while processing your request.");
                 }
             });
         }
-        
+        $("#restart_services").click(function() {
+            $(".bs-server-modal-center").modal("hide");
+            $.getJSON("./api.php?action=restart_services&ssh_port=" + $("#ssh_port").val() + "&server_id=" + $(".bs-server-modal-center").data("id") + "&password=" + $("#root_password").val(), function(data) {
+                if (data.result === true) {
+                    $.toast("Xtream Codes services will be restarted shortly.");
+                } else {
+                    $.toast("An error occured while processing your request.");
+                }
+                $("#root_password").val("");
+                $("#ssh_port").val("22");
+                $(".bs-server-modal-center").data("id", "");
+            });
+        });
+        $(".btn-reboot-server").click(function() {
+            $(".bs-server-modal-center").data("id", $(this).data("id"));
+            $(".bs-server-modal-center").modal("show");
+        });
         $(document).ready(function() {
             $("#datatable").DataTable({
                 language: {
@@ -187,13 +239,10 @@ if ($rSettings["sidebar"]) {
                 drawCallback: function() {
                     $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
                 },
-                responsive: false,
-                stateSave: true
+                responsive: false
             });
+            $("#datatable").css("width", "100%");
         });
         </script>
-
-        <!-- App js-->
-        <script src="assets/js/app.min.js"></script>
     </body>
 </html>

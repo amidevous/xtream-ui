@@ -8,78 +8,7 @@ if (!isset($_SESSION['hash'])) { exit; }
 
 $joinQuery = "";
 
-if ($_GET["id"] == "reg_users") {
-    $rMemberGroups = getMemberGroups();
-    
-    $table = 'reg_users';
-    $get = $_GET["id"];
-    $primaryKey = 'id';
-    
-    if ($rPermissions["is_admin"]) {
-        $extraWhere = "";
-    } else {
-        $extraWhere = "`owner_id` IN (".join(",", array_keys(getRegisteredUsers($rUserInfo["id"]))).")";
-    }
-
-    $columns = array(
-        array('db' => 'id', 'dt' => 0),
-        array('db' => 'username', 'dt' => 1),
-        array('db' => 'email', 'dt' => 2),
-        array('db' => 'ip', 'dt' => 3),
-        array('db' => 'member_group_id', 'dt' => 4,
-            'formatter' => function( $d, $row ) {
-                global $rMemberGroups;
-                return $rMemberGroups[intval($d)]["group_name"];
-            }
-        ),
-        array('db' => 'status', 'dt' => 5,
-            'formatter' => function( $d, $row ) {
-                if ($d == 1) {
-                    return '<i class="text-success fas fa-circle"></i>';
-                } else {
-                    return '<i class="text-danger fas fa-circle"></i>';
-                }
-            }
-        ),
-        array('db' => 'credits', 'dt' => 6),
-        array('db' => 'last_login', 'dt' => 7,
-            'formatter' => function( $d, $row ) {
-                if ($d) {
-                    return date("Y-m-d H:i:s", $d);
-                } else {
-                    return "NEVER";
-                }
-            }
-        ),
-        array('db' => 'id', 'dt' => 8,
-            'formatter' => function( $d, $row ) {
-                global $rPermissions;
-                if ($rPermissions["is_admin"]) {
-                    $rButtons = '<a href="./reg_user.php?id='.$d.'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                    ';
-                } else {
-                    $rButtons = '<a href="./credits_add.php?id='.$d.'"><button type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs"><i class="fe-dollar-sign"></i></button></a>
-                    ';
-                    $rButtons .= '<a href="./subreseller.php?id='.$d.'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                    ';
-                }
-                if ($row["status"] == 1) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$d.', \'disable\');"><i class="mdi mdi-lock"></i></button>
-                    ';
-                } else {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$d.', \'enable\');"><i class="mdi mdi-lock"></i></button>
-                    ';
-                }
-                if ((($rPermissions["is_reseller"]) && ($rPermissions["delete_users"])) OR ($rPermissions["is_admin"])) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$d.', \'delete\');"><i class="mdi mdi-close"></i></button>
-                    ';
-                }
-                return $rButtons;
-            }
-        ),
-        array('db' => 'notes', 'dt' => 9)
-    );
-} else if ($_GET["id"] == "mag_events") {
+if ($_GET["id"] == "mag_events") {
     if (!$rPermissions["is_admin"]) { exit; }
     $table = 'mag_events';
     $get = $_GET["id"];

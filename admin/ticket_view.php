@@ -1,6 +1,5 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+include "session.php"; include "functions.php";
 if (!isset($_GET["id"])) { exit; }
 
 $rTicket = getTicket($_GET["id"]);
@@ -70,15 +69,13 @@ if ($rSettings["sidebar"]) {
             </div>
         </footer>
         <!-- end Footer -->
-        <!-- Vendor js -->
+
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
-        <!-- third party js -->
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
         <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
         <script src="assets/js/app.min.js"></script>
-        
     </body>
 </html>
