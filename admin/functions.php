@@ -1,4 +1,6 @@
 <?php
+$rRelease = 14;
+
 session_start();
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
@@ -18,6 +20,16 @@ require_once realpath(dirname(__FILE__))."/gauth.php";
 
 $detect = new Mobile_Detect;
 $rStatusArray = Array(0 => "Stopped", 1 => "Running", 2 => "Starting", 3 => "<strong style='color:#cc9999'>DOWN</strong>", 4 => "On Demand", 5 => "Direct");
+$rClientFilters = Array(
+    "NOT_IN_BOUQUET" => "Not in Bouquet",
+    "CON_SVP" => "Connection Issue",
+    "ISP_LOCK_FAILED" => "ISP Lock Failed",
+    "USER_DISALLOW_EXT" => "Extension Disallowed",
+    "AUTH_FAILED" => "Authentication Failed",
+    "USER_EXPIRED" => "User Expired",
+    "USER_DISABLED" => "User Disabled",
+    "USER_BAN" => "User Banned"
+);
 
 // Exec replacement for remote machines.
 function sexec($rServerID, $rCommand) {
@@ -550,7 +562,7 @@ function addToBouquet($rType, $rBouquetID, $rID) {
         if (!in_array($rID, $rChannels)) {
             $rChannels[] = $rID;
             if (count($rChannels) > 0) {
-                $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode($rChannels))."' WHERE `id` = ".intval($rBouquetID).";");
+                $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode(array_values($rChannels)))."' WHERE `id` = ".intval($rBouquetID).";");
             }
         }
     }
@@ -568,7 +580,7 @@ function removeFromBouquet($rType, $rBouquetID, $rID) {
         $rChannels = json_decode($rBouquet[$rColumn], True);
         if (($rKey = array_search($rID, $rChannels)) !== false) {
             unset($rChannels[$rKey]);
-            $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode($rChannels))."' WHERE `id` = ".intval($rBouquetID).";");
+            $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode(array_values($rChannels)))."' WHERE `id` = ".intval($rBouquetID).";");
         }
     }
 }
@@ -894,10 +906,9 @@ function downloadImage($rImage) {
             if (strlen($rData) > 0) {
                 $rFilename = generateString(32);
                 $rPath = MAIN_DIR . "wwwdir/images/".$rFilename.".".$rExt;
-                $rURL = "./images/".$rFilename.".".$rExt;
                 file_put_contents($rPath, $rData);
                 if (strlen(file_get_contents($rPath)) == strlen($rData)) {
-                    return $rURL;
+                    return getURL()."/images/".$rFilename.".".$rExt;
                 }
             }
         }
@@ -907,9 +918,9 @@ function downloadImage($rImage) {
 
 function getFooter() {
     // Don't be a dick. Leave it.
-    global $rAdminSettings, $rPermissions, $rSettings;
+    global $rAdminSettings, $rPermissions, $rSettings, $rRelease;
     if ($rPermissions["is_admin"]) {
-        return "Copyright &copy; 2019 - <a href=\"https://xtream-ui.com\">Xtream UI</a> - Free & Open Source Forever";
+        return "Copyright &copy; 2019 - <a href=\"https://xtream-ui.com\">Xtream UI</a> R".$rRelease." - Free & Open Source Forever";
     } else {
         return $rSettings["copyrights_text"];
     }

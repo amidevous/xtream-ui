@@ -20,10 +20,14 @@ if (isset($_POST["submit_user"])) {
         } else {
             $rArray["verified"] = 0;
         }
-        if (!strlen($_POST["password"]) == 0) {
+        if (strlen($_POST["password"]) > 0) {
             $rArray["password"] = cryptPassword($_POST["password"]);
         }
         unset($_POST["password"]);
+        if ($rArray["credits"] <> $_POST["credits"]) {
+            $rCreditsAdjustment = $_POST["credits"] - $rArray["credits"];
+            $rReason = $_POST["credits_reason"];
+        }
         foreach($_POST as $rKey => $rValue) {
             if (isset($rArray[$rKey])) {
                 $rArray[$rKey] = $rValue;
@@ -51,6 +55,9 @@ if (isset($_POST["submit_user"])) {
                 $rInsertID = intval($_POST["edit"]);
             } else {
                 $rInsertID = $db->insert_id;
+            }
+            if (isset($rCreditsAdjustment)) {
+                $db->query("INSERT INTO `credits_log`(`target_id`, `admin_id`, `amount`, `date`, `reason`) VALUES(".$rInsertID.", ".intval($rUserInfo["id"]).", ".$db->real_escape_string($rCreditsAdjustment).", ".intval(time()).", '".$db->real_escape_string($rReason)."');");
             }
             $_STATUS = 0;
         } else {
@@ -176,6 +183,12 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="credits">Credits</label>
                                                             <div class="col-md-2">
                                                                 <input type="text" class="form-control" id="credits" onkeypress="return isNumberKey(event)" name="credits" value="<?php if (isset($rUser)) { echo $rUser["credits"]; } else { echo "0"; } ?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4" style="display: none;" id="credits_reason_div">
+                                                            <label class="col-md-4 col-form-label" for="credits_reason">Reason for Credits Adjustment</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="credits_reason" name="credits_reason" value="">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -316,6 +329,10 @@ if ($rSettings["sidebar"]) {
                 if (event.which == '13') {
                     event.preventDefault();
                 }
+            });
+            
+            $("#credits").change(function() {
+                $("#credits_reason_div").show();
             });
             
             $("#max_connections").inputFilter(function(value) { return /^\d*$/.test(value); });

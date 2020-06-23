@@ -1,6 +1,8 @@
 <?php
 include "functions.php";
 if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
+if (!$rPermissions["is_admin"]) { exit; }
+
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -15,26 +17,7 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
-                            <div class="page-title-right">
-                                <ol class="breadcrumb m-0">
-                                    <li>
-                                        <?php if (!$detect->isMobile()) { ?>
-                                        <a href="#" onClick="toggleAuto();" style="margin-right:10px;">
-                                            <button type="button" class="btn btn-dark waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-refresh"></i> <span class="auto-text">Auto-Refresh</span>
-                                            </button>
-                                        </a>
-                                        <?php } else { ?>
-                                        <a href="javascript:location.reload();" onClick="toggleAuto();" style="margin-right:10px;">
-                                            <button type="button" class="btn btn-dark waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-refresh"></i> Refresh
-                                            </button>
-                                        </a>
-                                        <?php } ?>
-                                    </li>
-                                </ol>
-                            </div>
-                            <h4 class="page-title">Activity Logs</h4>
+                            <h4 class="page-title">Stream Logs</h4>
                         </div>
                     </div>
                 </div>     
@@ -47,9 +30,9 @@ if ($rSettings["sidebar"]) {
                                     <div class="col-md-3">
                                         <input type="text" class="form-control" id="log_search" value="" placeholder="Search Logs...">
                                     </div>
-                                    <label class="col-md-1 col-form-label text-center" for="server">Filter</label>
+                                    <label class="col-md-1 col-form-label text-center" for="reseller">Server</label>
                                     <div class="col-md-3">
-                                        <select id="server" class="form-control" data-toggle="select2">
+                                        <select id="reseller" class="form-control" data-toggle="select2">
                                             <option value="" selected>All Servers</option>
                                             <?php foreach (getStreamingServers() as $rServer) { ?>
                                             <option value="<?=$rServer["id"]?>"><?=$rServer["server_name"]?></option>
@@ -58,7 +41,7 @@ if ($rSettings["sidebar"]) {
                                     </div>
                                     <label class="col-md-1 col-form-label text-center" for="range">Dates</label>
                                     <div class="col-md-2">
-                                        <input type="text" class="form-control text-center date" id="range" name="range" data-toggle="date-picker" data-single-date-picker="true" autocomplete="off">
+                                        <input type="text" class="form-control text-center date" id="range" name="range" data-toggle="date-picker" data-single-date-picker="true" autocomplete="off" placeholder="All Dates">
                                     </div>
                                     <label class="col-md-1 col-form-label text-center" for="show_entries">Show</label>
                                     <div class="col-md-1">
@@ -73,13 +56,10 @@ if ($rSettings["sidebar"]) {
                                     <thead>
                                         <tr>
                                             <th class="text-center">ID</th>
-                                            <th>Username</th>
                                             <th>Stream</th>
                                             <th>Server</th>
-                                            <th class="text-center">Start</th>
-                                            <th class="text-center">Stop</th>
-                                            <th class="text-center">IP</th>
-                                            <th class="text-center">Country</th>
+                                            <th>Error</th>
+                                            <th class="text-center">Date</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -127,25 +107,6 @@ if ($rSettings["sidebar"]) {
 
         <!-- Datatables init -->
         <script>
-        var autoRefresh = true;
-        
-        function toggleAuto() {
-            if (autoRefresh == true) {
-                autoRefresh = false;
-                $(".auto-text").html("Manual Mode");
-            } else {
-                autoRefresh = true;
-                $(".auto-text").html("Auto-Refresh");
-            }
-        }
-        
-        function reloadUsers() {
-            if (autoRefresh == true) {
-                $("#datatable-activity").DataTable().ajax.reload(null, false);
-            }
-            setTimeout(reloadUsers, 2000);
-        }
-        
         function getServer() {
             return $("#server").val();
         }
@@ -192,13 +153,13 @@ if ($rSettings["sidebar"]) {
                 ajax: {
                     url: "./table_search.php",
                     "data": function(d) {
-                        d.id = "user_activity",
+                        d.id = "stream_logs",
                         d.range = getRange(),
                         d.server = getServer()
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [0,4,5,6,7]}
+                    {"className": "dt-center", "targets": [0,4]}
                 ],
                 "order": [[ 0, "desc" ]],
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>
@@ -212,9 +173,6 @@ if ($rSettings["sidebar"]) {
             $('#server').change(function(){
                 $("#datatable-activity").DataTable().ajax.reload( null, false );
             })
-            <?php if (!$detect->isMobile()) { ?>
-            setTimeout(reloadUsers, 5000);
-            <?php } ?>
         });
         </script>
 

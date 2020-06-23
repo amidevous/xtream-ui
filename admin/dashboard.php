@@ -16,7 +16,6 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
-                            
                             <ul class="nav nav-tabs nav-bordered dashboard-tabs">
                                 <li class="nav-item">
                                     <a data-id="home" href="#" class="nav-link active">
@@ -550,7 +549,7 @@ if ($rSettings["sidebar"]) {
             });
         }
         
-        $('.nav-link').on('click', function (e) {
+        $('.dashboard-tabs .nav-link').on('click', function (e) {
             window.rServerID = $(e.target).data("id");
             getStats();
             $(".nav-link").each(function() {

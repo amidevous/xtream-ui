@@ -903,5 +903,340 @@ if ($rType == "users") {
         }
     }
     echo json_encode($rReturn);exit;
+} else if ($rType == "stream_list") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`stream_categories`.`category_name`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    $rWhere[] = "`streams`.`type` = 1";
+    if (strlen($_GET["category"]) > 0) {
+        $rWhere[] = "`streams`.`category_id` = ".intval($_GET["category"]);
+    }
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`streams`.`id` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%')";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `streams`.`id`, `streams`.`stream_display_name`, `stream_categories`.`category_name` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], $rRow["stream_display_name"], $rRow["category_name"]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "movie_list") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`stream_categories`.`category_name`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    $rWhere[] = "`streams`.`type` = 2";
+    if (strlen($_GET["category"]) > 0) {
+        $rWhere[] = "`streams`.`category_id` = ".intval($_GET["category"]);
+    }
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`streams`.`id` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%')";
+    }
+    if (strlen($_GET["filter"]) > 0) {
+        if ($_GET["filter"] == 1) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`pid` > 0 AND `streams_sys`.`to_analyze` = 0 AND `streams_sys`.`stream_status` <> 1)";
+        } else if ($_GET["filter"] == 2) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`pid` > 0 AND `streams_sys`.`to_analyze` = 1 AND `streams_sys`.`stream_status` <> 1)";
+        } else if ($_GET["filter"] == 3) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`stream_status` = 1)";
+        } else if ($_GET["filter"] == 4) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` <> 1)";
+        } else if ($_GET["filter"] == 5) {
+            $rWhere[] = "`streams`.`direct_source` = 1";
+        }
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `streams`.`id`, `streams`.`stream_display_name`, `stream_categories`.`category_name`, `streams`.`direct_source`, `streams_sys`.`to_analyze`, `streams_sys`.`pid` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rActualStatus = 0;
+                if (intval($rRow["direct_source"]) == 1) {
+                    // Direct
+                    $rActualStatus = 3;
+                } else if ($rRow["pid"]) {
+                    if ($rRow["to_analyze"] == 1) {
+                        $rActualStatus = 2; // Encoding
+                    } else if ($rRow["stream_status"] == 1) {
+                        $rActualStatus = 4; // Down
+                    } else {
+                        $rActualStatus = 1; // Encoded
+                    }
+                } else {
+                    // Not Encoded
+                    $rActualStatus = 0;
+                }
+                $rReturn["data"][] = Array($rRow["id"], $rRow["stream_display_name"], $rRow["category_name"], $rVODStatusArray[$rActualStatus]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "credits_log") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`credits_log`.`id`", "`owner_username`", "`target_username`", "`credits_log`.`amount`", "`credits_log`.`reason`", "`date`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`target`.`username` LIKE '%{$rSearch}%' OR `owner`.`username` LIKE '%{$rSearch}%' OR FROM_UNIXTIME(`date`) LIKE '%{$rSearch}%' OR `credits_log`.`amount` LIKE '%{$rSearch}%' OR `credits_log`.`reason` LIKE '%{$rSearch}%')";
+    }
+    if (strlen($_GET["range"]) > 0) {
+        $rStartTime = substr($_GET["range"], 0, 10);
+        $rEndTime = substr($_GET["range"], strlen($_GET["range"])-10, 10);
+        if (!$rStartTime = strtotime($rStartTime. " 00:00:00")) {
+            $rStartTime = null;
+        }
+        if (!$rEndTime = strtotime($rEndTime." 23:59:59")) {
+            $rEndTime = null;
+        }
+        if (($rStartTime) && ($rEndTime)) {
+            $rWhere[] = "(`credits_log`.`date` >= ".$rStartTime." AND `credits_log`.`date` <= ".$rEndTime.")";
+        }
+    }
+    if (strlen($_GET["reseller"]) > 0) {
+        $rWhere[] = "(`credits_log`.`target_id` = ".intval($_GET["reseller"])." OR `credits_log`.`admin_id` = ".intval($_GET["reseller"]).")";
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `credits_log` LEFT JOIN `reg_users` AS `target` ON `target`.`id` = `credits_log`.`target_id` LEFT JOIN `reg_users` AS `owner` ON `owner`.`id` = `credits_log`.`admin_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `credits_log`.`id`, `credits_log`.`target_id`, `credits_log`.`admin_id`, `target`.`username` AS `target_username`, `owner`.`username` AS `owner_username`, `amount`, FROM_UNIXTIME(`date`) AS `date`, `credits_log`.`reason` FROM `credits_log` LEFT JOIN `reg_users` AS `target` ON `target`.`id` = `credits_log`.`target_id` LEFT JOIN `reg_users` AS `owner` ON `owner`.`id` = `credits_log`.`admin_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], "<a href='./reg_user.php?id=".$rRow["admin_id"]."'>".$rRow["owner_username"]."</a>", "<a href='./reg_user.php?id=".$rRow["target_id"]."'>".$rRow["target_username"]."</a>", $rRow["amount"], $rRow["reason"], $rRow["date"]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "client_logs") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`client_logs`.`id`", "`users`.`username`", "`streams`.`stream_display_name`", "`client_logs`,`client_status`", "`client_logs`.`user_agent`", "`client_logs`.`ip`", "`client_logs`.`date`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`client_logs`.`client_status` LIKE '%{$rSearch}%' OR `client_logs`.`query_string` LIKE '%{$rSearch}%' OR FROM_UNIXTIME(`date`) LIKE '%{$rSearch}%' OR `client_logs`.`user_agent` LIKE '%{$rSearch}%' OR `client_logs`.`ip` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `users`.`username` LIKE '%{$rSearch}%')";
+    }
+    if (strlen($_GET["range"]) > 0) {
+        $rStartTime = substr($_GET["range"], 0, 10);
+        $rEndTime = substr($_GET["range"], strlen($_GET["range"])-10, 10);
+        if (!$rStartTime = strtotime($rStartTime. " 00:00:00")) {
+            $rStartTime = null;
+        }
+        if (!$rEndTime = strtotime($rEndTime." 23:59:59")) {
+            $rEndTime = null;
+        }
+        if (($rStartTime) && ($rEndTime)) {
+            $rWhere[] = "(`client_logs`.`date` >= ".$rStartTime." AND `client_logs`.`date` <= ".$rEndTime.")";
+        }
+    }
+    if (strlen($_GET["filter"]) > 0) {
+        $rWhere[] = "`client_logs`.`client_status` = '".$db->real_escape_string($_GET["filter"])."'";
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `client_logs` LEFT JOIN `streams` ON `streams`.`id` = `client_logs`.`stream_id` LEFT JOIN `users` ON `users`.`id` = `client_logs`.`user_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `client_logs`.`id`, `client_logs`.`user_id`, `client_logs`.`stream_id`, `streams`.`stream_display_name`, `users`.`username`, `client_logs`.`client_status`, `client_logs`.`query_string`, `client_logs`.`user_agent`, `client_logs`.`ip`, FROM_UNIXTIME(`client_logs`.`date`) AS `date` FROM `client_logs` LEFT JOIN `streams` ON `streams`.`id` = `client_logs`.`stream_id` LEFT JOIN `users` ON `users`.`id` = `client_logs`.`user_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], "<a href='./user.php?id=".$rRow["user_id"]."'>".$rRow["username"]."</a>", "<a href='./stream.php?id=".$rRow["stream_id"]."'>".$rRow["stream_display_name"]."</a>", $rRow["client_status"], $rRow["user_agent"], "<a target='_blank' href='https://www.ip-tracker.org/locator/ip-lookup.php?ip=".$rRow["ip"]."'>".$rRow["ip"]."</a>", $rRow["date"]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "reg_user_logs") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`reg_userlog`.`id`", "`reg_users`.`username`", "`reg_userlog`.`username`", "`reg_userlog`.`type`", "`reg_userlog`.`date`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`reg_userlog`.`username` LIKE '%{$rSearch}%' OR `reg_userlog`.`type` LIKE '%{$rSearch}%' OR FROM_UNIXTIME(`date`) LIKE '%{$rSearch}%' OR `reg_users`.`username` LIKE '%{$rSearch}%')";
+    }
+    if (strlen($_GET["range"]) > 0) {
+        $rStartTime = substr($_GET["range"], 0, 10);
+        $rEndTime = substr($_GET["range"], strlen($_GET["range"])-10, 10);
+        if (!$rStartTime = strtotime($rStartTime. " 00:00:00")) {
+            $rStartTime = null;
+        }
+        if (!$rEndTime = strtotime($rEndTime." 23:59:59")) {
+            $rEndTime = null;
+        }
+        if (($rStartTime) && ($rEndTime)) {
+            $rWhere[] = "(`reg_userlog`.`date` >= ".$rStartTime." AND `reg_userlog`.`date` <= ".$rEndTime.")";
+        }
+    }
+    if (strlen($_GET["reseller"]) > 0) {
+        $rWhere[] = "`reg_userlog`.`owner` = '".intval($_GET["reseller"])."'";
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `reg_userlog` LEFT JOIN `reg_users` ON `reg_users`.`id` = `reg_userlog`.`owner` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `reg_userlog`.`id`, `reg_userlog`.`owner` as `owner_id`, `reg_users`.`username` AS `owner`, `reg_userlog`.`username`, `reg_userlog`.`type`, FROM_UNIXTIME(`reg_userlog`.`date`) AS `date` FROM `reg_userlog` LEFT JOIN `reg_users` ON `reg_users`.`id` = `reg_userlog`.`owner` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], "<a href='./reg_user.php?id=".$rRow["owner_id"]."'>".$rRow["owner"]."</a>", $rRow["username"], strip_tags($rRow["type"]), $rRow["date"]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "stream_logs") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`stream_logs`.`id`", "`streams`.`stream_display_name`", "`streaming_servers`.`server_name`", "`stream_logs`.`error`", "`stream_logs`.`date`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `streaming_servers`.`server_name` LIKE '%{$rSearch}%' OR FROM_UNIXTIME(`date`) LIKE '%{$rSearch}%' OR `stream_logs`.`error` LIKE '%{$rSearch}%')";
+    }
+    if (strlen($_GET["range"]) > 0) {
+        $rStartTime = substr($_GET["range"], 0, 10);
+        $rEndTime = substr($_GET["range"], strlen($_GET["range"])-10, 10);
+        if (!$rStartTime = strtotime($rStartTime. " 00:00:00")) {
+            $rStartTime = null;
+        }
+        if (!$rEndTime = strtotime($rEndTime." 23:59:59")) {
+            $rEndTime = null;
+        }
+        if (($rStartTime) && ($rEndTime)) {
+            $rWhere[] = "(`stream_logs`.`date` >= ".$rStartTime." AND `stream_logs`.`date` <= ".$rEndTime.")";
+        }
+    }
+    if (strlen($_GET["server"]) > 0) {
+        $rWhere[] = "`stream_logs`.`server_id` = '".intval($_GET["server"])."'";
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `stream_logs` LEFT JOIN `streams` ON `streams`.`id` = `stream_logs`.`stream_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `stream_logs`.`server_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `stream_logs`.`id`, `stream_logs`.`stream_id`, `stream_logs`.`server_id`, `streams`.`stream_display_name`, `streaming_servers`.`server_name`, `stream_logs`.`error`, FROM_UNIXTIME(`stream_logs`.`date`) AS `date` FROM `stream_logs` LEFT JOIN `streams` ON `streams`.`id` = `stream_logs`.`stream_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `stream_logs`.`server_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], "<a href='".$rRow["stream_id"]."'>".$rRow["stream_display_name"]."</a>", "<a href='./server.php?id=".$rRow["server_id"]."'>".$rRow["server_name"]."</a>", $rRow["error"], $rRow["date"]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
 }
 ?>

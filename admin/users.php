@@ -111,7 +111,6 @@ if ($rSettings["sidebar"]) {
                                     </thead>
                                     <tbody></tbody>
                                 </table>
-
                             </div> <!-- end card body-->
                         </div> <!-- end card -->
                     </div><!-- end col-->

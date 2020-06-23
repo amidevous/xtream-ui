@@ -10,9 +10,9 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content"><div class="container-fluid">
+        <div class="content-page"><div class="content boxed-layout"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper"><div class="container-fluid">
+        <div class="wrapper boxed-layout"><div class="container-fluid">
         <?php } ?>
                 <!-- start page title -->
                 <div class="row">

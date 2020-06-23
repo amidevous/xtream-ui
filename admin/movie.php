@@ -17,7 +17,10 @@ if (isset($_POST["submit_stream"])) {
     }
     $rArray["stream_display_name"] = $_POST["stream_display_name"];
     $rArray["stream_source"] = Array($_POST["stream_source"]);
-    $rArray["movie_subtitles"] = Array($_POST["movie_subtitles"]);
+    if (strlen($_POST["movie_subtitles"]) > 0) {
+        $rSplit = explode(":", $_POST["movie_subtitles"]);
+        $rArray["movie_subtitles"] = Array("files" => Array($rSplit[2]), "names" => Array("Subtitles"), "charset" => Array("UTF-8"), "location" => intval($rSplit[1]));
+    }
     $rArray["notes"] = $_POST["notes"];
     $rArray["target_container"] = Array($_POST["target_container"]);
     $rArray["category_id"] = $_POST["category_id"];
@@ -56,13 +59,13 @@ if (isset($_POST["submit_stream"])) {
         $rArray["remove_subtitles"] = 0;
     }
     if ($rAdminSettings["download_images"]) {
-        $_POST["cover_big"] = downloadImage($_POST["cover_big"]);
+        $_POST["movie_image"] = downloadImage($_POST["movie_image"]);
         $_POST["backdrop_path"] = downloadImage($_POST["backdrop_path"]);
     }
     $rBouquets = $_POST["bouquets"];
     unset($_POST["bouquets"]);
     $rSeconds = intval($_POST["episode_run_time"]) * 60;
-    $rArray["movie_propeties"] = Array("kinopoisk_url" => $rTMDBURL, "tmdb_id" => $_POST["tmdb_id"], "name" => $rArray["stream_display_name"], "o_name" => $rArray["stream_display_name"], "cover_big" => $_POST["cover_big"], "movie_image" => $_POST["cover_big"], "releasedate" => $_POST["releasedate"], "episode_run_time" => $_POST["episode_run_time"], "youtube_trailer" => $_POST["youtube_trailer"], "director" => $_POST["director"], "actors" => $_POST["cast"], "cast" => $_POST["cast"], "description" => $_POST["plot"], "plot" => $_POST["plot"], "age" => "", "mpaa_rating" => "", "rating_count_kinopoisk" => 0, "country" => $_POST["country"], "genre" => $_POST["genre"], "backdrop_path" => Array($_POST["backdrop_path"]), "duration_secs" => $rSeconds, "duration" => sprintf('%02d:%02d:%02d', ($rSeconds/3600),($rSeconds/60%60), $rSeconds%60), "video" => Array(), "audio" => Array(), "bitrate" => 0, "rating" => $_POST["rating"]);
+    $rArray["movie_propeties"] = Array("kinopoisk_url" => $rTMDBURL, "tmdb_id" => $_POST["tmdb_id"], "name" => $rArray["stream_display_name"], "o_name" => $rArray["stream_display_name"], "cover_big" => $_POST["movie_image"], "movie_image" => $_POST["movie_image"], "releasedate" => $_POST["releasedate"], "episode_run_time" => $_POST["episode_run_time"], "youtube_trailer" => $_POST["youtube_trailer"], "director" => $_POST["director"], "actors" => $_POST["cast"], "cast" => $_POST["cast"], "description" => $_POST["plot"], "plot" => $_POST["plot"], "age" => "", "mpaa_rating" => "", "rating_count_kinopoisk" => 0, "country" => $_POST["country"], "genre" => $_POST["genre"], "backdrop_path" => Array($_POST["backdrop_path"]), "duration_secs" => $rSeconds, "duration" => sprintf('%02d:%02d:%02d', ($rSeconds/3600),($rSeconds/60%60), $rSeconds%60), "video" => Array(), "audio" => Array(), "bitrate" => 0, "rating" => $_POST["rating"]);
     $rCols = "`".implode('`,`', array_keys($rArray))."`";
     $rValues = null;
     foreach (array_values($rArray) as $rValue) {
@@ -270,6 +273,12 @@ if ($rSettings["sidebar"]) {
                                                                 <input type="text" class="form-control" id="stream_display_name" name="stream_display_name" value="<?php if (isset($rMovie)) { echo $rMovie["stream_display_name"]; } ?>">
                                                             </div>
                                                         </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="tmdb_search">TMDb Results</label>
+                                                            <div class="col-md-8">
+                                                                <select id="tmdb_search" class="form-control" data-toggle="select2"></select>
+                                                            </div>
+                                                        </div>
                                                         <?php
                                                         if (isset($rMovie)) {
                                                             $rMovieSource = json_decode($rMovie["stream_source"], True)[0];
@@ -346,15 +355,9 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="tmdb_search">TMDb Results</label>
-                                                            <div class="col-md-8">
-                                                                <select id="tmdb_search" class="form-control" data-toggle="select2"></select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="cover_big">Poster URL</label>
+                                                            <label class="col-md-4 col-form-label" for="movie_image">Poster URL</label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" class="form-control" id="cover_big" name="cover_big" value="<?php if (isset($rMovie)) { echo $rMovie["properties"]["cover_big"]; } ?>">
+                                                                <input type="text" class="form-control" id="movie_image" name="movie_image" value="<?php if (isset($rMovie)) { echo $rMovie["properties"]["movie_image"]; } ?>">
                                                                 <div class="input-group-append">
                                                                     <a href="javascript:void(0)" onClick="openImage(this)" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-eye"></i></a>
                                                                 </div>
@@ -455,8 +458,8 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="target_container">Target Container <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Which container to use for the final product, whether encoded or symlinked." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <select name="target_container" id="target_container" class="form-control" data-toggle="select2">
-                                                                    <?php foreach (Array("mp4", "mkv") as $rContainer) { ?>
-                                                                    <option <?php if (isset($rMovie)) { if ($rMovie["target_container"] == $rContainer) { echo "selected "; } } ?>value="<?=$rContainer?>"><?=$rContainer?></option>
+                                                                    <?php foreach (Array("mp4", "mkv", "avi", "mpg") as $rContainer) { ?>
+                                                                    <option <?php if (isset($rMovie)) { if (json_decode($rMovie["target_container"], True)[0] == $rContainer) { echo "selected "; } } ?>value="<?=$rContainer?>"><?=$rContainer?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -465,11 +468,19 @@ if ($rSettings["sidebar"]) {
                                                                 <input name="remove_subtitles" id="remove_subtitles" type="checkbox" <?php if (isset($rMovie)) { if ($rMovie["remove_subtitles"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
-                                                        <?php if (!isset($_GET["import"])) { ?>
+                                                        <?php if (!isset($_GET["import"])) {
+                                                        $rSubFile = "";
+                                                        if (isset($rMovie)) {
+                                                            $rSubData = json_decode($rMovie["movie_subtitles"], True);
+                                                            if (isset($rSubData["location"])) {
+                                                                $rSubFile = "s:".$rSubData["location"].":".$rSubData["files"][0];
+                                                            }
+                                                        }
+                                                        ?>
                                                         <div class="form-group row mb-4 stream-url">
-                                                            <label class="col-md-4 col-form-label" for="subtitles_location"> Subtitle Location <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select a subtitle file to encoded into the output stream." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="movie_subtitles"> Subtitle Location <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select a subtitle file to encoded into the output stream." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8 input-group">
-                                                                <input type="text" id="subtitles_location" name="subtitles_location" class="form-control" value="<?php if (isset($rMovie)) { echo json_decode($rMovie["movie_subtitles"], True)[0]; } ?>">
+                                                                <input type="text" id="movie_subtitles" name="movie_subtitles" class="form-control" value="<?php if (isset($rMovie)) { echo $rSubFile; } ?>">
                                                                 <div class="input-group-append">
                                                                     <a href="#file-browser" id="filebrowser-sub" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-folder-open-outline"></i></a>
                                                                 </div>
@@ -716,7 +727,7 @@ if ($rSettings["sidebar"]) {
             if ($('li.nav-item .active').attr('href') == "#stream-details") {
                 $("#stream_source").val("s:" + $("#server_id").val() + ":" + window.currentDirectory + rFile);
             } else {
-                $("#subtitles_location").val("s:" + $("#server_id").val() + ":" + window.currentDirectory + rFile);
+                $("#movie_subtitles").val("s:" + $("#server_id").val() + ":" + window.currentDirectory + rFile);
             }
             $.magnificPopup.close();
         }
@@ -963,9 +974,9 @@ if ($rSettings["sidebar"]) {
                         if (data.result == true) {
                             window.changeTitle = true;
                             $("#stream_display_name").val(data.data.title);
-                            $("#cover_big").val("");
+                            $("#movie_image").val("");
                             if (data.data.poster_path.length > 0) {
-                                $("#cover_big").val("https://image.tmdb.org/t/p/w600_and_h900_bestv2" + data.data.poster_path);
+                                $("#movie_image").val("https://image.tmdb.org/t/p/w600_and_h900_bestv2" + data.data.poster_path);
                             }
                             $("#backdrop_path").val("");
                             if (data.data.backdrop_path.length > 0) {

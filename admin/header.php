@@ -76,7 +76,6 @@
                             <div class="dropdown-menu dropdown-menu-right profile-dropdown">
                                 <a href="./settings.php" class="dropdown-item notify-item"><span>Settings</span></a>
                                 <a href="./epgs.php" class="dropdown-item notify-item"><span>EPG's</span></a>
-                                <a href="./bouquets.php" class="dropdown-item notify-item"><span>Bouquets</span></a>
                                 <a href="./subresellers.php" class="dropdown-item notify-item"><span>Subresellers</span></a>
                                 <a href="./groups.php" class="dropdown-item notify-item"><span>Groups</span></a>
                                 <a href="./packages.php" class="dropdown-item notify-item"><span>Packages</span></a>
@@ -84,6 +83,7 @@
                                 <a href="./stream_categories.php" class="dropdown-item notify-item"><span>Stream Categories</span></a>
                                 <a href="./movie_categories.php" class="dropdown-item notify-item"><span>Movie Categories</span></a>
                                 <a href="#" class="dropdown-item notify-item"><span><span>Series Categories <i class="la la-exclamation-triangle"></i></span></a>
+                                <a href="./mass_delete.php" class="dropdown-item notify-item"><span>Mass Delete</span></a>
                             </div>
                         </li>
                         <?php } ?>
@@ -134,6 +134,9 @@
                                     <li><a href="./server.php">Add Server</a></li>
                                     <li><a href="./install_server.php">Install Load Balancer</a></li>
                                     <li><a href="./servers.php">Manage Servers</a></li>
+                                    <li class="separator"></li>
+                                    <li><a href="./live_connections.php">Live Connections</a></li>
+                                    <li><a href="./user_activity.php">Activity Logs</a></li>
                                 </ul>
                             </li>
                             <?php } ?>
@@ -146,9 +149,14 @@
                                     <li><a href="./user<?php if ($rPermissions["is_reseller"]) { echo "_reseller"; } ?>.php">Add User</a></li>
                                     <li><a href="./users.php">Manage Users</a></li>
                                     <?php if ($rPermissions["is_admin"]) { ?>
+                                    <li><a href="./user_mass.php">Mass Edit Users</a></li>
                                     <li class="separator"></li>
                                     <li><a href="./reg_user.php">Add Registered User</a></li>
                                     <li><a href="./reg_users.php">Manage Registered Users</a></li>
+                                    <li class="separator"></li>
+                                    <li><a href="./credit_logs.php">Credit Logs</a></li>
+                                    <li><a href="./client_logs.php">Client Logs</a></li>
+                                    <li><a href="./reg_user_logs.php">Reseller Logs</a></li>
                                     <?php } ?>
                                 </ul>
                             </li>
@@ -167,22 +175,22 @@
                             <?php } ?>
                             <li class="has-submenu">
                                 <a href="#"> <i class="la la-tablet"></i>Devices <div class="arrow-down"></div></a>
-                                <?php if ($rPermissions["is_admin"]) { ?>
                                 <ul class="submenu">
-                                    <li><a href="./user<?php if ($rPermissions["is_reseller"]) { echo "_reseller"; } ?>.php?mag">Add MAG User</a></li>
+                                    <?php if ($rPermissions["is_admin"]) { ?>
+                                    <li><a href="./user.php?mag">Add MAG User</a></li>
                                     <li><a href="./mag.php">Link MAG User</a></li>
                                     <li><a href="./mags.php">Manage MAG Devices</a></li>
                                     <li class="separator"></li>
-                                    <li><a href="./user<?php if ($rPermissions["is_reseller"]) { echo "_reseller"; } ?>.php?e2">Add Enigma User</a></li>
+                                    <li><a href="./user.php?e2">Add Enigma User</a></li>
                                     <li><a href="./enigma.php">Link Enigma User</a></li>
                                     <li><a href="./enigmas.php">Manage Enigma Devices</a></li>
-                                </ul>
-                                <?php } else { ?>
-                                <ul class="submenu">
+                                    <li class="separator"></li>
+                                    <li><a href="./mag_events.php">MAG Event Logs</a></li>
+                                    <?php } else { ?>
                                     <li><a href="./mags.php">Manage MAG Devices</a></li>
                                     <li><a href="./enigmas.php">Manage Enigma Devices</a></li>
+                                    <?php } ?>
                                 </ul>
-                                <?php } ?>
                             </li>
                             <?php if ($rPermissions["is_admin"]) { ?>
                             <li class="has-submenu">
@@ -190,6 +198,7 @@
                                 <ul class="submenu">
                                     <li><a href="./movie.php">Add Movie</a></li>
                                     <li><a href="./movies.php">Manage Movies</a></li>
+                                    <li><a href="./movie_mass.php">Mass Edit Movies</a></li>
                                     <li class="separator"></li>
                                     <li><a href="#">Add TV Series <i class="la la-exclamation-triangle"></i></a></li>
                                     <li><a href="#">Manage TV Series <i class="la la-exclamation-triangle"></i></a></li>
@@ -205,6 +214,15 @@
                                     <li><a href="./stream.php?import">Import Streams</a></li>
                                     <li><a href="./streams.php">Manage Streams</a></li>
                                     <li><a href="./stream_mass.php">Mass Edit Streams</a></li>
+                                    <li class="separator"></li>
+                                    <li><a href="./stream_logs.php">Stream Logs</a></li>
+                                </ul>
+                            </li>
+                            <li class="has-submenu">
+                                <a href="#"> <i class="mdi mdi-flower-tulip-outline"></i>Bouquets <div class="arrow-down"></div></a>
+                                <ul class="submenu">
+                                    <li><a href="./bouquet.php">Add Bouquet</a></li>
+                                    <li><a href="./bouquets.php">Manage Bouquets</a></li>
                                 </ul>
                             </li>
                             <?php }
@@ -230,16 +248,6 @@
                             if ($rPermissions["is_admin"]) { ?>
                             <li>
                                 <a href="./tickets.php"> <i class="la la-envelope"></i>Tickets</a>
-                            </li>
-                            <li class="has-submenu">
-                                <a href="#"> <i class="mdi mdi-file-document-outline"></i>Logs <div class="arrow-down"></div></a>
-                                <ul class="submenu">
-                                    <li><a href="./live_connections.php">Live Connections</a></li>
-                                    <li><a href="./user_activity.php">Activity Logs</a></li>
-                                    <li><a href="#">Client Logs <i class="la la-exclamation-triangle"></i></a></li>
-                                    <li><a href="#">Stream Logs <i class="la la-exclamation-triangle"></i></a></li>
-                                    <li><a href="./mag_events.php">Manage MAG Events</a></li>
-                                </ul>
                             </li>
                             <?php } ?>
                         </ul>

@@ -132,6 +132,10 @@ if (isset($_GET["action"])) {
                     if ($rUserDetails) {
                         $db->query("INSERT INTO `reg_userlog`(`owner`, `username`, `password`, `date`, `type`) VALUES(".intval($rUserInfo["id"]).", '".$db->real_escape_string($rUserDetails["username"])."', '', ".intval(time()).", '[<b>UserPanel</b> -> <u>Delete Subreseller</u>]');");
                     }
+                    $rPrevOwner = getRegisteredUser($rUserDetails["owner_id"]);
+                    $rCredits = $rUserDetails["credits"];
+                    $rNewCredits = $rPrevOwner["credits"] + $rCredits;
+                    $db->query("UPDATE `reg_users` SET `credits` = ".$rNewCredits." WHERE `id` = ".intval($rPrevOwner["id"]).";");
                 }
                 $db->query("DELETE FROM `reg_users` WHERE `id` = ".$db->real_escape_string($rUserID).";");
                 echo json_encode(Array("result" => True));exit;

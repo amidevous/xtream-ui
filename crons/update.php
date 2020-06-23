@@ -49,7 +49,7 @@ function writeAdminSettings($rAdminSettings) {
 }
 
 $rAdminSettings = getAdminSettings();
-$rDefaults = Array("auto_update" => false, "auto_update_periodicity" => 3600, "auto_update_check" => 0, "version" => 12, "git_url" => "xtreamui/XtreamUI");
+$rDefaults = Array("auto_update" => false, "auto_update_periodicity" => 3600, "auto_update_check" => 0, "version" => 14, "git_url" => "xtreamui/XtreamUI");
 foreach ($rDefaults as $rKey => $rValue) {
     if (!isset($rAdminSettings[$rKey])) {
         $rAdminSettings[$rKey] = $rValue;

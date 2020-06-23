@@ -27,68 +27,56 @@ if (isset($_POST["submit_user"])) {
     } else {
         $rArray = Array("member_id" => 0, "username" => "", "password" => "", "exp_date" => null, "admin_enabled" => 1, "enabled" => 1, "admin_notes" => "", "reseller_notes" => "", "bouquet" => Array(), "max_connections" => 1, "is_restreamer" => 0, "allowed_ips" => Array(), "allowed_ua" => Array(), "created_at" => time(), "created_by" => -1, "is_mag" => 0, "is_e2" => 0, "force_server_id" => 0, "is_isplock" => 0, "isp_desc" => "", "forced_country" => "", "is_stalker" => 0, "bypass_ua" => 0, "play_token" => "");
     }
-    if ((!isset($rUser)) OR (!$rUser["is_trial"])) {
-        if (!empty($_POST["package"])) {
-            $rPackage = getPackage($_POST["package"]);
-            // Check package is within permissions.
-            if (($rPackage) && (in_array($rUserInfo["member_group_id"], json_decode($rPackage["groups"], True)))) {
-                // Ignore post and get information from package instead.
+    if (!empty($_POST["package"])) {
+        $rPackage = getPackage($_POST["package"]);
+        // Check package is within permissions.
+        if (($rPackage) && (in_array($rUserInfo["member_group_id"], json_decode($rPackage["groups"], True)))) {
+            // Ignore post and get information from package instead.
+            if ($_POST["trial"]) {
+                $rCost = $rPackage["trial_credits"];
+            } else {
+                $rCost = $rPackage["official_credits"];
+            }
+            if (($rUserInfo["credits"] >= $rCost) && ($canGenerateTrials)) {
                 if ($_POST["trial"]) {
-                    $rCost = $rPackage["trial_credits"];
+                    $rArray["exp_date"] = strtotime('+'.intval($rPackage["trial_duration"]).' '.$rPackage["trial_duration_in"]);
+                    $rArray["is_trial"] = 1;
                 } else {
-                    $rCost = $rPackage["official_credits"];
-                }
-                if (($rUserInfo["credits"] >= $rCost) && ($canGenerateTrials)) {
-                    if ($_POST["trial"]) {
-                        $rArray["exp_date"] = strtotime('+'.intval($rPackage["trial_duration"]).' '.$rPackage["trial_duration_in"]);
-                        $rArray["is_trial"] = 1;
-                    } else {
-                        if (isset($rUser)) {
-                            if ($rUser["exp_date"] >= time()) {
-                                $rArray["exp_date"] = strtotime('+'.intval($rPackage["official_duration"]).' '.$rPackage["official_duration_in"], intval($rUser["exp_date"]));
-                            } else {
-                                $rArray["exp_date"] = strtotime('+'.intval($rPackage["official_duration"]).' '.$rPackage["official_duration_in"]);
-                            }
+                    if (isset($rUser)) {
+                        if ($rUser["exp_date"] >= time()) {
+                            $rArray["exp_date"] = strtotime('+'.intval($rPackage["official_duration"]).' '.$rPackage["official_duration_in"], intval($rUser["exp_date"]));
                         } else {
                             $rArray["exp_date"] = strtotime('+'.intval($rPackage["official_duration"]).' '.$rPackage["official_duration_in"]);
                         }
-                    }
-                    $rArray["bouquet"] = $rPackage["bouquets"];
-                    $rArray["max_connections"] = $rPackage["max_connections"];
-                    $rArray["is_restreamer"] = $rPackage["is_restreamer"];
-                    $rOwner = $_POST["member_id"];
-                    if (in_array($rOwner, $rRegisteredUsers)) {
-                        $rArray["member_id"] = $rOwner;
                     } else {
-                        $rArray["member_id"] = $rUserInfo["id"]; // Invalid owner, reset.
+                        $rArray["exp_date"] = strtotime('+'.intval($rPackage["official_duration"]).' '.$rPackage["official_duration_in"]);
                     }
-                    $rArray["reseller_notes"] = $_POST["reseller_notes"];
-                    if (isset($_POST["is_mag"])) {
-                        $rArray["is_mag"] = 1;
-                    }
-                    if (isset($_POST["is_e2"])) {
-                        $rArray["is_e2"] = 1;
-                    }
+                    $rArray["is_trial"] = 0;
+                }
+                $rArray["bouquet"] = $rPackage["bouquets"];
+                $rArray["max_connections"] = $rPackage["max_connections"];
+                $rArray["is_restreamer"] = $rPackage["is_restreamer"];
+                $rOwner = $_POST["member_id"];
+                if (in_array($rOwner, $rRegisteredUsers)) {
+                    $rArray["member_id"] = $rOwner;
                 } else {
-                    $_STATUS = 4; // Not enough credits.
+                    $rArray["member_id"] = $rUserInfo["id"]; // Invalid owner, reset.
+                }
+                $rArray["reseller_notes"] = $_POST["reseller_notes"];
+                if (isset($_POST["is_mag"])) {
+                    $rArray["is_mag"] = 1;
+                }
+                if (isset($_POST["is_e2"])) {
+                    $rArray["is_e2"] = 1;
                 }
             } else {
-                $_STATUS = 3; // Invalid package.
-            }
-        } else if (isset($rUser)) {
-            // No package, just editing fields.
-            $rArray["reseller_notes"] = $_POST["reseller_notes"];
-            $rOwner = $_POST["member_id"];
-            if (in_array($rOwner, $rRegisteredUsers)) {
-                $rArray["member_id"] = $rOwner;
-            } else {
-                $rArray["member_id"] = $rUserInfo["id"]; // Invalid owner, reset.
+                $_STATUS = 4; // Not enough credits.
             }
         } else {
             $_STATUS = 3; // Invalid package.
         }
-    } else {
-        // Editing trial user.
+    } else if (isset($rUser)) {
+        // No package, just editing fields.
         $rArray["reseller_notes"] = $_POST["reseller_notes"];
         $rOwner = $_POST["member_id"];
         if (in_array($rOwner, $rRegisteredUsers)) {
@@ -96,6 +84,8 @@ if (isset($_POST["submit_user"])) {
         } else {
             $rArray["member_id"] = $rUserInfo["id"]; // Invalid owner, reset.
         }
+    } else {
+        $_STATUS = 3; // Invalid package.
     }
     if (!$rPermissions["allow_change_pass"]) {
         if (isset($rUser)) {
@@ -146,12 +136,12 @@ if (isset($_POST["submit_user"])) {
         $isMag = False; $isE2 = False;
         // Confirm Reseller can generate MAG.
         if ($rArray["is_mag"]) {
-            if ($rPackage["can_gen_mag"]) {
+            if (($rPackage["can_gen_mag"]) OR (isset($rUser))) {
                 $isMag = True;
             }
         }
         if ($rArray["is_e2"]) {
-            if ($rPackage["can_gen_e2"]) {
+            if (($rPackage["can_gen_e2"]) OR (isset($rUser))) {
                 $isE2 = True;
             }
         }
@@ -327,7 +317,15 @@ if ($rSettings["sidebar"]) {
                             An invalid MAC address was entered, please try again.
                         </div>
                         <?php }
-                        } ?>
+                        }
+                        if ((isset($rUser)) AND ($rUser["is_trial"])) { ?>
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            This is a trial user. Extending the package will convert it to an official package.
+                        </div>
+                        <?php  } ?>
                         <div class="card">
                             <div class="card-body">
                                 <form action="./user_reseller.php<?php if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="user_form">
@@ -345,14 +343,12 @@ if ($rSettings["sidebar"]) {
                                                     <span class="d-none d-sm-inline">Details</span>
                                                 </a>
                                             </li>
-                                            <?php if ((!isset($rUser)) OR (!$rUser["is_trial"])) { ?>
                                             <li class="nav-item">
                                                 <a href="#review-purchase" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
                                                     <i class="mdi mdi-book-open-variant mr-1"></i>
                                                     <span class="d-none d-sm-inline">Review Purchase</span>
                                                 </a>
                                             </li>
-                                            <?php } ?>
                                         </ul>
                                         <div class="tab-content b-0 mb-0 pt-0">
                                             <div class="tab-pane" id="user-details">
@@ -380,7 +376,6 @@ if ($rSettings["sidebar"]) {
                                                                 </select>
                                                             </div>
                                                         </div>
-                                                        <?php if ((!isset($rUser)) OR (!$rUser["is_trial"])) { ?>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="package"><?php if (isset($rUser)) { echo "Extend "; } ?>Package</label>
                                                             <div class="col-md-8">
@@ -398,7 +393,6 @@ if ($rSettings["sidebar"]) {
                                                                 </select>
                                                             </div>
                                                         </div>
-                                                        <?php } ?>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="max_connections">Max Connections</label>
                                                             <div class="col-md-2">
@@ -441,15 +435,10 @@ if ($rSettings["sidebar"]) {
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
                                                     <li class="next list-inline-item float-right">
-                                                        <?php if ((!isset($rUser)) OR (!$rUser["is_trial"])) { ?>
                                                         <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
-                                                        <?php } else { ?>
-                                                        <input name="submit_user" type="submit" class="btn btn-primary purchase" value="Edit User" />
-                                                        <?php } ?>
                                                     </li>
                                                 </ul>
                                             </div>
-                                            <?php if ((!isset($rUser)) OR (!$rUser["is_trial"])) { ?>
                                             <div class="tab-pane" id="review-purchase">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -496,7 +485,6 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
-                                            <?php } ?>
                                         </div> <!-- tab-content -->
                                     </div> <!-- end #basicwizard-->
                                 </form>

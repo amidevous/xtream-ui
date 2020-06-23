@@ -3,45 +3,15 @@ include "functions.php";
 if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
+$rCategories = getCategories("movie");
+
 if (isset($_POST["submit_stream"])) {
     $rArray = Array();
-    if (isset($_POST["c_days_to_restart"])) {
-        if ((isset($_POST["days_to_restart"])) && (preg_match("/^(?:2[0-3]|[01][0-9]):[0-5][0-9]$/", $_POST["time_to_restart"]))) {
-            $rTimeArray = Array("days" => Array(), "at" => $_POST["time_to_restart"]);
-            foreach ($_POST["days_to_restart"] as $rID => $rDay) {
-                $rTimeArray["days"][] = $rDay;
-            }
-            $rArray["auto_restart"] = json_encode($rTimeArray);
+    if (isset($_POST["c_movie_symlink"])) {
+        if (isset($_POST["movie_symlink"])) {
+            $rArray["movie_symlink"] = 1;
         } else {
-            $rArray["auto_restart"] = "";
-        }
-    }
-    if (isset($_POST["c_gen_timestamps"])) {
-        if (isset($_POST["gen_timestamps"])) {
-            $rArray["gen_timestamps"] = 1;
-        } else {
-            $rArray["gen_timestamps"] = 0;
-        }
-    }
-    if (isset($_POST["c_allow_record"])) {
-        if (isset($_POST["allow_record"])) {
-            $rArray["allow_record"] = 1;
-        } else {
-            $rArray["allow_record"] = 0;
-        }
-    }
-    if (isset($_POST["c_rtmp_output"])) {
-        if (isset($_POST["rtmp_output"])) {
-            $rArray["rtmp_output"] = 1;
-        } else {
-            $rArray["rtmp_output"] = 0;
-        }
-    }
-    if (isset($_POST["c_stream_all"])) {
-        if (isset($_POST["stream_all"])) {
-            $rArray["stream_all"] = 1;
-        } else {
-            $rArray["stream_all"] = 0;
+            $rArray["movie_symlink"] = 0;
         }
     }
     if (isset($_POST["c_direct_source"])) {
@@ -58,32 +28,11 @@ if (isset($_POST["submit_stream"])) {
             $rArray["read_native"] = 0;
         }
     }
-    if (isset($_POST["c_tv_archive_server_id"])) {
-        if (isset($_POST["tv_archive_server_id"])) {
-            $rArray["tv_archive_server_id"] = intval($_POST["tv_archive_server_id"]);
+    if (isset($_POST["c_remove_subtitles"])) {
+        if (isset($_POST["remove_subtitles"])) {
+            $rArray["remove_subtitles"] = 1;
         } else {
-            $rArray["tv_archive_server_id"] = 0;
-        }
-    }
-    if (isset($_POST["c_tv_archive_duration"])) {
-        if (isset($_POST["tv_archive_duration"])) {
-            $rArray["tv_archive_duration"] = intval($_POST["tv_archive_duration"]);
-        } else {
-            $rArray["tv_archive_duration"] = 0;
-        }
-    }
-    if (isset($_POST["c_delay_minutes"])) {
-        if (isset($_POST["delay_minutes"])) {
-            $rArray["delay_minutes"] = intval($_POST["delay_minutes"]);
-        } else {
-            $rArray["delay_minutes"] = 0;
-        }
-    }
-    if (isset($_POST["c_probesize_ondemand"])) {
-        if (isset($_POST["probesize_ondemand"])) {
-            $rArray["probesize_ondemand"] = intval($_POST["probesize_ondemand"]);
-        } else {
-            $rArray["probesize_ondemand"] = 0;
+            $rArray["remove_subtitles"] = 0;
         }
     }
     if (isset($_POST["c_category_id"])) {
@@ -92,8 +41,8 @@ if (isset($_POST["submit_stream"])) {
     if (isset($_POST["c_custom_sid"])) {
         $rArray["custom_sid"] = $_POST["custom_sid"];
     }
-    if (isset($_POST["c_custom_ffmpeg"])) {
-        $rArray["custom_ffmpeg"] = $_POST["custom_ffmpeg"];
+    if (isset($_POST["c_target_container"])) {
+        $rArray["target_container"] = json_encode(Array($_POST["target_container"]));
     }
     if (isset($_POST["c_transcode_profile_id"])) {
         $rArray["transcode_profile_id"] = $_POST["transcode_profile_id"];
@@ -118,12 +67,6 @@ if (isset($_POST["submit_stream"])) {
                 }
             }
             if (isset($_POST["c_server_tree"])) {
-                $rOnDemandArray = Array();
-                if (isset($_POST["on_demand"])) {
-                    foreach ($_POST["on_demand"] as $rID) {
-                        $rOnDemandArray[] = $rID;
-                    }
-                }
                 $rStreamExists = Array();
                 $result = $db->query("SELECT `server_stream_id`, `server_id` FROM `streams_sys` WHERE `stream_id` = ".intval($rStreamID).";");
                 if (($result) && ($result->num_rows > 0)) {
@@ -142,17 +85,12 @@ if (isset($_POST["submit_stream"])) {
                         } else {
                             $rParent = intval($rServer["parent"]);
                         }
-                        if (in_array($rServerID, $rOnDemandArray)) {
-                            $rOD = 1;
-                        } else {
-                            $rOD = 0;
-                        }                            
                         if (isset($rStreamExists[$rServerID])) {
-                            if (!$db->query("UPDATE `streams_sys` SET `parent_id` = ".$rParent.", `on_demand` = ".$rOD." WHERE `server_stream_id` = ".$rStreamExists[$rServerID].";")) {
+                            if (!$db->query("UPDATE `streams_sys` SET `parent_id` = ".$rParent." WHERE `server_stream_id` = ".$rStreamExists[$rServerID].";")) {
                                 $_STATUS = 1;
                             }
                         } else {
-                            if (!$db->query("INSERT INTO `streams_sys`(`stream_id`, `server_id`, `parent_id`, `on_demand`) VALUES(".intval($rStreamID).", ".$rServerID.", ".$rParent.", ".$rOD.");")) {
+                            if (!$db->query("INSERT INTO `streams_sys`(`stream_id`, `server_id`, `parent_id`) VALUES(".intval($rStreamID).", ".$rServerID.", ".$rParent.");")) {
                                 $_STATUS = 1;
                             }
                         }
@@ -162,18 +100,6 @@ if (isset($_POST["submit_stream"])) {
                     if (!in_array($rServerID, $rStreamsAdded)) {
                         $db->query("DELETE FROM `streams_sys` WHERE `server_stream_id` = ".$rDBID.";");
                     }
-                }
-            }
-            if (isset($_POST["c_user_agent"])) {
-                $db->query("DELETE FROM `streams_options` WHERE `stream_id` = ".intval($rStreamID)." AND `argument_id` = 1;");
-                if ((isset($_POST["user_agent"])) && (strlen($_POST["user_agent"]) > 0)) {
-                    $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rStreamID).", 1, '".$db->real_escape_string($_POST["user_agent"])."');");
-                }
-            }
-            if (isset($_POST["c_http_proxy"])) {
-                $db->query("DELETE FROM `streams_options` WHERE `stream_id` = ".intval($rStreamID)." AND `argument_id` = 2;");
-                if ((isset($_POST["http_proxy"])) && (strlen($_POST["http_proxy"]) > 0)) {
-                    $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rStreamID).", 2, '".$db->real_escape_string($_POST["http_proxy"])."');");
                 }
             }
             if (isset($_POST["c_bouquets"])) {
@@ -188,8 +114,8 @@ if (isset($_POST["submit_stream"])) {
                 }
             }
         }
-        if (isset($_POST["restart_on_edit"])) {
-            $rPost = Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs));
+        if (isset($_POST["reencode_on_edit"])) {
+            $rPost = Array("action" => "vod", "sub" => "start", "stream_ids" => array_values($rStreamIDs));
             $rContext = stream_context_create(array(
                 'http' => array(
                     'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
@@ -205,7 +131,6 @@ if (isset($_POST["submit_stream"])) {
 }
 
 
-$rStreamArguments = getStreamArguments();
 $rTranscodeProfiles = getTranscodeProfiles();
 $rServerTree = Array();
 $rServerTree[] = Array("id" => "source", "parent" => "#", "text" => "<strong>Stream Source</strong>", "icon" => "mdi mdi-youtube-tv", "state" => Array("opened" => true));
@@ -229,10 +154,10 @@ if ($rSettings["sidebar"]) {
                         <div class="page-title-box">
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
-                                    <a href="./streams.php"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Streams</li></a>
+                                    <a href="./movies.php"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Movies</li></a>
                                 </ol>
                             </div>
-                            <h4 class="page-title">Mass Edit Streams <small id="selected_count"></small></h4>
+                            <h4 class="page-title">Mass Edit Movies <small id="selected_count"></small></h4>
                         </div>
                     </div>
                 </div>     
@@ -244,7 +169,7 @@ if ($rSettings["sidebar"]) {
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
-                            Mass edit of streams was successfully executed!
+                            Mass edit of movies was successfully executed!
                         </div>
                         <?php } else if ((isset($_STATUS)) && ($_STATUS > 0)) { ?>
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -256,7 +181,7 @@ if ($rSettings["sidebar"]) {
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
-                                <form action="./stream_mass.php" method="POST" id="stream_form">
+                                <form action="./movie_mass.php" method="POST" id="stream_form">
                                     <input type="hidden" name="server_tree_data" id="server_tree_data" value="" />
                                     <input type="hidden" name="streams" id="streams" value="" />
                                     <div id="basicwizard">
@@ -264,19 +189,13 @@ if ($rSettings["sidebar"]) {
                                             <li class="nav-item">
                                                 <a href="#stream-selection" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                     <i class="mdi mdi-play mr-1"></i>
-                                                    <span class="d-none d-sm-inline">Streams</span>
+                                                    <span class="d-none d-sm-inline">Movies</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#stream-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                     <i class="mdi mdi-account-card-details-outline mr-1"></i>
                                                     <span class="d-none d-sm-inline">Details</span>
-                                                </a>
-                                            </li>
-                                            <li class="nav-item">
-                                                <a href="#auto-restart" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
-                                                    <i class="mdi mdi-clock-outline mr-1"></i>
-                                                    <span class="d-none d-sm-inline">Auto Restart</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
@@ -289,10 +208,10 @@ if ($rSettings["sidebar"]) {
                                         <div class="tab-content b-0 mb-0 pt-0">
                                             <div class="tab-pane" id="stream-selection">
                                                 <div class="row">
-                                                    <div class="col-md-4 col-6">
-                                                        <input type="text" class="form-control" id="stream_search" value="" placeholder="Search Streams...">
+                                                    <div class="col-md-3 col-6">
+                                                        <input type="text" class="form-control" id="stream_search" value="" placeholder="Search Movies...">
                                                     </div>
-                                                    <div class="col-md-4 col-6">
+                                                    <div class="col-md-3 col-6">
                                                         <select id="category_search" class="form-control" data-toggle="select2">
                                                             <option value="" selected>All Categories</option>
                                                             <?php foreach ($rCategories as $rCategory) { ?>
@@ -300,7 +219,16 @@ if ($rSettings["sidebar"]) {
                                                             <?php } ?>
                                                         </select>
                                                     </div>
-                                                    <label class="col-md-1 col-2 col-form-label text-center" for="show_entries">Show</label>
+                                                    <div class="col-md-3 col-6">
+                                                        <select id="filter" class="form-control" data-toggle="select2">
+                                                            <option value="" selected>No Filter</option>
+                                                            <option value="1">Encoded</option>
+                                                            <option value="2">Encoding</option>
+                                                            <option value="3">Down</option>
+                                                            <option value="4">Ready</option>
+                                                            <option value="5">Direct</option>
+                                                        </select>
+                                                    </div>
                                                     <div class="col-md-2 col-8">
                                                         <select id="show_entries" class="form-control" data-toggle="select2">
                                                             <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
@@ -319,6 +247,7 @@ if ($rSettings["sidebar"]) {
                                                                 <th class="text-center">ID</th>
                                                                 <th>Stream Name</th>
                                                                 <th>Category</th>
+                                                                <th class="text-center">Status</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody></tbody>
@@ -361,12 +290,12 @@ if ($rSettings["sidebar"]) {
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="gen_timestamps" data-type="switch" name="c_gen_timestamps">
+                                                                <input type="checkbox" class="activate" data-name="direct_source" data-type="switch" name="c_direct_source">
                                                                 <label></label>
                                                             </div>
-                                                            <label class="col-md-3 col-form-label" for="gen_timestamps">Generate PTS</label>
+                                                            <label class="col-md-3 col-form-label" for="direct_source">Direct Source</label>
                                                             <div class="col-md-2">
-                                                                <input name="gen_timestamps" id="gen_timestamps" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input name="direct_source" id="direct_source" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="read_native">Native Frames</label>
                                                             <div class="col-md-2">
@@ -379,94 +308,42 @@ if ($rSettings["sidebar"]) {
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="stream_all" data-type="switch" name="c_stream_all">
+                                                                <input type="checkbox" class="activate" data-name="movie_symlink" data-type="switch" name="c_movie_symlink">
                                                                 <label></label>
                                                             </div>
-                                                            <label class="col-md-3 col-form-label" for="stream_all">Stream All Codecs</label>
+                                                            <label class="col-md-3 col-form-label" for="movie_symlink">Create Symlink</label>
                                                             <div class="col-md-2">
-                                                                <input name="stream_all" id="stream_all" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="allow_record">Allow Recording</label>
-                                                            <div class="col-md-2">
-                                                                <input name="allow_record" id="allow_record" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
-                                                            </div>
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="allow_record" data-type="switch" name="c_allow_record">
-                                                                <label></label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="rtmp_output" data-type="switch" name="c_rtmp_output">
-                                                                <label></label>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="rtmp_output">Allow RTMP Output</label>
-                                                            <div class="col-md-2">
-                                                                <input name="rtmp_output" id="rtmp_output" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="direct_source">Direct Source</label>
-                                                            <div class="col-md-2">
-                                                                <input name="direct_source" id="direct_source" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
-                                                            </div>
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="direct_source" data-type="switch" name="c_direct_source">
-                                                                <label></label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="custom_sid" name="c_custom_sid">
-                                                                <label></label>
+                                                                <input name="movie_symlink" id="movie_symlink" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="custom_sid">Custom Channel SID</label>
                                                             <div class="col-md-2">
                                                                 <input type="text" disabled class="form-control" id="custom_sid" name="custom_sid" value="">
                                                             </div>
-                                                            <label class="col-md-3 col-form-label" for="delay_minutes">Minute Delay</label>
-                                                            <div class="col-md-2">
-                                                                <input type="text" disabled class="form-control" id="delay_minutes" name="delay_minutes" value="0">
-                                                            </div>
                                                             <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="delay_minutes" name="c_delay_minutes">
+                                                                <input type="checkbox" class="activate" data-name="custom_sid" name="c_custom_sid">
                                                                 <label></label>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="custom_ffmpeg" name="c_custom_ffmpeg">
+                                                                <input type="checkbox" class="activate" data-name="target_container" name="c_target_container">
                                                                 <label></label>
                                                             </div>
-                                                            <label class="col-md-3 col-form-label" for="custom_ffmpeg">Custom FFmpeg</label>
+                                                            <label class="col-md-3 col-form-label" for="target_container">Target Container</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" disabled class="form-control" id="custom_ffmpeg" name="custom_ffmpeg" value="">
+                                                                <select disabled name="target_container" id="target_container" class="form-control" data-toggle="select2">
+                                                                    <?php foreach (Array("mp4", "mkv", "avi", "mpg") as $rContainer) { ?>
+                                                                    <option value="<?=$rContainer?>"><?=$rContainer?></option>
+                                                                    <?php } ?>
+                                                                </select>
                                                             </div>
-                                                            <label class="col-md-3 col-form-label" for="probesize_ondemand">On Demand Probesize</label>
+                                                            <label class="col-md-3 col-form-label" for="remove_subtitles">Remove Subtitles</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" disabled class="form-control" id="probesize_ondemand" name="probesize_ondemand" value="128000">
+                                                                <input name="remove_subtitles" id="remove_subtitles" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                             <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="probesize_ondemand" name="c_probesize_ondemand">
+                                                                <input type="checkbox" class="activate" data-name="remove_subtitles" data-type="switch" name="c_remove_subtitles">
                                                                 <label></label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="user_agent" name="c_user_agent">
-                                                                <label></label>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="user_agent">User Agent</label>
-                                                            <div class="col-md-8">
-                                                                <input type="text" disabled class="form-control" id="user_agent" name="user_agent" value="<?php echo $rStreamArguments["user_agent"]["argument_default_value"]; ?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="http_proxy" name="c_http_proxy">
-                                                                <label></label>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="http_proxy">HTTP Proxy</label>
-                                                            <div class="col-md-8">
-                                                                <input type="text" disabled class="form-control" id="http_proxy" name="http_proxy" value="<?php echo $rStreamArguments["proxy"]["argument_default_value"]; ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -495,48 +372,6 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
-                                            
-                                            <div class="tab-pane" id="auto-restart">
-                                                <div class="row">
-                                                    <div class="col-12">
-                                                        <div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="days_to_restart" name="c_days_to_restart">
-                                                                <label></label>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="days_to_restart">Days to Restart</label>
-                                                            <div class="col-md-8">
-                                                                <?php $rAutoRestart = Array("days" => Array(), "at" => "06:00"); ?>
-                                                                <select disabled id="days_to_restart" name="days_to_restart[]" class="form-control select2-multiple" data-toggle="select2" multiple="multiple" data-placeholder="Choose ...">
-                                                                    <?php foreach (Array("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday") as $rDay) { ?>
-                                                                    <option value="<?=$rDay?>"><?=$rDay?></option>
-                                                                    <?php } ?>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <div class="col-md-1"></div>
-                                                            <label class="col-md-3 col-form-label" for="time_to_restart">Time to Restart</label>
-                                                            <div class="col-md-8">
-                                                                <div class="input-group clockpicker" data-placement="top" data-align="top" data-autoclose="true">
-                                                                    <input disabled id="time_to_restart" name="time_to_restart" type="text" class="form-control" value="<?=$rAutoRestart["at"]?>">
-                                                                    <div class="input-group-append">
-                                                                        <span class="input-group-text"><i class="mdi mdi-clock-outline"></i></span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div> <!-- end col -->
-                                                </div> <!-- end row -->
-                                                <ul class="list-inline wizard mb-0">
-                                                    <li class="previous list-inline-item">
-                                                        <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
-                                                    </li>
-                                                    <li class="next list-inline-item float-right">
-                                                        <a href="javascript: void(0);" class="btn btn-secondary">Next</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
                                             <div class="tab-pane" id="load-balancing">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -552,42 +387,9 @@ if ($rSettings["sidebar"]) {
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <div class="col-md-1"></div>
-                                                            <label class="col-md-3 col-form-label" for="on_demand">On Demand</label>
-                                                            <div class="col-md-8">
-                                                                <select disabled id="on_demand" name="on_demand[]" class="form-control select2-multiple" data-toggle="select2" multiple="multiple" data-placeholder="Choose ...">
-                                                                    <?php foreach($rServers as $rServerItem) { ?>
-                                                                        <option value="<?=$rServerItem["id"]?>"><?=$rServerItem["server_name"]?></option>
-                                                                    <?php } ?>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="tv_archive_server_id" name="c_tv_archive_server_id">
-                                                                <label></label>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="tv_archive_server_id">Timeshift Server</label>
-                                                            <div class="col-md-8">
-                                                                <select disabled name="tv_archive_server_id" id="tv_archive_server_id" class="form-control" data-toggle="select2">
-                                                                    <option value="">Timeshift Disabled</option>
-                                                                    <?php foreach ($rServers as $rServer) { ?>
-                                                                    <option value="<?=$rServer["id"]?>"><?=$rServer["server_name"]?></option>
-                                                                    <?php } ?>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="tv_archive_duration" name="c_tv_archive_duration">
-                                                                <label></label>
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="tv_archive_duration">Timeshift Days</label>
-                                                            <div class="col-md-3">
-                                                                <input disabled type="text" class="form-control" id="tv_archive_duration" name="tv_archive_duration" value="0" />
-                                                            </div>
-                                                            <label class="col-md-3 col-form-label" for="restart_on_edit">Restart on Edit</label>
+                                                            <label class="col-md-3 col-form-label" for="reencode_on_edit">Re-Encode on Edit</label>
                                                             <div class="col-md-2">
-                                                                <input name="restart_on_edit" id="restart_on_edit" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd" checked />
+                                                                <input name="reencode_on_edit" id="reencode_on_edit" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd" checked />
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -664,6 +466,9 @@ if ($rSettings["sidebar"]) {
         function getCategory() {
             return $("#category_search").val();
         }
+        function getFilter() {
+            return $("#filter").val();
+        }
         function toggleStreams() {
             $("#datatable-mass tr").each(function() {
                 if ($(this).hasClass('selectedfilter')) {
@@ -700,7 +505,7 @@ if ($rSettings["sidebar"]) {
             elems.forEach(function(html) {
                 var switchery = new Switchery(html);
                 window.rSwitches[$(html).attr("id")] = switchery;
-                if ($(html).attr("id") != "restart_on_edit") {
+                if ($(html).attr("id") != "reencode_on_edit") {
                     window.rSwitches[$(html).attr("id")].disable();
                 }
             });
@@ -779,12 +584,13 @@ if ($rSettings["sidebar"]) {
                 ajax: {
                     url: "./table_search.php",
                     "data": function(d) {
-                        d.id = "stream_list",
-                        d.category = getCategory()
+                        d.id = "movie_list",
+                        d.category = getCategory(),
+                        d.filter = getFilter()
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [0]}
+                    {"className": "dt-center", "targets": [0,3]}
                 ],
                 "rowCallback": function(row, data) {
                     if ($.inArray(data[0], window.rSelected) !== -1) {
@@ -801,6 +607,9 @@ if ($rSettings["sidebar"]) {
             })
             $('#category_search').change(function(){
                 rTable.ajax.reload(null, false);
+            })
+            $('#filter').change(function(){
+                rTable.ajax.reload( null, false );
             })
             $("#datatable-mass").selectable({
                 filter: 'tr',
