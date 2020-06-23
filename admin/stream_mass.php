@@ -190,20 +190,7 @@ if (isset($_POST["submit_stream"])) {
             }
         }
         if (isset($_POST["restart_on_edit"])) {
-            $rPost = Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs));
-            $rContext = stream_context_create(array(
-                'http' => array(
-                    'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                    'method'  => 'POST',
-                    'content' => http_build_query($rPost)
-                )
-            ));
-            if ($rAdminSettings["local_api"]) {
-				$rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-			} else {
-				$rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-			}
-            $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+            APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs)));
         }
     }
     $_STATUS = 0;

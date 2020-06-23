@@ -81,6 +81,7 @@ if ($rSettings["sidebar"]) {
                                         <div class="col-md-3">
                                             <select id="series_category_id" class="form-control" data-toggle="select2">
                                                 <option value="" selected>All Categories</option>
+                                                <option value="-1">No TMDb Match</option>
                                                 <?php foreach ($rCategories as $rCategory) { ?>
                                                 <option value="<?=$rCategory["id"]?>"><?=$rCategory["category_name"]?></option>
                                                 <?php } ?>

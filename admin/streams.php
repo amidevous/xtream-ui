@@ -42,20 +42,25 @@ if ($rSettings["sidebar"]) {
                                         <?php if (!$detect->isMobile()) { ?>
                                         <a href="#" onClick="toggleAuto();">
                                             <button type="button" class="btn btn-dark waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-refresh"></i> <span class="auto-text">Auto-Refresh</span>
+                                                <span class="auto-text">Auto-Refresh</span>
                                             </button>
                                         </a>
                                         <?php } else { ?>
                                         <a href="javascript:location.reload();" onClick="toggleAuto();">
                                             <button type="button" class="btn btn-dark waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-refresh"></i> Refresh
+                                                Refresh
                                             </button>
                                         </a>
                                         <?php }
                                         if ($rPermissions["is_admin"]) { ?>
-                                        <a href="stream.php<?php if($rCategory) { echo "?category=".$rCategory["id"]; }?>">
+                                        <a href="stream.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-plus"></i> Add Stream
+                                                Add Stream
+                                            </button>
+                                        </a>
+                                        <a href="created_channel.php">
+                                            <button type="button" class="btn btn-purple waves-effect waves-light btn-sm">
+                                                Create
                                             </button>
                                         </a>
                                         <?php } ?>
@@ -132,6 +137,7 @@ if ($rSettings["sidebar"]) {
                                                 <option value="5"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 5)) { echo " selected"; } ?>>On Demand</option>
                                                 <option value="6"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 6)) { echo " selected"; } ?>>Direct</option>
 												<option value="7"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 7)) { echo " selected"; } ?>>Timeshift</option>
+                                                <option value="8"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 8)) { echo " selected"; } ?>>Created Channel</option>
                                             </select>
                                         </div>
                                         <label class="col-md-1 col-form-label text-center" for="stream_show_entries">Show</label>

@@ -699,7 +699,11 @@ if ($rSettings["sidebar"]) {
             });
             
             $("#user_form").submit(function(e){
-                $("#bouquets_selected").val(JSON.stringify(window.rBouquets));
+                var rBouquets = [];
+                $("#datatable-bouquets tr.selected").each(function() {
+                    rBouquets.push($(this).find("td:eq(0)").html());
+                });
+                $("#bouquets_selected").val(JSON.stringify(rBouquets));
                 $("#allowed_ua option").prop('selected', true);
                 $("#allowed_ips option").prop('selected', true);
             });

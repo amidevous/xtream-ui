@@ -2,12 +2,6 @@
 include "./functions.php";
 if (!isset($_SESSION['hash'])) { exit; }
 
-if ($rAdminSettings["local_api"]) {
-    $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-} else {
-    $rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-}
-
 if (isset($_GET["action"])) {
     if ($_GET["action"] == "stream") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
@@ -15,13 +9,9 @@ if (isset($_GET["action"])) {
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
         if (in_array($rSub, Array("start", "stop"))) {
-            $rURL = $rAPI."?action=stream&sub=".$rSub."&stream_ids[]=".$rStreamID."&servers[]=".$rServerID;
-            echo file_get_contents($rURL);exit;
+            echo APIRequest(Array("action" => "stream", "sub" => $rSub, "stream_ids" => Array($rStreamID), "servers" => Array($rServerID)));exit;
         } else if ($rSub == "restart") {
-            if (json_decode(file_get_contents($rAPI."?action=stream&sub=start&stream_ids[]=".$rStreamID."&servers[]=".$rServerID), True)["result"]) {
-                echo json_encode(Array("result" => True));exit;
-            }
-            echo json_encode(Array("result" => False));exit;
+            echo APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => Array($rStreamID), "servers" => Array($rServerID)));exit;
         } else if ($rSub == "delete") {
             $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID)." AND `server_id` = ".$db->real_escape_string($rServerID).";");
             $result = $db->query("SELECT COUNT(`server_stream_id`) AS `count` FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID).";");
@@ -39,8 +29,7 @@ if (isset($_GET["action"])) {
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
         if (in_array($rSub, Array("start", "stop"))) {
-            $rURL = $rAPI."?action=vod&sub=".$rSub."&stream_ids[]=".$rStreamID."&servers[]=".$rServerID;
-            echo file_get_contents($rURL);exit;
+            echo APIRequest(Array("action" => "vod", "sub" => "start", "stream_ids" => Array($rStreamID), "servers" => Array($rServerID)));exit;
         } else if ($rSub == "delete") {
             $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID)." AND `server_id` = ".$db->real_escape_string($rServerID).";");
             $result = $db->query("SELECT COUNT(`server_stream_id`) AS `count` FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID).";");
@@ -59,8 +48,7 @@ if (isset($_GET["action"])) {
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
         if (in_array($rSub, Array("start", "stop"))) {
-            $rURL = $rAPI."?action=vod&sub=".$rSub."&stream_ids[]=".$rStreamID."&servers[]=".$rServerID;
-            echo file_get_contents($rURL);exit;
+            echo APIRequest(Array("action" => "vod", "sub" => "start", "stream_ids" => Array($rStreamID), "servers" => Array($rServerID)));exit;
         } else if ($rSub == "delete") {
             $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID)." AND `server_id` = ".$db->real_escape_string($rServerID).";");
             $result = $db->query("SELECT COUNT(`server_stream_id`) AS `count` FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID).";");
@@ -329,6 +317,16 @@ if (isset($_GET["action"])) {
         } else {
             echo json_encode(Array("result" => False));exit;
         }
+    } else if ($_GET["action"] == "watch_output") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $rID = intval($_GET["result_id"]);
+        $rSub = $_GET["sub"];
+        if ($rSub == "delete") {
+            $db->query("DELETE FROM `watch_output` WHERE `id` = ".$db->real_escape_string($rID).";");
+            echo json_encode(Array("result" => True));exit;
+        } else {
+            echo json_encode(Array("result" => False));exit;
+        }
     } else if ($_GET["action"] == "enigma") {
         $rEnigmaID = intval($_GET["enigma_id"]);
         // Check if this device falls under the reseller or subresellers.
@@ -376,15 +374,7 @@ if (isset($_GET["action"])) {
                 }
             }
             if (count($rStreamIDs) > 0) {
-                $rPost = Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs), "servers" => Array(intval($rServerID)));
-                $rContext = stream_context_create(array(
-                    'http' => array(
-                        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                        'method'  => 'POST',
-                        'content' => http_build_query($rPost)
-                    )
-                ));
-                $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+                $rResult = APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs), "servers" => Array(intval($rServerID))));
             }
             echo json_encode(Array("result" => True));exit;
         } else if ($rSub == "stop") {
@@ -396,15 +386,7 @@ if (isset($_GET["action"])) {
                 }
             }
             if (count($rStreamIDs) > 0) {
-                $rPost = Array("action" => "stream", "sub" => "stop", "stream_ids" => array_values($rStreamIDs), "servers" => Array(intval($rServerID)));
-                $rContext = stream_context_create(array(
-                    'http' => array(
-                        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                        'method'  => 'POST',
-                        'content' => http_build_query($rPost)
-                    )
-                ));
-                $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+                $rResult = APIRequest(Array("action" => "stream", "sub" => "stop", "stream_ids" => array_values($rStreamIDs), "servers" => Array(intval($rServerID))));
             }
             echo json_encode(Array("result" => True));exit;
         } else {
@@ -705,12 +687,15 @@ if (isset($_GET["action"])) {
     } else if ($_GET["action"] == "tmdb_search") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         include "tmdb.php";
+        include "tmdb_release.php";
         if (strlen($rAdminSettings["tmdb_language"]) > 0) {
             $rTMDB = new TMDB($rSettings["tmdb_api_key"], $rAdminSettings["tmdb_language"]);
         } else {
             $rTMDB = new TMDB($rSettings["tmdb_api_key"]);
         }
         $rTerm = $_GET["term"];
+        $rRelease = new Release($rTerm);
+        $rTerm = $rRelease->getTitle();
         $rJSON = Array();
         if ($_GET["type"] == "movie") {
             $rResults = $rTMDB->searchMovie($rTerm);
@@ -754,7 +739,7 @@ if (isset($_GET["action"])) {
     } else if ($_GET["action"] == "listdir") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         if ($_GET["filter"] == "video") {
-            $rFilter = Array("mp4", "mkv", "mov", "avi", "mpg", "mpeg", "flv", "wmv");
+            $rFilter = Array("mp4", "mkv", "avi", "mpg", "flv");
         } else if ($_GET["filter"] == "subs") {
             $rFilter = Array("srt", "sub", "sbv");
         } else {
@@ -790,8 +775,8 @@ if (isset($_GET["action"])) {
                         } else if ($rData["type"] == 3) {
                             $rArray["message"] = $rData["message"];
                         }
-                        $rAPI = "http://".$rServers[intval($row["server_id"])]["server_ip"].":".$rServers[intval($row["server_id"])]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=signal_send&".http_build_query($rArray);
-                        $rSuccess = file_get_contents($rAPI);
+                        $rArray["action"] = "signal_send";
+                        $rSuccess = SystemAPIRequest(intval($row["server_id"]), $rArray);
                     }
                 }
                 echo json_encode(Array("result" => True));exit;
@@ -839,6 +824,16 @@ if (isset($_GET["action"])) {
                 $db->query("DELETE FROM `".$db->real_escape_string($_GET["type"])."` WHERE `".$rColumn."` <= ".intval($rEndTime).";");
             } else {
                 $db->query("DELETE FROM `".$db->real_escape_string($_GET["type"])."`;");
+            }
+        } else if ($_GET["type"] == "watch_output") {
+            if (($rStartTime) && ($rEndTime)) {
+                $db->query("DELETE FROM `watch_output` WHERE UNIX_TIMESTAMP(`dateadded`) >= ".intval($rStartTime)." AND UNIX_TIMESTAMP(`dateadded`) <= ".intval($rEndTime).";");
+            } else if ($rStartTime) {
+                $db->query("DELETE FROM `watch_output` WHERE UNIX_TIMESTAMP(`dateadded`) >= ".intval($rStartTime).";");
+            } else if ($rEndTime) {
+                $db->query("DELETE FROM `watch_output` WHERE UNIX_TIMESTAMP(`dateadded`) <= ".intval($rEndTime).";");
+            } else {
+                $db->query("DELETE FROM `watch_output`;");
             }
         }
         echo json_encode(Array("result" => True));exit;

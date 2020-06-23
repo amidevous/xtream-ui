@@ -72,6 +72,7 @@ if (isset($_POST["submit_episodes"])) {
                 deleteMovieFile($row["server_id"], $rEpisode);
             }
         }
+        $db->query("DELETE FROM `series_episodes` WHERE `stream_id` = ".intval($rEpisode).";");
         $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".intval($rEpisode).";");
         $db->query("DELETE FROM `streams` WHERE `id` = ".intval($rEpisode).";");
     }
@@ -244,6 +245,7 @@ if ($rSettings["sidebar"]) {
                                                             <option value="3">Down</option>
                                                             <option value="4">Ready</option>
                                                             <option value="5">Direct</option>
+                                                            <option value="6">No TMDb Match</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-md-2 col-8">
@@ -287,6 +289,7 @@ if ($rSettings["sidebar"]) {
                                                     <div class="col-md-3 col-6">
                                                         <select id="series_category_search" class="form-control" data-toggle="select2">
                                                             <option value="" selected>All Categories</option>
+                                                            <option value="-1">No TMDb Match</option>
                                                             <?php foreach (getCategories("series") as $rCategory) { ?>
                                                             <option value="<?=$rCategory["id"]?>"<?php if ((isset($_GET["category"])) && ($_GET["category"] == $rCategory["id"])) { echo " selected"; } ?>><?=$rCategory["category_name"]?></option>
                                                             <?php } ?>
@@ -671,7 +674,8 @@ if ($rSettings["sidebar"]) {
                     url: "./table_search.php",
                     "data": function(d) {
                         d.id = "stream_list",
-                        d.category = getStreamCategory()
+                        d.category = getStreamCategory(),
+                        d.include_channels = true
                     }
                 },
                 columnDefs: [

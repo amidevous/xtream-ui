@@ -50,6 +50,8 @@ if (isset($_POST["submit_server"])) {
     if (isset($_POST["enable_geoip"])) {
         $rArray["enable_geoip"] = true;
         unset($_POST["enable_geoip"]);
+    } else {
+        $rArray["enable_geoip"] = false;
     }
     if (isset($_POST["geoip_type"])) {
         $rArray["geoip_type"] = "high_priority";

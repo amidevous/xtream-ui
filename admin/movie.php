@@ -2,12 +2,14 @@
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
-if (isset($_GET["import"])) { exit; } // Not ready yet!
-
 $rCategories = getCategories("movie");
 $rTranscodeProfiles = getTranscodeProfiles();
 
 if (isset($_POST["submit_stream"])) {
+    set_time_limit(0);
+    ini_set('mysql.connect_timeout', 0);
+    ini_set('max_execution_time', 0);
+    ini_set('default_socket_timeout', 0);
     if (isset($_POST["edit"])) {
         $rArray = getStream($_POST["edit"]);
         unset($rArray["id"]);
@@ -15,7 +17,6 @@ if (isset($_POST["submit_stream"])) {
         $rArray = Array("movie_symlink" => 0, "type" => 2, "target_container" => Array("mp4"), "added" => time(), "read_native" => 0, "stream_all" => 0, "redirect_stream" => 1, "direct_source" => 0, "gen_timestamps" => 1, "transcode_attributes" => Array(), "stream_display_name" => "", "stream_source" => Array(), "movie_subtitles" => Array(), "category_id" => 0, "stream_icon" => "", "notes" => "", "custom_sid" => "", "custom_ffmpeg" => "", "transcode_profile_id" => 0, "enable_transcode" => 0, "auto_restart" => "[]", "allow_record" => 0, "rtmp_output" => 0, "epg_id" => null, "channel_id" => null, "epg_lang" => null, "tv_archive_server_id" => 0, "tv_archive_duration" => 0, "delay_minutes" => 0, "external_push" => Array(), "probesize_ondemand" => 128000);
     }
     $rArray["stream_display_name"] = $_POST["stream_display_name"];
-    $rArray["stream_source"] = Array($_POST["stream_source"]);
     if (strlen($_POST["movie_subtitles"]) > 0) {
         $rSplit = explode(":", $_POST["movie_subtitles"]);
         $rArray["movie_subtitles"] = Array("files" => Array($rSplit[2]), "names" => Array("Subtitles"), "charset" => Array("UTF-8"), "location" => intval($rSplit[1]));
@@ -23,17 +24,19 @@ if (isset($_POST["submit_stream"])) {
         $rArray["movie_subtitles"] = Array();
     }
     $rArray["notes"] = $_POST["notes"];
-    $rArray["target_container"] = Array($_POST["target_container"]);
+    if (isset($_POST["target_container"])) {
+        $rArray["target_container"] = Array($_POST["target_container"]);
+    }
     $rArray["category_id"] = $_POST["category_id"];
-    $rArray["custom_sid"] = $_POST["custom_sid"];
+    if (isset($_POST["custom_sid"])) {
+        $rArray["custom_sid"] = $_POST["custom_sid"];
+    }
     $rArray["transcode_profile_id"] = $_POST["transcode_profile_id"];
+    if (!$rArray["transcode_profile_id"]) {
+        $rArray["transcode_profile_id"] = 0;
+    }
     if ($rArray["transcode_profile_id"] > 0) {
         $rArray["enable_transcode"] = 1;
-    }
-    if (strlen($_POST["tmdb_id"]) > 0) {
-        $rTMDBURL = "https://www.themoviedb.org/movie/".$_POST["tmdb_id"];
-    } else {
-        $rTMDBURL = "";
     }
     if (isset($_POST["read_native"])) {
         $rArray["read_native"] = 1;
@@ -59,10 +62,6 @@ if (isset($_POST["submit_stream"])) {
     } else {
         $rArray["remove_subtitles"] = 0;
     }
-    if ($rAdminSettings["download_images"]) {
-        $_POST["movie_image"] = downloadImage($_POST["movie_image"]);
-        $_POST["backdrop_path"] = downloadImage($_POST["backdrop_path"]);
-    }
 	if (isset($_POST["restart_on_edit"])) {
 		$rRestart = true;
 		unset($_POST["restart_on_edit"]);
@@ -71,100 +70,204 @@ if (isset($_POST["submit_stream"])) {
 	}
     $rBouquets = $_POST["bouquets"];
     unset($_POST["bouquets"]);
-    $rSeconds = intval($_POST["episode_run_time"]) * 60;
-    $rArray["movie_propeties"] = Array("kinopoisk_url" => $rTMDBURL, "tmdb_id" => $_POST["tmdb_id"], "name" => $rArray["stream_display_name"], "o_name" => $rArray["stream_display_name"], "cover_big" => $_POST["movie_image"], "movie_image" => $_POST["movie_image"], "releasedate" => $_POST["releasedate"], "episode_run_time" => $_POST["episode_run_time"], "youtube_trailer" => $_POST["youtube_trailer"], "director" => $_POST["director"], "actors" => $_POST["cast"], "cast" => $_POST["cast"], "description" => $_POST["plot"], "plot" => $_POST["plot"], "age" => "", "mpaa_rating" => "", "rating_count_kinopoisk" => 0, "country" => $_POST["country"], "genre" => $_POST["genre"], "backdrop_path" => Array($_POST["backdrop_path"]), "duration_secs" => $rSeconds, "duration" => sprintf('%02d:%02d:%02d', ($rSeconds/3600),($rSeconds/60%60), $rSeconds%60), "video" => Array(), "audio" => Array(), "bitrate" => 0, "rating" => $_POST["rating"]);
-    if (strlen($rArray["movie_propeties"]["backdrop_path"][0]) == 0) {
-        unset($rArray["movie_propeties"]["backdrop_path"]);
-    }
-    $rCols = "`".implode('`,`', array_keys($rArray))."`";
-    $rValues = null;
-    foreach (array_values($rArray) as $rValue) {
-        isset($rValues) ? $rValues .= ',' : $rValues = '';
-        if (is_array($rValue)) {
-            $rValue = json_encode($rValue);
-        }
-        if (is_null($rValue)) {
-            $rValues .= 'NULL';
-        } else {
-            $rValues .= '\''.$db->real_escape_string($rValue).'\'';
-        }
-    }
-    if (isset($_POST["edit"])) {
-        $rCols = "`id`,".$rCols;
-        $rValues = $_POST["edit"].",".$rValues;
-    }
-    $rQuery = "REPLACE INTO `streams`(".$db->real_escape_string($rCols).") VALUES(".$rValues.");";
-    if ($db->query($rQuery)) {
-        if (isset($_POST["edit"])) {
-            $rInsertID = intval($_POST["edit"]);
-        } else {
-            $rInsertID = $db->insert_id;
-        }
-        $rStreamExists = Array();
-        if (isset($_POST["edit"])) {
-            $result = $db->query("SELECT `server_stream_id`, `server_id` FROM `streams_sys` WHERE `stream_id` = ".intval($rInsertID).";");
-            if (($result) && ($result->num_rows > 0)) {
-                while ($row = $result->fetch_assoc()) {
-                    $rStreamExists[intval($row["server_id"])] = intval($row["server_stream_id"]);
-                }
-            }
-        }
-        if (isset($_POST["server_tree_data"])) {
-            $rStreamsAdded = Array();
-            $rServerTree = json_decode($_POST["server_tree_data"], True);
-            foreach ($rServerTree as $rServer) {
-                if ($rServer["parent"] <> "#") {
-                    $rServerID = intval($rServer["id"]);
-                    $rStreamsAdded[] = $rServerID;
-                    if ($rServer["parent"] == "source") {
-                        $rParent = "NULL";
-                    } else {
-                        $rParent = intval($rServer["parent"]);
-                    }
-                    if (isset($rStreamExists[$rServerID])) {
-                        $db->query("UPDATE `streams_sys` SET `parent_id` = ".$rParent.", `on_demand` = 0 WHERE `server_stream_id` = ".$rStreamExists[$rServerID].";");
-                    } else {
-                        $db->query("INSERT INTO `streams_sys`(`stream_id`, `server_id`, `parent_id`, `on_demand`) VALUES(".intval($rInsertID).", ".$rServerID.", ".$rParent.", 0);");
+    $rImportStreams = Array();
+    if (!empty($_FILES['m3u_file']['tmp_name'])) {
+        $rStreamDatabase = Array();
+        $result = $db->query("SELECT `stream_source` FROM `streams` WHERE `type` = 2;");
+        if (($result) && ($result->num_rows > 0)) {
+            while ($row = $result->fetch_assoc()) {
+                foreach (json_decode($row["stream_source"], True) as $rSource) {
+                    if (strlen($rSource) > 0) {
+                        $rStreamDatabase[] = str_replace(" ", "%20", $rSource);
                     }
                 }
             }
-            foreach ($rStreamExists as $rServerID => $rDBID) {
-                if (!in_array($rServerID, $rStreamsAdded)) {
-                    $db->query("DELETE FROM `streams_sys` WHERE `server_stream_id` = ".$rDBID.";");
-                }
+        }
+        $rFile = '';
+        if ((!empty($_FILES['m3u_file']['tmp_name'])) && (strtolower(pathinfo($_FILES['m3u_file']['name'], PATHINFO_EXTENSION)) == "m3u")) {
+            $rFile = file_get_contents($_FILES['m3u_file']['tmp_name']);
+        }
+        preg_match_all('/(?P<tag>#EXTINF:[-1,0])|(?:(?P<prop_key>[-a-z]+)=\"(?P<prop_val>[^"]+)")|(?<name>,[^\r\n]+)|(?<url>http[^\s]+)/', $rFile, $rMatches);
+        $rResults = [];
+        $rIndex = -1;
+        for ($i = 0; $i < count($rMatches[0]); $i++) {
+            $rItem = $rMatches[0][$i];
+            if (!empty($rMatches['tag'][$i])) {
+                ++$rIndex;
+            } elseif (!empty($rMatches['prop_key'][$i])) {
+                $rResults[$rIndex][$rMatches['prop_key'][$i]] = trim($rMatches['prop_val'][$i]);
+            } elseif (!empty($rMatches['name'][$i])) {
+                $rResults[$rIndex]['name'] = trim(substr($rItem, 1));
+            } elseif (!empty($rMatches['url'][$i])) {
+                $rResults[$rIndex]['url'] = str_replace(" ", "%20", trim($rItem));
             }
         }
-		if ($rRestart) {
-			$rPost = Array("action" => "vod", "sub" => "start", "stream_ids" => Array($rInsertID));
-			$rContext = stream_context_create(array(
-				'http' => array(
-					'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-					'method'  => 'POST',
-					'content' => http_build_query($rPost)
-				)
-			));
-			if ($rAdminSettings["local_api"]) {
-				$rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-			} else {
-				$rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+        foreach ($rResults as $rResult) {
+			if (!in_array($rResult["url"], $rStreamDatabase)) {
+                $rPathInfo = pathinfo($rResult["url"]);
+                $rImportArray = Array("stream_source" => Array($rResult["url"]), "stream_icon" => $rResult["tvg-logo"] ?: "", "stream_display_name" => $rResult["name"] ?: "", "movie_propeties" => Array(), "async" => true, "target_container" => Array($rPathInfo["extension"]));
+				$rImportStreams[] = $rImportArray;
 			}
-			$rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
-		}
-        foreach ($rBouquets as $rBouquet) {
-            addToBouquet("stream", $rBouquet, $rInsertID);
         }
-        foreach (getBouquets() as $rBouquet) {
-            if (!in_array($rBouquet["id"], $rBouquets)) {
-                removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
+    } else if (!empty($_POST["import_folder"])) {
+        $rStreamDatabase = Array();
+        $result = $db->query("SELECT `stream_source` FROM `streams` WHERE `type` = 2;");
+        if (($result) && ($result->num_rows > 0)) {
+            while ($row = $result->fetch_assoc()) {
+                foreach (json_decode($row["stream_source"], True) as $rSource) {
+                    if (strlen($rSource) > 0) {
+                        $rStreamDatabase[] = $rSource;
+                    }
+                }
+            }
+        }
+        $rParts = explode(":", $_POST["import_folder"]);
+        if (is_numeric($rParts[1])) {
+            if (isset($_POST["scan_recursive"])) {
+                $rFiles = scanRecursive(intval($rParts[1]), $rParts[2], Array("mp4", "mkv", "avi", "mpg", "flv")); // Only these containers are accepted.
+            } else {
+                $rFiles = Array();
+                foreach (listDir(intval($rParts[1]), rtrim($rParts[2], "/"), Array("mp4", "mkv", "avi", "mpg", "flv"))["files"] as $rFile) {
+                    $rFiles[] = rtrim($rParts[2], "/")."/".$rFile;
+                }
+            }
+            foreach ($rFiles as $rFile) {
+                $rFilePath = "s:".intval($rParts[1]).":".$rFile;
+                if (!in_array($rFilePath, $rStreamDatabase)) {
+                    $rPathInfo = pathinfo($rFile);
+                    $rImportArray = Array("stream_source" => Array($rFilePath), "stream_icon" => "", "stream_display_name" => $rPathInfo["filename"], "movie_propeties" => Array(), "async" => true, "target_container" => Array($rPathInfo["extension"]));
+                    $rImportStreams[] = $rImportArray;
+                }
+            }
+        }
+    } else {
+        $rImportArray = Array("stream_source" => Array($_POST["stream_source"]), "stream_icon" => $rArray["stream_icon"], "stream_display_name" => $rArray["stream_display_name"], "movie_propeties" => Array(), "async" => false);
+        if (strlen($_POST["tmdb_id"]) > 0) {
+            $rTMDBURL = "https://www.themoviedb.org/movie/".$_POST["tmdb_id"];
+        } else {
+            $rTMDBURL = "";
+        }
+        if ($rAdminSettings["download_images"]) {
+            $_POST["movie_image"] = downloadImage($_POST["movie_image"]);
+            $_POST["backdrop_path"] = downloadImage($_POST["backdrop_path"]);
+        }
+        $rSeconds = intval($_POST["episode_run_time"]) * 60;
+        $rImportArray["movie_propeties"] = Array("kinopoisk_url" => $rTMDBURL, "tmdb_id" => $_POST["tmdb_id"], "name" => $rArray["stream_display_name"], "o_name" => $rArray["stream_display_name"], "cover_big" => $_POST["movie_image"], "movie_image" => $_POST["movie_image"], "releasedate" => $_POST["releasedate"], "episode_run_time" => $_POST["episode_run_time"], "youtube_trailer" => $_POST["youtube_trailer"], "director" => $_POST["director"], "actors" => $_POST["cast"], "cast" => $_POST["cast"], "description" => $_POST["plot"], "plot" => $_POST["plot"], "age" => "", "mpaa_rating" => "", "rating_count_kinopoisk" => 0, "country" => $_POST["country"], "genre" => $_POST["genre"], "backdrop_path" => Array($_POST["backdrop_path"]), "duration_secs" => $rSeconds, "duration" => sprintf('%02d:%02d:%02d', ($rSeconds/3600),($rSeconds/60%60), $rSeconds%60), "video" => Array(), "audio" => Array(), "bitrate" => 0, "rating" => $_POST["rating"]);
+        if (strlen($rImportArray["movie_propeties"]["backdrop_path"][0]) == 0) {
+            unset($rImportArray["movie_propeties"]["backdrop_path"]);
+        }
+		if (isset($_POST["edit"])) {
+			$rImportStreams[] = $rImportArray;
+		} else {
+			$rResult = $db->query("SELECT COUNT(`id`) AS `count` FROM `streams` WHERE `stream_display_name` = '".$db->real_escape_string($rImportArray["stream_display_name"])."';");
+			if ($rResult->fetch_assoc()["count"] == 0) {
+				$rImportStreams[] = $rImportArray;
+			} else {
+				$_STATUS = 2;
+				$rMovie = array_merge($rArray, $rImportArray);
+			}
+		}
+    }
+    if (count($rImportStreams) > 0) {
+        $rRestartIDs = Array();
+        foreach ($rImportStreams as $rImportStream) {
+            $rImportArray = $rArray;
+            foreach (array_keys($rImportStream) as $rKey) {
+				$rImportArray[$rKey] = $rImportStream[$rKey];
+            }
+            $rImportArray["order"] = getNextOrder();
+            $rSync = $rImportArray["async"];
+            unset($rImportArray["async"]);
+            $rCols = "`".implode('`,`', array_keys($rImportArray))."`";
+            $rValues = null;
+            foreach (array_values($rImportArray) as $rValue) {
+                isset($rValues) ? $rValues .= ',' : $rValues = '';
+                if (is_array($rValue)) {
+                    $rValue = json_encode($rValue);
+                }
+                if (is_null($rValue)) {
+                    $rValues .= 'NULL';
+                } else {
+                    $rValues .= '\''.$db->real_escape_string($rValue).'\'';
+                }
+            }
+            if (isset($_POST["edit"])) {
+                $rCols = "`id`,".$rCols;
+                $rValues = $_POST["edit"].",".$rValues;
+            }
+            $rQuery = "REPLACE INTO `streams`(".$db->real_escape_string($rCols).") VALUES(".$rValues.");";
+            if ($db->query($rQuery)) {
+                if (isset($_POST["edit"])) {
+                    $rInsertID = intval($_POST["edit"]);
+                } else {
+                    $rInsertID = $db->insert_id;
+                }
+                $rStreamExists = Array();
+                if (isset($_POST["edit"])) {
+                    $result = $db->query("SELECT `server_stream_id`, `server_id` FROM `streams_sys` WHERE `stream_id` = ".intval($rInsertID).";");
+                    if (($result) && ($result->num_rows > 0)) {
+                        while ($row = $result->fetch_assoc()) {
+                            $rStreamExists[intval($row["server_id"])] = intval($row["server_stream_id"]);
+                        }
+                    }
+                }
+                if (isset($_POST["server_tree_data"])) {
+                    $rStreamsAdded = Array();
+                    $rServerTree = json_decode($_POST["server_tree_data"], True);
+                    foreach ($rServerTree as $rServer) {
+                        if ($rServer["parent"] <> "#") {
+                            $rServerID = intval($rServer["id"]);
+                            $rStreamsAdded[] = $rServerID;
+                            if ($rServer["parent"] == "source") {
+                                $rParent = "NULL";
+                            } else {
+                                $rParent = intval($rServer["parent"]);
+                            }
+                            if (isset($rStreamExists[$rServerID])) {
+                                $db->query("UPDATE `streams_sys` SET `parent_id` = ".$rParent.", `on_demand` = 0 WHERE `server_stream_id` = ".$rStreamExists[$rServerID].";");
+                            } else {
+                                $db->query("INSERT INTO `streams_sys`(`stream_id`, `server_id`, `parent_id`, `on_demand`) VALUES(".intval($rInsertID).", ".$rServerID.", ".$rParent.", 0);");
+                            }
+                        }
+                    }
+                    foreach ($rStreamExists as $rServerID => $rDBID) {
+                        if (!in_array($rServerID, $rStreamsAdded)) {
+                            $db->query("DELETE FROM `streams_sys` WHERE `server_stream_id` = ".$rDBID.";");
+                        }
+                    }
+                }
+                if ($rRestart) {
+                    $rRestartIDs[] = $rInsertID;
+                }
+                foreach ($rBouquets as $rBouquet) {
+                    addToBouquet("stream", $rBouquet, $rInsertID);
+                }
+                foreach (getBouquets() as $rBouquet) {
+                    if (!in_array($rBouquet["id"], $rBouquets)) {
+                        removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
+                    }
+                }
+                if ($rSync) {
+                    // Sync TMDb in background.
+                    $db->query("INSERT INTO `tmdb_async`(`type`, `stream_id`) VALUES(1, ".intval($rInsertID).");");
+                }
             }
         }
         scanBouquets();
-    }
-    if (isset($rInsertID)) {
-        $_GET["id"] = $rInsertID;
-        $_STATUS = 0;
+        if ($rRestart) {
+            APIRequest(Array("action" => "vod", "sub" => "start", "stream_ids" => $rRestartIDs));
+        }
+        if (isset($_FILES["m3u_file"])) {
+            header("Location: ./movies.php");exit;
+        } else if (!isset($_GET["id"])) {
+            $_GET["id"] = $rInsertID;
+            $_STATUS = 0;
+        }
     } else {
-        $_STATUS = 1;
+        if (!isset($_STATUS)) {
+			$_STATUS = 3;
+            $rMovie = $rArray;
+		}
     }
 }
 
@@ -212,10 +315,29 @@ if ($rSettings["sidebar"]) {
                         <div class="page-title-box">
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
-                                    <a href="./movies.php"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Movies</li></a>
+                                    <li>
+                                        <a href="./movies.php<?php if (isset($_GET["category"])) { echo "?category=".$_GET["category"]; } ?>">
+                                            <button type="button" class="btn btn-primary waves-effect waves-light btn-sm">
+                                                View Movies
+                                            </button>
+                                        </a>
+                                        <?php if (!isset($_GET["import"])) { ?>
+                                        <a href="./movie.php?import">
+                                            <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
+                                                Import Multiple
+                                            </button>
+                                        </a>
+                                        <?php } else { ?>
+                                        <a href="./movie.php">
+                                            <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
+                                                Add Single
+                                            </button>
+                                        </a>
+                                        <?php } ?>
+                                    </li>
                                 </ol>
                             </div>
-                            <h4 class="page-title"><?php if (isset($rMovie)) { echo $rMovie["stream_display_name"].' &nbsp;<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rMovie["id"].', \''.json_decode($rMovie["target_container"], True)[0].'\');"><i class="mdi mdi-play"></i></button>'; } else if (isset($_GET["import"])) { echo "Import Movies"; } else { echo "Add Movie"; } ?></h4>
+                            <h4 class="page-title"><?php if (isset($rMovie["id"])) { echo $rMovie["stream_display_name"].' &nbsp;<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rMovie["id"].', \''.json_decode($rMovie["target_container"], True)[0].'\');"><i class="mdi mdi-play"></i></button>'; } else if (isset($_GET["import"])) { echo "Import Movies"; } else { echo "Add Movie"; } ?></h4>
                         </div>
                     </div>
                 </div>     
@@ -229,15 +351,29 @@ if ($rSettings["sidebar"]) {
                             </button>
                             Movie operation was completed successfully.
                         </div>
-                        <?php } else if ((isset($_STATUS)) && ($_STATUS > 0)) { ?>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 1)) { ?>
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                                 <span aria-hidden="true">&times;</span>
                             </button>
-                            There was an error performing this operation! Please check the form entry and try again.
+                            An error occured while inserting into the database, please check the form.
+                        </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 2)) { ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            The movie name is already in use, please select another.
+                        </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 3)) { ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            No new movies were imported. Please check the input.
                         </div>
                         <?php }
-                        if (isset($rMovie)) { ?>
+                        if (isset($rMovie["id"])) { ?>
                         <div class="card text-xs-center">
                             <div class="table">
                                 <table id="datatable-list" class="table table-borderless mb-0">
@@ -273,7 +409,7 @@ if ($rSettings["sidebar"]) {
                         <div class="card">
                             <div class="card-body">
                                 <form<?php if(isset($_GET["import"])) { echo " enctype=\"multipart/form-data\""; } ?> action="./movie.php<?php if (isset($_GET["import"])) { echo "?import"; } else if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="stream_form" data-parsley-validate="">
-                                    <?php if (isset($rMovie)) { ?>
+                                    <?php if (isset($rMovie["id"])) { ?>
                                     <input type="hidden" name="edit" value="<?=$rMovie["id"]?>" />
                                     <?php } ?>
                                     <input type="hidden" id="tmdb_id" name="tmdb_id" value="<?php if (isset($rMovie)) { echo $rMovie["properties"]["tmdb_id"]; } ?>" />
@@ -341,23 +477,42 @@ if ($rSettings["sidebar"]) {
                                                         </div>
                                                         <?php } else { ?>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="m3u_url">M3U URL</label>
+                                                            <label class="col-md-4 col-form-label" for="import_type">Type</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="m3u_url" name="m3u_url" value="">
+                                                                <div class="custom-control custom-radio mt-1">
+                                                                    <span>
+                                                                        <input type="radio" id="import_type_1" name="customRadio" class="custom-control-input" checked>
+                                                                        <label class="custom-control-label" for="import_type_1">M3U</label>
+                                                                    </span>
+                                                                    <span style="padding-left:50px;">
+                                                                        <input type="radio" id="import_type_2" name="customRadio" class="custom-control-input">
+                                                                        <label class="custom-control-label" for="import_type_2">Folder</label>
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="m3u_file">M3U File</label>
-                                                            <div class="col-md-8">
-                                                                <input type="file" id="m3u_file" name="m3u_file" />
+                                                        <div id="import_m3uf_toggle">
+                                                            <div class="form-group row mb-4">
+                                                                <label class="col-md-4 col-form-label" for="m3u_file">M3U File</label>
+                                                                <div class="col-md-8">
+                                                                    <input type="file" id="m3u_file" name="m3u_file" />
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="import_folder">Folder</label>
-                                                            <div class="col-md-8 input-group">
-                                                                <input type="text" id="import_folder" name="import_folder" class="form-control" value="<?=$rMovieSource?>">
-                                                                <div class="input-group-append">
-                                                                    <a href="#file-browser" id="filebrowser" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-folder-open-outline"></i></a>
+                                                        <div id="import_folder_toggle" style="display:none;">
+                                                            <div class="form-group row mb-4">
+                                                                <label class="col-md-4 col-form-label" for="import_folder">Folder</label>
+                                                                <div class="col-md-8 input-group">
+                                                                    <input type="text" id="import_folder" name="import_folder" class="form-control" value="<?=$rMovieSource?>">
+                                                                    <div class="input-group-append">
+                                                                        <a href="#file-browser" id="filebrowser" class="btn btn-primary waves-effect waves-light"><i class="mdi mdi-folder-open-outline"></i></a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-group row mb-4">
+                                                                <label class="col-md-4 col-form-label" for="scan_recursive">Scan Recursively</label>
+                                                                <div class="col-md-2">
+                                                                    <input name="scan_recursive" id="scan_recursive" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -494,24 +649,17 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-2">
                                                                 <input name="movie_symlink" id="movie_symlink" type="checkbox" <?php if (isset($rMovie)) { if ($rMovie["movie_symlink"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
+                                                            <?php if (!isset($_GET["import"])) { ?>
                                                             <label class="col-md-4 col-form-label" for="custom_sid">Custom Channel SID <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Here you can specify the SID of the channel in order to work with the epg on the enigma2 devices. You have to specify the code with the ':' but without the first number, 1 or 4097 . Example: if we have this code:  '1:0:1:13f:157c:13e:820000:0:0:0:2097' then you have to add on this field:  ':0:1:13f:157c:13e:820000:0:0:0:" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <input type="text" class="form-control" id="custom_sid" name="custom_sid" value="<?php if (isset($rMovie)) { echo $rMovie["custom_sid"]; } ?>">
                                                             </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="target_container">Target Container <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Which container to use for the final product, whether encoded or symlinked." class="mdi mdi-information"></i></label>
-                                                            <div class="col-md-2">
-                                                                <select name="target_container" id="target_container" class="form-control" data-toggle="select2">
-                                                                    <?php foreach (Array("mp4", "mkv", "avi", "mpg") as $rContainer) { ?>
-                                                                    <option <?php if (isset($rMovie)) { if (json_decode($rMovie["target_container"], True)[0] == $rContainer) { echo "selected "; } } ?>value="<?=$rContainer?>"><?=$rContainer?></option>
-                                                                    <?php } ?>
-                                                                </select>
-                                                            </div>
+                                                            <?php } else { ?>
                                                             <label class="col-md-4 col-form-label" for="remove_subtitles">Remove Existing Subtitles <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Remove existing subtitles from file before encoding. You can't remove hardcoded subtitles using this method." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <input name="remove_subtitles" id="remove_subtitles" type="checkbox" <?php if (isset($rMovie)) { if ($rMovie["remove_subtitles"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
+                                                            <?php } ?>
                                                         </div>
                                                         <?php if (!isset($_GET["import"])) {
                                                         $rSubFile = "";
@@ -542,6 +690,22 @@ if ($rSettings["sidebar"]) {
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <?php if (!isset($_GET["import"])) { ?>
+                                                            <label class="col-md-4 col-form-label" for="target_container">Target Container <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Which container to use for the final product, whether encoded or symlinked." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <select name="target_container" id="target_container" class="form-control" data-toggle="select2">
+                                                                    <?php foreach (Array("mp4", "mkv", "avi", "mpg", "flv") as $rContainer) { ?>
+                                                                    <option <?php if (isset($rMovie)) { if (json_decode($rMovie["target_container"], True)[0] == $rContainer) { echo "selected "; } } ?>value="<?=$rContainer?>"><?=$rContainer?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="remove_subtitles">Remove Existing Subtitles <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Remove existing subtitles from file before encoding. You can't remove hardcoded subtitles using this method." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="remove_subtitles" id="remove_subtitles" type="checkbox" <?php if (isset($rMovie)) { if ($rMovie["remove_subtitles"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <?php } ?>
                                                         </div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
@@ -695,6 +859,7 @@ if ($rSettings["sidebar"]) {
         
         <script>
         var changeTitle = false;
+        var rSwitches = [];
         
         (function($) {
           $.fn.inputFilter = function(inputFilter) {
@@ -724,6 +889,7 @@ if ($rSettings["sidebar"]) {
                     } else if (rType == "stop") {
                         $.toast("Movie encoding has been stopped.");
                     } else if (rType == "delete") {
+                        $("#movie-" + rID + "-" + rServerID).remove();
                         $.toast("Movie successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
@@ -749,6 +915,10 @@ if ($rSettings["sidebar"]) {
         function selectFile(rFile) {
             if ($('li.nav-item .active').attr('href') == "#stream-details") {
                 $("#stream_source").val("s:" + $("#server_id").val() + ":" + window.currentDirectory + rFile);
+                var rExtension = rFile.substr((rFile.lastIndexOf('.')+1));
+                if ($("#target_container option[value='" + rExtension + "']").length > 0) {
+                    $("#target_container").val(rExtension).trigger('change');
+                }
             } else {
                 $("#movie_subtitles").val("s:" + $("#server_id").val() + ":" + window.currentDirectory + rFile);
             }
@@ -781,6 +951,12 @@ if ($rSettings["sidebar"]) {
                     type: 'iframe'
                 }
             });
+        }
+        function setSwitch(switchElement, checkedBool) {
+            if((checkedBool && !switchElement.isChecked()) || (!checkedBool && switchElement.isChecked())) {
+                switchElement.setPosition(true);
+                switchElement.handleOnchange(true);
+            }
         }
         $(document).ready(function() {
             $('select').select2({width: '100%'});
@@ -820,6 +996,7 @@ if ($rSettings["sidebar"]) {
             var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
             elems.forEach(function(html) {
               var switchery = new Switchery(html);
+              window.rSwitches[$(html).attr("id")] = switchery;
             });
             
             $("#select_folder").click(function() {
@@ -898,22 +1075,12 @@ if ($rSettings["sidebar"]) {
                     $.toast("Enter a movie source.");
                 }
                 <?php } else { ?>
-                if (($("#m3u_file").val().length == 0) && ($("#m3u_url").val().length == 0) && ($("#import_folder").val().length == 0)) {
+                if (($("#m3u_file").val().length == 0) && ($("#import_folder").val().length == 0)) {
                     e.preventDefault();
-                    $.toast("Please select a M3U file to upload, enter an URL or select a folder.");
+                    $.toast("Please select a M3U file to upload or select a folder.");
                 }
                 <?php } ?>
                 $("#server_tree_data").val(JSON.stringify($('#server_tree').jstree(true).get_json('#', {flat:true})));
-                rPass = false;
-                $.each($('#server_tree').jstree(true).get_json('#', {flat:true}), function(k,v) {
-                    if (v.parent == "source") {
-                        rPass = true;
-                    }
-                });
-                if (rPass == false) {
-                    e.preventDefault();
-                    $.toast("Select at least one server.");
-                }
             });
             
             $("#filebrowser").magnificPopup({
@@ -967,6 +1134,54 @@ if ($rSettings["sidebar"]) {
                 $("#changeDir").click();
             });
             
+            $("#direct_source").change(function() {
+                evaluateDirectSource();
+            });
+            $("#movie_symlink").change(function() {
+                evaluateSymlink();
+            });
+            
+            function evaluateDirectSource() {
+                $(["movie_symlink", "read_native", "transcode_profile_id", "target_container", "remove_subtitles", "movie_subtitles"]).each(function(rID, rElement) {
+                    if ($(rElement)) {
+                        if ($("#direct_source").is(":checked")) {
+                            if (window.rSwitches[rElement]) {
+                                setSwitch(window.rSwitches[rElement], false);
+                                window.rSwitches[rElement].disable();
+                            } else {
+                                $("#" + rElement).prop("disabled", true);
+                            }
+                        } else {
+                            if (window.rSwitches[rElement]) {
+                                window.rSwitches[rElement].enable();
+                            } else {
+                                $("#" + rElement).prop("disabled", false);
+                            }
+                        }
+                    }
+                });
+            }
+            function evaluateSymlink() {
+                $(["direct_source", "read_native", "transcode_profile_id"]).each(function(rID, rElement) {
+                    if ($(rElement)) {
+                        if ($("#movie_symlink").is(":checked")) {
+                            if (window.rSwitches[rElement]) {
+                                setSwitch(window.rSwitches[rElement], false);
+                                window.rSwitches[rElement].disable();
+                            } else {
+                                $("#" + rElement).prop("disabled", true);
+                            }
+                        } else {
+                            if (window.rSwitches[rElement]) {
+                                window.rSwitches[rElement].enable();
+                            } else {
+                                $("#" + rElement).prop("disabled", false);
+                            }
+                        }
+                    }
+                });
+            }
+            
             $("#stream_display_name").change(function() {
                 if (!window.changeTitle) {
                     $("#tmdb_search").empty().trigger('change');
@@ -1003,7 +1218,11 @@ if ($rSettings["sidebar"]) {
                     $.getJSON("./api.php?action=tmdb&type=movie&id=" + $("#tmdb_search").val(), function(data) {
                         if (data.result == true) {
                             window.changeTitle = true;
-                            $("#stream_display_name").val(data.data.title);
+                            rTitle = data.data.title;
+                            if (data.data.release_date) {
+                                rTitle += " - " + data.data.release_date.substr(0, 4);
+                            }
+                            $("#stream_display_name").val(rTitle);
                             $("#movie_image").val("");
                             if (data.data.poster_path.length > 0) {
                                 $("#movie_image").val("https://image.tmdb.org/t/p/w600_and_h900_bestv2" + data.data.poster_path);
@@ -1061,7 +1280,7 @@ if ($rSettings["sidebar"]) {
                 }
             });
             
-            <?php if (isset($rMovie)) { ?>
+            <?php if (isset($rMovie["id"])) { ?>
             $("#datatable-list").DataTable({
                 ordering: false,
                 paging: false,
@@ -1085,10 +1304,21 @@ if ($rSettings["sidebar"]) {
             $("#stream_display_name").trigger('change');
             <?php } ?>
             
+            $("#import_type_1").click(function() {
+                $("#import_m3uf_toggle").show();
+                $("#import_folder_toggle").hide();
+            });
+            $("#import_type_2").click(function() {
+                $("#import_m3uf_toggle").hide();
+                $("#import_folder_toggle").show();
+            });
+            
             $("#runtime").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("form").attr('autocomplete', 'off');
             
             $("#changeDir").click();
+            evaluateDirectSource();
+            evaluateSymlink();
         });
         </script>
     </body>

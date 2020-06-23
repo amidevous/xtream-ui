@@ -115,20 +115,14 @@ if (isset($_POST["submit_stream"])) {
             }
         }
         if (isset($_POST["reencode_on_edit"])) {
-            $rPost = Array("action" => "vod", "sub" => "start", "stream_ids" => array_values($rStreamIDs));
-            $rContext = stream_context_create(array(
-                'http' => array(
-                    'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                    'method'  => 'POST',
-                    'content' => http_build_query($rPost)
-                )
-            ));
-			if ($rAdminSettings["local_api"]) {
-				$rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-			} else {
-				$rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-			}
-            $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+            APIRequest(Array("action" => "vod", "sub" => "start", "stream_ids" => array_values($rStreamIDs)));
+        }
+        if (isset($_POST["reprocess_tmdb"])) {
+            foreach ($rStreamIDs as $rStreamID) {
+                if (intval($rStreamID) > 0) {
+                    $db->query("INSERT INTO `tmdb_async`(`type`, `stream_id`, `status`) VALUES(1, ".intval($rStreamID).", 0);");
+                }
+            }
         }
     }
     $_STATUS = 0;
@@ -231,6 +225,7 @@ if ($rSettings["sidebar"]) {
                                                             <option value="3">Down</option>
                                                             <option value="4">Ready</option>
                                                             <option value="5">Direct</option>
+                                                            <option value="6">No TMDb Match</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-md-2 col-8">
@@ -393,7 +388,12 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-1"></div>
                                                             <label class="col-md-3 col-form-label" for="reencode_on_edit">Re-Encode on Edit</label>
                                                             <div class="col-md-2">
-                                                                <input name="reencode_on_edit" id="reencode_on_edit" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd" checked />
+                                                                <input name="reencode_on_edit" id="reencode_on_edit" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd" />
+                                                            </div>
+                                                            <div class="col-md-1"></div>
+                                                            <label class="col-md-3 col-form-label" for="reprocess_tmdb">Re-Process TMDb Data</label>
+                                                            <div class="col-md-2">
+                                                                <input name="reprocess_tmdb" id="reprocess_tmdb" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd" />
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -502,7 +502,7 @@ if ($rSettings["sidebar"]) {
             elems.forEach(function(html) {
                 var switchery = new Switchery(html);
                 window.rSwitches[$(html).attr("id")] = switchery;
-                if ($(html).attr("id") != "reencode_on_edit") {
+                if (($(html).attr("id") != "reencode_on_edit") && ($(html).attr("id") != "reprocess_tmdb")) {
                     window.rSwitches[$(html).attr("id")].disable();
                 }
             });

@@ -103,6 +103,9 @@ if (isset($_POST["submit_stream"])) {
         $rArray["channel_id"] = $_POST["channel_id"];
         unset($_POST["channel_id"]);
     }
+    if (!$rArray["transcode_profile_id"]) {
+        $rArray["transcode_profile_id"] = 0;
+    }
     if ($rArray["transcode_profile_id"] > 0) {
         $rArray["enable_transcode"] = 1;
     }
@@ -120,11 +123,20 @@ if (isset($_POST["submit_stream"])) {
         }
     }
     $rImportStreams = Array();
-    if ((isset($_FILES["m3u_file"])) OR (isset($_POST["m3u_url"]))) {
+    if (isset($_FILES["m3u_file"])) {
+        $rStreamDatabase = Array();
+        $result = $db->query("SELECT `stream_source` FROM `streams` WHERE `type` IN (1,3);");
+        if (($result) && ($result->num_rows > 0)) {
+            while ($row = $result->fetch_assoc()) {
+                foreach (json_decode($row["stream_source"], True) as $rSource) {
+                    if (strlen($rSource) > 0) {
+                        $rStreamDatabase[] = str_replace(" ", "%20", $rSource);
+                    }
+                }
+            }
+        }
         $rFile = '';
-        if (!empty($_POST['m3u_url'])) {
-            $rFile = file_get_contents($_POST['m3u_url']);
-        } else if ((!empty($_FILES['m3u_file']['tmp_name'])) && (strtolower(pathinfo($_FILES['m3u_file']['name'], PATHINFO_EXTENSION)) == "m3u")) {
+        if ((!empty($_FILES['m3u_file']['tmp_name'])) && (strtolower(pathinfo($_FILES['m3u_file']['name'], PATHINFO_EXTENSION)) == "m3u")) {
             $rFile = file_get_contents($_FILES['m3u_file']['tmp_name']);
         }
         preg_match_all('/(?P<tag>#EXTINF:[-1,0])|(?:(?P<prop_key>[-a-z]+)=\"(?P<prop_val>[^"]+)")|(?<name>,[^\r\n]+)|(?<url>http[^\s]+)/', $rFile, $rMatches);
@@ -139,7 +151,7 @@ if (isset($_POST["submit_stream"])) {
             } elseif (!empty($rMatches['name'][$i])) {
                 $rResults[$rIndex]['name'] = trim(substr($rItem, 1));
             } elseif (!empty($rMatches['url'][$i])) {
-                $rResults[$rIndex]['url'] = trim($rItem);
+                $rResults[$rIndex]['url'] = str_replace(" ", "%20", trim($rItem));
             }
         }
         foreach ($rResults as $rResult) {
@@ -154,8 +166,7 @@ if (isset($_POST["submit_stream"])) {
                     }
                 }
             }
-			$rResult = $db->query("SELECT COUNT(`id`) AS `count` FROM `streams` WHERE `stream_display_name` = '".$db->real_escape_string($rImportArray["stream_display_name"])."';");
-			if ($rResult->fetch_assoc()["count"] == 0) {
+			if (!in_array($rResult["url"], $rStreamDatabase)) {
 				$rImportStreams[] = $rImportArray;
 			}
         }
@@ -189,9 +200,7 @@ if (isset($_POST["submit_stream"])) {
             foreach (array_keys($rImportStream) as $rKey) {
 				$rImportArray[$rKey] = $rImportStream[$rKey];
             }
-            if ($rSettings["channel_number_type"] == "manual") {
-                $rImportArray["order"] = getNextOrder();
-            }
+            $rImportArray["order"] = getNextOrder();
             $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rImportArray))."`");
             $rValues = null;
             foreach (array_values($rImportArray) as $rValue) {
@@ -266,37 +275,26 @@ if (isset($_POST["submit_stream"])) {
                     $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 2, '".$db->real_escape_string($_POST["http_proxy"])."');");
                 }
 				if ($rRestart) {
-					$rPost = Array("action" => "stream", "sub" => "start", "stream_ids" => Array($rInsertID));
-					$rContext = stream_context_create(array(
-						'http' => array(
-							'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-							'method'  => 'POST',
-							'content' => http_build_query($rPost)
-						)
-					));
-					if ($rAdminSettings["local_api"]) {
-						$rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-					} else {
-						$rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-					}
-					$rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+					APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => Array($rInsertID)));
 				}
                 foreach ($rBouquets as $rBouquet) {
                     addToBouquet("stream", $rBouquet, $rInsertID);
                 }
-                foreach (getBouquets() as $rBouquet) {
-                    if (!in_array($rBouquet["id"], $rBouquets)) {
-                        removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
+                if ((!isset($_FILES["m3u_file"])) && (!isset($_POST["edit"]))) {
+                    foreach (getBouquets() as $rBouquet) {
+                        if (!in_array($rBouquet["id"], $rBouquets)) {
+                            removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
+                        }
                     }
                 }
-                scanBouquets();
                 $_STATUS = 0;
             } else {
                 $_STATUS = 1;
 				$rStream = $rArray;
             }
         }
-        if ((isset($_FILES["m3u_file"])) OR (isset($_POST["m3u_url"]))) {
+        scanBouquets();
+        if (isset($_FILES["m3u_file"])) {
             header("Location: ./streams.php");exit;
         } else if (!isset($_GET["id"])) {
             $_GET["id"] = $rInsertID;
@@ -304,7 +302,7 @@ if (isset($_POST["submit_stream"])) {
     } else {
 		if (!isset($_STATUS)) {
 			$_STATUS = 3;
-			$rStream = $rArray;
+            $rStream = $rArray;
 		}
     }
 }
@@ -375,7 +373,26 @@ if ($rSettings["sidebar"]) {
                         <div class="page-title-box">
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
-                                    <a href="./streams.php<?php if (isset($_GET["category"])) { echo "?category=".$_GET["category"]; } ?>"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Streams</li></a>
+                                    <li>
+                                        <a href="./streams.php<?php if (isset($_GET["category"])) { echo "?category=".$_GET["category"]; } ?>">
+                                            <button type="button" class="btn btn-primary waves-effect waves-light btn-sm">
+                                                View Streams
+                                            </button>
+                                        </a>
+                                        <?php if (!isset($_GET["import"])) { ?>
+                                        <a href="./stream.php?import">
+                                            <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
+                                                Import M3U
+                                            </button>
+                                        </a>
+                                        <?php } else { ?>
+                                        <a href="./stream.php">
+                                            <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
+                                                Add Single
+                                            </button>
+                                        </a>
+                                        <?php } ?>
+                                    </li>
                                 </ol>
                             </div>
                             <h4 class="page-title"><?php if (isset($rStream["id"])) { echo $rStream["stream_display_name"].' &nbsp;<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rStream["id"].');"><i class="mdi mdi-play"></i></button>'; } else if (isset($_GET["import"])) { echo "Import Streams"; } else { echo "Add Stream"; } ?></h4>
@@ -528,13 +545,7 @@ if ($rSettings["sidebar"]) {
                                                         </span>
                                                         <?php } else { ?>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="m3u_url">M3U URL</label>
-                                                            <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="m3u_url" name="m3u_url" value="">
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="m3u_file">M3U File</label>
+                                                            <label class="col-md-4 col-form-label" for="m3u_file">M3U</label>
                                                             <div class="col-md-8">
                                                                 <input type="file" id="m3u_file" name="m3u_file" />
                                                             </div>
@@ -927,6 +938,7 @@ if ($rSettings["sidebar"]) {
         
         <script>
         var rEPG = <?=json_encode($rEPGJS)?>;
+        var rSwitches = [];
         
         (function($) {
           $.fn.inputFilter = function(inputFilter) {
@@ -1021,11 +1033,18 @@ if ($rSettings["sidebar"]) {
                 }
             });
         }
+        function setSwitch(switchElement, checkedBool) {
+            if((checkedBool && !switchElement.isChecked()) || (!checkedBool && switchElement.isChecked())) {
+                switchElement.setPosition(true);
+                switchElement.handleOnchange(true);
+            }
+        }
         $(document).ready(function() {
             $('select').select2({width: '100%'})
             var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
             elems.forEach(function(html) {
               var switchery = new Switchery(html);
+              window.rSwitches[$(html).attr("id")] = switchery;
             });
             $("#epg_id").on("select2:select", function(e) { 
                 selectEPGSource();
@@ -1048,6 +1067,29 @@ if ($rSettings["sidebar"]) {
             }, "plugins" : [ "dnd" ]
             });
             
+            $("#direct_source").change(function() {
+                evaluateDirectSource();
+            });
+            function evaluateDirectSource() {
+                $(["read_native", "gen_timestamps", "stream_all", "allow_record", "rtmp_output", "delay_minutes", "custom_ffmpeg", "probesize_ondemand", "user_agent", "http_proxy", "transcode_profile_id", "custom_map", "days_to_restart", "time_to_restart", "epg_id", "epg_lang", "channel_id", "on_demand", "tv_archive_duration", "tv_archive_server_id", "restart_on_edit"]).each(function(rID, rElement) {
+                    if ($(rElement)) {
+                        if ($("#direct_source").is(":checked")) {
+                            if (window.rSwitches[rElement]) {
+                                setSwitch(window.rSwitches[rElement], false);
+                                window.rSwitches[rElement].disable();
+                            } else {
+                                $("#" + rElement).prop("disabled", true);
+                            }
+                        } else {
+                            if (window.rSwitches[rElement]) {
+                                window.rSwitches[rElement].enable();
+                            } else {
+                                $("#" + rElement).prop("disabled", false);
+                            }
+                        }
+                    }
+                });
+            }
             $("#load_maps").click(function() {
                 rURL = $("#stream_source:eq(0)").val();
                 if (rURL.length > 0) {
@@ -1134,9 +1176,9 @@ if ($rSettings["sidebar"]) {
                     $.toast("Enter a stream name.");
                 }
                 <?php } else { ?>
-                if (($("#m3u_file").val().length == 0) && ($("#m3u_url").val().length == 0)) {
+                if ($("#m3u_file").val().length == 0) {
                     e.preventDefault();
-                    $.toast("Please select a M3U file to upload or enter an URL.");
+                    $.toast("Please select a M3U file to upload.");
                 }
                 <?php } ?>
                 $("#server_tree_data").val(JSON.stringify($('#server_tree').jstree(true).get_json('#', {flat:true})));
@@ -1191,6 +1233,7 @@ if ($rSettings["sidebar"]) {
                 }
                 $("#custom_map").val(rMap.trim());
             });
+            evaluateDirectSource();
         });
         </script>
     </body>

@@ -34,10 +34,12 @@ if (isset($_POST["submit_series"])) {
                     }
                 }
             }
-            if (isset($_POST["c_process_seasons"])) {
-                set_time_limit(180);
-                ini_set('max_execution_time', 180);
-                updateSeries($rSeriesID);
+        }
+        if (isset($_POST["reprocess_tmdb"])) {
+            foreach ($rSeriesIDs as $rSeriesID) {
+                if (intval($rSeriesID) > 0) {
+                    $db->query("INSERT INTO `tmdb_async`(`type`, `stream_id`, `status`) VALUES(2, ".intval($rSeriesID).", 0);");
+                }
             }
         }
         if (isset($_POST["c_bouquets"])) {
@@ -116,6 +118,7 @@ if ($rSettings["sidebar"]) {
                                                     <div class="col-md-4 col-6">
                                                         <select id="category_search" class="form-control" data-toggle="select2">
                                                             <option value="" selected>All Categories</option>
+                                                            <option value="-1">No TMDb Match</option>
                                                             <?php foreach ($rCategories as $rCategory) { ?>
                                                             <option value="<?=$rCategory["id"]?>"<?php if ((isset($_GET["category"])) && ($_GET["category"] == $rCategory["id"])) { echo " selected"; } ?>><?=$rCategory["category_name"]?></option>
                                                             <?php } ?>
@@ -180,11 +183,11 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
 														<div class="form-group row mb-4">
-                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
-                                                                <input type="checkbox" class="activate" data-name="process_seasons" name="c_process_seasons">
-                                                                <label></label>
+                                                            <div class="col-md-1"></div>
+                                                            <label class="col-md-3 col-form-label" for="reprocess_tmdb">Re-Process TMDb Data</label>
+                                                            <div class="col-md-2">
+                                                                <input name="reprocess_tmdb" id="reprocess_tmdb" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd" />
                                                             </div>
-                                                            <label class="col-md-8 col-form-label" for="process_seasons">Reprocess Seasons - This can take a while, don't do too many at once.</label>
                                                         </div>
                                                         
                                                     </div> <!-- end col -->
@@ -297,9 +300,6 @@ if ($rSettings["sidebar"]) {
             elems.forEach(function(html) {
                 var switchery = new Switchery(html);
                 window.rSwitches[$(html).attr("id")] = switchery;
-                if ($(html).attr("id") != "reencode_on_edit") {
-                    window.rSwitches[$(html).attr("id")].disable();
-                }
             });
             $('#server_tree').jstree({ 'core' : {
                 'check_callback': function (op, node, parent, position, more) {

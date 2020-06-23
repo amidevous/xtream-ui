@@ -1,5 +1,5 @@
 <?php
-$rRelease = 18;             // Official Beta Release Number
+$rRelease = 19;             // Official Beta Release Number
 $rTimeout = 60;             // Seconds Timeout for Queries, Functions & Requests
 $rDebug = False;
 
@@ -43,12 +43,53 @@ $rClientFilters = Array(
 
 $rResetSettings = Array("allowed_stb_types" => '["AuraHD","AuraHD2","AuraHD3","AuraHD4","AuraHD5","AuraHD6","AuraHD7","AuraHD8","AuraHD9","MAG200","MAG245","MAG245D","MAG250","MAG254","MAG255","MAG256","MAG257","MAG260","MAG270","MAG275","MAG322","MAG323","MAG324","MAG325","MAG349","MAG350","MAG351","MAG352","MAG420","WR320"]', "client_prebuffer" => 20, "mag_container" => "ts", "probesize" => 5000000, "stream_max_analyze" => 5000000, "user_auto_kick_hours" => 0, "disallow_empty_user_agents" => 0, "show_all_category_mag" => 1, "flood_limit" => 120, "stream_start_delay" => 0, "vod_bitrate_plus" => 200, "read_buffer_size" => 8192, "tv_channel_default_aspect" => 0, "playback_limit" => 3, "show_tv_channel_logo" => 1, "show_channel_logo_in_preview" => 1, "enable_connection_problem_indication" => 1, "vod_limit_at" => 20, "persistent_connections" => 1, "record_max_length" => 180, "max_local_recordings" => 10, "allowed_stb_types_for_local_recording" => '["MAG255","MAG256","MAG257"]', "stalker_theme" => "emerald", "rtmp_random" => 1, "use_buffer" => 0, "restreamer_prebuffer" => 0, "audio_restart_loss" => 0, "channel_number_type" => "bouquet", "stb_change_pass" => 1, "enable_debug_stalker" => 0, "online_capacity_interval" => 10, "always_enabled_subtitles" => 1, "save_closed_connection" => 1, "client_logs_save" => 1, "case_sensitive_line" => 1, "county_override_1st" => 0, "disallow_2nd_ip_con" => 0, "firewall" => 0, "use_mdomain_in_lists" => 0, "priority_backup" => 0, "series_custom_name" => 0, "mobile_apps" => 0, "mag_security" => 1);
 
-// Exec replacement for remote machines.
+function APIRequest($rData) {
+    global $rAdminSettings, $rServers, $_INFO;
+    ini_set('default_socket_timeout', 5);
+    if ($rAdminSettings["local_api"]) {
+        $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+    } else {
+        $rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+    }
+    $rPost = http_build_query($rData);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $rAPI);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $rPost);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
+    $rData = curl_exec($ch);
+    return $rData;
+}
+
+function SystemAPIRequest($rServerID, $rData) {
+    global $rServers, $rSettings;
+    ini_set('default_socket_timeout', 5);
+    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php";
+    $rData["password"] = $rSettings["live_streaming_pass"];
+    $rPost = http_build_query($rData);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $rAPI);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $rPost);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); 
+    $rData = curl_exec($ch);
+    return $rData;
+}
+
 function sexec($rServerID, $rCommand) {
     global $rServers, $rSettings;
-	ini_set('default_socket_timeout', 3);
-    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=BackgroundCLI&cmds[]=".urlencode($rCommand);
-    return file_get_contents($rAPI);
+    if ($rServerID <> $_INFO["server_id"]) {
+        return SystemAPIRequest($rServerID, Array("action" => "BackgroundCLI", "cmds" => Array($rCommand)));
+    } else {
+        return exec($rCommand);
+    }
+}
+
+function checkSource($rServerID, $rFilename) {
+    global $rServers, $rSettings;
+    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".$rSettings["live_streaming_pass"]."&action=getFile&filename=".urlencode($rFilename);
+    $rCommand = 'timeout 5 '.MAIN_DIR.'bin/ffprobe -show_streams -v quiet "'.$rAPI.'" -of json';
+    return json_decode(shell_exec($rCommand), True);
 }
 
 function getBackups() {
@@ -85,8 +126,7 @@ function listDir($rServerID, $rDirectory, $rAllowed=null) {
             }
         }
     } else {
-        $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=viewDir&dir=".urlencode($rDirectory);
-        $rData = file_get_contents($rAPI);
+        $rData = SystemAPIRequest($rServerID, Array('action' => 'viewDir', 'dir' => $rDirectory));
         $rDocument = new DOMDocument();
         $rDocument->loadHTML($rData);
         $rFiles = $rDocument->getElementsByTagName('li');
@@ -104,6 +144,21 @@ function listDir($rServerID, $rDirectory, $rAllowed=null) {
     return $rReturn;
 }
 
+function scanRecursive($rServerID, $rDirectory, $rAllowed=null) {
+    $result = [];
+    $rFiles = listDir($rServerID, $rDirectory, $rAllowed);
+    foreach ($rFiles["files"] as $rFile) {
+        $rFilePath = rtrim($rDirectory, "/").'/'.$rFile;
+        $result[] = $rFilePath;
+    }
+    foreach ($rFiles["dirs"] as $rDir) {
+        foreach (scanRecursive($rServerID, rtrim($rDirectory, "/")."/".$rDir."/", $rAllowed) as $rFile) {
+            $result[] = $rFile;
+        }
+    }
+    return $result;
+}
+
 function getEncodeErrors($rID) {
     global $rSettings;
     $rServers = getStreamingServers(true);
@@ -115,7 +170,7 @@ function getEncodeErrors($rID) {
         if (isset($rServers[$rServerID])) {
             if (!($rServer["pid"] > 0 && $rServer["to_analyze"] == 0 && $rServer["stream_status"] <> 1)) {
                 $rFilename = MAIN_DIR."movies/".intval($rID).".errors";
-                $rError = file_get_contents("http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=getFile&filename=".urlencode($rFilename));
+                $rError = SystemAPIRequest($rServerID, Array('action' => 'getFile', 'filename' => $rFilename));
                 if (strlen($rError) > 0) {
                     $rErrors[$rServerID] = $rError;
                 }
@@ -128,7 +183,7 @@ function getEncodeErrors($rID) {
 function getTimeDifference($rServerID) {
 	global $rServers, $rSettings;
     ini_set('default_socket_timeout', 3);
-    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=getDiff&main_time=".intval(time());
+    $rError = SystemAPIRequest($rServerID, Array('action' => 'getDiff', 'main_time' => intval(time())));
     return intval(file_get_contents($rAPI));
 }
 
@@ -136,8 +191,7 @@ function deleteMovieFile($rServerID, $rID) {
 	global $rServers, $rSettings;
     ini_set('default_socket_timeout', 3);
     $rCommand = "rm ".MAIN_DIR."movies/".$rID.".*";
-    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=BackgroundCLI&cmds[]=".urlencode($rCommand);
-    return file_get_contents($rAPI);
+    return SystemAPIRequest($rServerID, Array('action' => 'BackgroundCLI', 'action' => Array($rCommand)));
 }
 
 function generateString($strength = 10) {
@@ -409,13 +463,33 @@ function getTranscodeProfiles() {
     return $return;
 }
 
-function getWatchFolders($rType) {
+function getWatchFolders($rType=null) {
     global $db;
     $return = Array();
-    $result = $db->query("SELECT * FROM `watch_folders` WHERE `type` = '".$db->real_escape_string($rType)."' ORDER BY `id` ASC;");
+    if ($rType) {
+        $result = $db->query("SELECT * FROM `watch_folders` WHERE `type` = '".$db->real_escape_string($rType)."' ORDER BY `id` ASC;");
+    } else {
+        $result = $db->query("SELECT * FROM `watch_folders` ORDER BY `id` ASC;");
+    }
     if (($result) && ($result->num_rows > 0)) {
         while ($row = $result->fetch_assoc()) {
             $return[] = $row;
+        }
+    }
+    return $return;
+}
+
+function getWatchCategories($rType=null) {
+    global $db;
+    $return = Array();
+    if ($rType) {
+        $result = $db->query("SELECT * FROM `watch_categories` WHERE `type` = ".intval($rType)." ORDER BY `genre_id` ASC;");
+    } else {
+        $result = $db->query("SELECT * FROM `watch_categories` ORDER BY `genre_id` ASC;");
+    }
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $return[$row["genre_id"]] = $row;
         }
     }
     return $return;
@@ -430,10 +504,19 @@ function getWatchFolder($rID) {
     return null;
 }
 
+function getSeriesByTMDB($rID) {
+    global $db;
+    $result = $db->query("SELECT * FROM `series` WHERE `tmdb_id` = ".intval($rID).";");
+    if (($result) && ($result->num_rows == 1)) {
+        return $result->fetch_assoc();
+    }
+    return null;
+}
+
 function getSeries() {
     global $db;
     $return = Array();
-    $result = $db->query("SELECT * FROM `series` ORDER BY `id` ASC;");
+    $result = $db->query("SELECT * FROM `series` ORDER BY `title` ASC;");
     if (($result) && ($result->num_rows > 0)) {
         while ($row = $result->fetch_assoc()) {
             $return[] = $row;
@@ -466,6 +549,17 @@ function getSeriesTrailer($rTMDBID) {
         }
     }
     return "";
+}
+
+function getStills($rTMDBID, $rSeason, $rEpisode) {
+    // Not implemented in TMDB PHP API...
+    global $rSettings, $rAdminSettings;
+    if (strlen($rAdminSettings["tmdb_language"]) > 0) {
+        $rURL = "https://api.themoviedb.org/3/tv/".$rTMDBID."/season/".$rSeason."/episode/".$rEpisode."/images?api_key=".$rSettings["tmdb_api_key"]."&language=".$rAdminSettings["tmdb_language"];
+    } else {
+        $rURL = "https://api.themoviedb.org/3/tv/".$rTMDBID."/season/".$rSeason."/episode/".$rEpisode."/images?api_key=".$rSettings["tmdb_api_key"];
+    }
+    return json_decode(file_get_contents($rURL), True);
 }
 
 function getUserAgents() {
@@ -1048,13 +1142,19 @@ function getSeriesList() {
 function checkTable($rTable) {
     global $db;
     $rTableQuery = Array(
-        "subreseller_setup" => "CREATE TABLE `subreseller_setup` (`id` int(11) NOT NULL AUTO_INCREMENT, `reseller` int(8) NOT NULL DEFAULT '0', `subreseller` int(8) NOT NULL DEFAULT '0', `status` int(1) NOT NULL DEFAULT '1', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
-        "admin_settings" => "CREATE TABLE `admin_settings` (`type` varchar(128) NOT NULL DEFAULT '', `value` varchar(4096) NOT NULL DEFAULT '', PRIMARY KEY (`type`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
-        "watch_folders" => "CREATE TABLE `watch_folders` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` varchar(32) NOT NULL DEFAULT '', `directory` varchar(2048) NOT NULL DEFAULT '', `server_id` int(8) NOT NULL DEFAULT '0', `last_run` int(32) NOT NULL DEFAULT '0', `active` int(1) NOT NULL DEFAULT '1', PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"
+        "subreseller_setup" => Array("CREATE TABLE `subreseller_setup` (`id` int(11) NOT NULL AUTO_INCREMENT, `reseller` int(8) NOT NULL DEFAULT '0', `subreseller` int(8) NOT NULL DEFAULT '0', `status` int(1) NOT NULL DEFAULT '1', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"),
+        "admin_settings" => Array("CREATE TABLE `admin_settings` (`type` varchar(128) NOT NULL DEFAULT '', `value` varchar(4096) NOT NULL DEFAULT '', PRIMARY KEY (`type`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"),
+        "watch_folders" => Array("CREATE TABLE `watch_folders` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` varchar(32) NOT NULL DEFAULT '', `directory` varchar(2048) NOT NULL DEFAULT '', `server_id` int(8) NOT NULL DEFAULT '0', `category_id` int(8) NOT NULL DEFAULT '0', `bouquets` varchar(4096) NOT NULL DEFAULT '[]', `last_run` int(32) NOT NULL DEFAULT '0', `active` int(1) NOT NULL DEFAULT '1', PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"),
+        "tmdb_async" => Array("CREATE TABLE `tmdb_async` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` int(1) NOT NULL DEFAULT '0', `stream_id` int(16) NOT NULL DEFAULT '0', `status` int(8) NOT NULL DEFAULT '0', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"),
+        "watch_settings" => Array("CREATE TABLE `watch_settings` (`read_native` int(1) NOT NULL DEFAULT '1', `movie_symlink` int(1) NOT NULL DEFAULT '1', `auto_encode` int(1) NOT NULL DEFAULT '0', `transcode_profile_id` int(8) NOT NULL DEFAULT '0', `scan_seconds` int(8) NOT NULL DEFAULT '3600') ENGINE=InnoDB DEFAULT CHARSET=latin1;", "INSERT INTO `watch_settings` (`read_native`, `movie_symlink`, `auto_encode`, `transcode_profile_id`, `scan_seconds`) VALUES(1, 1, 0, 0, 3600);"),
+        "watch_categories" => Array("CREATE TABLE `watch_categories` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` int(1) NOT NULL DEFAULT '0', `genre_id` int(8) NOT NULL DEFAULT '0', `genre` varchar(64) NOT NULL DEFAULT '', `category_id` int(8) NOT NULL DEFAULT '0', `bouquets` varchar(4096) NOT NULL DEFAULT '[]', PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1", "INSERT INTO `watch_categories` (`id`, `type`, `genre_id`, `genre`, `category_id`, `bouquets`) VALUES (1, 1, 28, 'Action', 0, '[]'), (2, 1, 12, 'Adventure', 0, '[]'), (3, 1, 16, 'Animation', 0, '[]'), (4, 1, 35, 'Comedy', 0, '[]'), (5, 1, 80, 'Crime', 0, '[]'), (6, 1, 99, 'Documentary', 0, '[]'), (7, 1, 18, 'Drama', 0, '[]'), (8, 1, 10751, 'Family', 0, '[]'), (9, 1, 14, 'Fantasy', 0, '[]'), (10, 1, 36, 'History', 0, '[]'), (11, 1, 27, 'Horror', 0, '[]'), (12, 1, 10402, 'Music', 0, '[]'), (13, 1, 9648, 'Mystery', 0, '[]'), (14, 1, 10749, 'Romance', 0, '[]'), (15, 1, 878, 'Science Fiction', 0, '[]'), (16, 1, 10770, 'TV Movie', 0, '[]'), (17, 1, 53, 'Thriller', 0, '[]'), (18, 1, 10752, 'War', 0, '[]'), (19, 1, 37, 'Western', 0, '[]');"),
+        "watch_output" => Array("CREATE TABLE `watch_output` (`id` int(11) NOT NULL AUTO_INCREMENT, `type` int(1) NOT NULL DEFAULT '0', `server_id` int(8) NOT NULL DEFAULT '0', `filename` varchar(4096) NOT NULL DEFAULT '', `status` int(1) NOT NULL DEFAULT '0', `stream_id` int(8) NOT NULL DEFAULT '0', `dateadded` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;")
     );
     if ((!$db->query("DESCRIBE `".$rTable."`;")) && (isset($rTableQuery[$rTable]))) {
         // Doesn't exist! Create it.
-        $db->query($rTableQuery[$rTable]);
+        foreach ($rTableQuery[$rTable] as $rQuery) {
+            $db->query($rQuery);
+        }
     }
 }
 
@@ -1110,7 +1210,7 @@ function downloadImage($rImage) {
 			} else {
 				$rData = file_get_contents($rImage);
 				if (strlen($rData) > 0) {
-                    $rFilename = generateString(32);
+                    $rFilename = md5($rPathInfo["filename"]);
                     $rPath = MAIN_DIR . "wwwdir/images/".$rFilename.".".$rExt;
 					file_put_contents($rPath, $rData);
 					if (strlen(file_get_contents($rPath)) == strlen($rData)) {
@@ -1252,6 +1352,113 @@ function getNextOrder() {
     return 0;
 }
 
+function generateSeriesPlaylist($rSeriesNo) {
+    global $db, $rServers, $rSettings;
+    $rReturn = Array("success" => false, "sources" => Array(), "server_id" => 0);
+    $result = $db->query("SELECT `stream_id` FROM `series_episodes` WHERE `series_id` = ".intval($rSeriesNo)." ORDER BY `season_num` ASC, `sort` ASC;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $resultB = $db->query("SELECT `stream_source` FROM `streams` WHERE `id` = ".intval($row["stream_id"]).";");
+            if (($resultB) && ($resultB->num_rows > 0)) {
+                $rSource = json_decode($resultB->fetch_assoc()["stream_source"], True)[0];
+                $rSplit = explode(":", $rSource);
+                $rFilename = join(":", array_slice($rSplit, 2, count($rSplit)-2));
+                $rServerID = intval($rSplit[1]);
+                if ($rReturn["server_id"] == 0) {
+                    $rReturn["server_id"] = $rServerID;
+                    $rReturn["success"] = true;
+                }
+                if ($rReturn["server_id"] <> $rServerID) {
+                    $rReturn["success"] = false;
+                    break;
+                }
+                $rReturn["sources"][] = $rFilename;
+            }
+        }
+    }
+    return $rReturn;
+}
+
+function updateTables() {
+    global $db;
+    if (file_exists("./.update")) {
+        unlink("./.update");
+    }
+    // Update table settings etc.
+    checkTable("tmdb_async");
+    checkTable("subreseller_setup");
+    checkTable("admin_settings");
+    checkTable("watch_folders");
+    checkTable("watch_settings");
+    checkTable("watch_categories");
+    checkTable("watch_output");
+    // R19A
+    $rResult = $db->query("SHOW COLUMNS FROM `watch_folders` LIKE 'bouquets';");
+    if (($rResult) && ($rResult->num_rows == 0)) {
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `category_id` int(8) NOT NULL DEFAULT '0';");
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `bouquets` varchar(4096) NOT NULL DEFAULT '[]';");
+    }
+    // R19D
+    $rResult = $db->query("SHOW COLUMNS FROM `watch_settings` LIKE 'percentage_match';");
+    if (($rResult) && ($rResult->num_rows == 0)) {
+        $db->query("ALTER TABLE `watch_settings` ADD COLUMN `percentage_match` int(3) NOT NULL DEFAULT '80';");
+        $db->query("ALTER TABLE `watch_settings` ADD COLUMN `ffprobe_input` int(1) NOT NULL DEFAULT '0';");
+    }
+    $rResult = $db->query("SHOW COLUMNS FROM `watch_folders` LIKE 'disable_tmdb';");
+    if (($rResult) && ($rResult->num_rows == 0)) {
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `disable_tmdb` int(1) NOT NULL DEFAULT '0';");
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `ignore_no_match` int(1) NOT NULL DEFAULT '0';");
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `auto_subtitles` int(1) NOT NULL DEFAULT '0';");
+    }
+    // R19E
+    $rResult = $db->query("SHOW COLUMNS FROM `watch_folders` LIKE 'fb_bouquets';");
+    if (($rResult) && ($rResult->num_rows == 0)) {
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `fb_bouquets` VARCHAR(4096) NOT NULL DEFAULT '[]';");
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `fb_category_id` int(8) NOT NULL DEFAULT '0';");
+    }
+    // R19 Official
+    $rResult = $db->query("SHOW COLUMNS FROM `watch_folders` LIKE 'allowed_extensions';");
+    if (($rResult) && ($rResult->num_rows == 0)) {
+        $db->query("ALTER TABLE `watch_folders` ADD COLUMN `allowed_extensions` VARCHAR(4096) NOT NULL DEFAULT '[]';");
+    }
+    updateTMDbCategories();
+}
+
+function updateTMDbCategories() {
+    global $db, $rAdminSettings, $rSettings;
+    include "tmdb.php";
+    if (strlen($rAdminSettings["tmdb_language"]) > 0) {
+        $rTMDB = new TMDB($rSettings["tmdb_api_key"], $rAdminSettings["tmdb_language"]);
+    } else {
+        $rTMDB = new TMDB($rSettings["tmdb_api_key"]);
+    }
+    $rCurrentCats = Array(1 => Array(), 2 => Array());
+    $rResult = $db->query("SELECT `type`, `genre_id` FROM `watch_categories`;");
+    if (($rResult) && ($rResult->num_rows > 0)) {
+        while ($rRow = $rResult->fetch_assoc()) {
+            $rCurrentCats[$rRow["type"]][] = $rRow["genre_id"];
+        }
+    }
+    $rMovieGenres = $rTMDB->getMovieGenres();
+    foreach ($rMovieGenres as $rMovieGenre) {
+        if (!in_array($rMovieGenre->getID(), $rCurrentCats[1])) {
+            $db->query("INSERT INTO `watch_categories`(`type`, `genre_id`, `genre`, `category_id`, `bouquets`) VALUES(1, ".intval($rMovieGenre->getID()).", '".$db->real_escape_string($rMovieGenre->getName())."', 0, '[]');");
+        }
+        if (!in_array($rMovieGenre->getID(), $rCurrentCats[2])) {
+            $db->query("INSERT INTO `watch_categories`(`type`, `genre_id`, `genre`, `category_id`, `bouquets`) VALUES(2, ".intval($rMovieGenre->getID()).", '".$db->real_escape_string($rMovieGenre->getName())."', 0, '[]');");
+        }
+    }
+    $rTVGenres = $rTMDB->getTVGenres();
+    foreach ($rTVGenres as $rTVGenre) {
+        if (!in_array($rTVGenre->getID(), $rCurrentCats[1])) {
+            $db->query("INSERT INTO `watch_categories`(`type`, `genre_id`, `genre`, `category_id`, `bouquets`) VALUES(1, ".intval($rTVGenre->getID()).", '".$db->real_escape_string($rTVGenre->getName())."', 0, '[]');");
+        }
+        if (!in_array($rTVGenre->getID(), $rCurrentCats[2])) {
+            $db->query("INSERT INTO `watch_categories`(`type`, `genre_id`, `genre`, `category_id`, `bouquets`) VALUES(2, ".intval($rTVGenre->getID()).", '".$db->real_escape_string($rTVGenre->getName())."', 0, '[]');");
+        }
+    }
+}
+
 if (isset($_SESSION['hash'])) {
     $rUserInfo = getRegisteredUserHash($_SESSION['hash']);
     $rPermissions = getPermissions($rUserInfo['member_group_id']);
@@ -1263,7 +1470,7 @@ if (isset($_SESSION['hash'])) {
         unset($rPermissions);
         session_unset();
         session_destroy();
-        header("Location: index.php");
+        header("Location: ./index.php");
     }
     $rAdminSettings = getAdminSettings();
     $rSettings = getSettings();

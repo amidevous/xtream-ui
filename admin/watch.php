@@ -2,7 +2,11 @@
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
-$rMemberGroups = getMemberGroups();
+if (isset($_GET["kill"])) {
+    if (isset($rAdminSettings["watch_pid"])) {
+        exec("pkill -9 ".$rAdminSettings["watch_pid"]);
+    }
+}
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -10,31 +14,41 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content boxed-layout"><div class="container-fluid">
+        <div class="content-page"><div class="content boxed-layout-ext"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper boxed-layout"><div class="container-fluid">
+        <div class="wrapper boxed-layout-ext"><div class="container-fluid">
         <?php } ?>
-                <!-- start page title -->
+        <!-- start page title -->
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
-                                        <a href="reg_users.php">
-                                            <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-account-group"></i> Registered Users
+                                        <a href="settings_watch.php">
+                                            <button type="button" class="btn btn-primary waves-effect waves-light btn-sm">
+                                                Settings
                                             </button>
                                         </a>
-                                        <a href="subreseller_setup.php">
-                                            <button type="button" class="btn btn-primary waves-effect waves-light btn-sm">
-                                                <i class="mdi mdi-plus"></i> Setup Access
+                                        <a href="watch_output.php">
+                                            <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
+                                                Watch Output
+                                            </button>
+                                        </a>
+                                        <a href="watch.php?kill=1">
+                                            <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-toggle="tooltip" data-placement="top" title="" data-original-title="Kill Process">
+                                                <i class="mdi mdi-hammer"></i>
+                                            </button>
+                                        </a>
+                                        <a href="watch_add.php">
+                                            <button type="button" class="btn btn-success waves-effect waves-light btn-sm" data-toggle="tooltip" data-placement="top" title="" data-original-title="Add Folder">
+                                                <i class="mdi mdi-plus"></i>
                                             </button>
                                         </a>
                                     </li>
                                 </ol>
                             </div>
-                            <h4 class="page-title">Subreseller Setup</h4>
+                            <h4 class="page-title">Folder Watch</h4>
                         </div>
                     </div>
                 </div>     
@@ -42,26 +56,44 @@ if ($rSettings["sidebar"]) {
 
                 <div class="row">
                     <div class="col-12">
+                        <?php if (isset($_GET["kill"])) { ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            Folder watch process has been killed.
+                        </div>
+                        <?php } ?>
                         <div class="card">
                             <div class="card-body" style="overflow-x:auto;">
                                 <table id="datatable" class="table dt-responsive nowrap">
                                     <thead>
                                         <tr>
                                             <th class="text-center">ID</th>
-                                            <th>Reseller Owner</th>
-                                            <th>Subreseller</th>
+                                            <th>Type</th>
+                                            <th>Server Name</th>
+                                            <th>Directory</th>
+                                            <th class="text-center">Last Run</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach (getSubresellerSetups() as $rItem) { ?>
-                                        <tr id="setup-<?=$rItem["id"]?>">
-                                            <td class="text-center"><?=$rItem["id"]?></td>
-                                            <td><?=$rMemberGroups[$rItem["reseller"]]["group_name"]?></td>
-                                            <td><?=$rMemberGroups[$rItem["subreseller"]]["group_name"]?></td>
+                                        <?php foreach (getWatchFolders() as $rFolder) {
+                                        if ($rFolder["last_run"] > 0) {
+                                            $rDate = date("Y-m-d H:i:s", $rFolder["last_run"]);
+                                        } else {
+                                            $rDate = "Never";
+                                        }
+                                        ?>
+                                        <tr id="folder-<?=$rFolder["id"]?>">
+                                            <td class="text-center"><?=$rFolder["id"]?></td>
+                                            <td><?=Array("movie" => "Movies", "series" => "Series")[$rFolder["type"]]?></td>
+                                            <td><?=$rServers[$rFolder["server_id"]]["server_name"]?></td>
+                                            <td><?=$rFolder["directory"]?></td>
+                                            <td class="text-center"><?=$rDate?></td>
                                             <td class="text-center">
-                                                <a href="./subreseller_setup.php?id=<?=$rItem["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                                                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rItem["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
+                                                <a href="./watch_add.php?id=<?=$rFolder["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                                                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rFolder["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
                                             </td>
                                         </tr>
                                         <?php } ?>
@@ -104,15 +136,15 @@ if ($rSettings["sidebar"]) {
         <script>
         function api(rID, rType) {
             if (rType == "delete") {
-                if (confirm('Are you sure you want to delete this setup? This cannot be undone!') == false) {
+                if (confirm('Are you sure you want to delete this profile? This cannot be undone!') == false) {
                     return;
                 }
             }
-            $.getJSON("./api.php?action=subreseller_setup&sub=" + rType + "&id=" + rID, function(data) {
+            $.getJSON("./api.php?action=folder&sub=" + rType + "&folder_id=" + rID, function(data) {
                 if (data.result === true) {
                     if (rType == "delete") {
-                        $("#setup-" + rID).remove();
-                        $.toast("Setup successfully deleted.");
+                        $("#folder-" + rID).remove();
+                        $.toast("Folder successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
@@ -123,7 +155,7 @@ if ($rSettings["sidebar"]) {
                 }
             });
         }
-
+        
         $(document).ready(function() {
             $("#datatable").DataTable({
                 language: {
@@ -135,9 +167,6 @@ if ($rSettings["sidebar"]) {
                 drawCallback: function() {
                     $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
                 },
-                bInfo: false,
-                searching: false,
-                paging: false,
                 responsive: false
             });
             $("#datatable").css("width", "100%");

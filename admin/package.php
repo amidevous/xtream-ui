@@ -472,7 +472,11 @@ if ($rSettings["sidebar"]) {
                 }
             });
             $("#package_form").submit(function(e){
-                $("#bouquets_selected").val(JSON.stringify(window.rBouquets));
+                var rBouquets = [];
+                $("#datatable-bouquets tr.selected").each(function() {
+                    rBouquets.push($(this).find("td:eq(0)").html());
+                });
+                $("#bouquets_selected").val(JSON.stringify(rBouquets));
             });
             $("#max_connections").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#trial_duration").inputFilter(function(value) { return /^\d*$/.test(value); });

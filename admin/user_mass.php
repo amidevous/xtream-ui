@@ -531,8 +531,12 @@ if ($rSettings["sidebar"]) {
                 }
             });
             $("#user_form").submit(function(e){
+                var rBouquets = [];
+                $("#datatable-bouquets tr.selected").each(function() {
+                    rBouquets.push($(this).find("td:eq(0)").html());
+                });
+                $("#bouquets_selected").val(JSON.stringify(rBouquets));
                 $("#users_selected").val(JSON.stringify(window.rSelected));
-                $("#bouquets_selected").val(JSON.stringify(window.rBouquets));
                 if (window.rSelected.length == 0) {
                     e.preventDefault();
                     $.toast("Select at least one user to edit.");

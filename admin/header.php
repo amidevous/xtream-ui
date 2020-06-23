@@ -70,17 +70,18 @@
                             </a>
                             <div class="dropdown-menu dropdown-menu-right profile-dropdown">
                                 <a href="./settings.php" class="dropdown-item notify-item"><span>Settings</span></a>
-                                <a href="./epgs.php" class="dropdown-item notify-item"><span>EPG's</span></a>
-                                <a href="./subresellers.php" class="dropdown-item notify-item"><span>Subresellers</span></a>
-                                <a href="./groups.php" class="dropdown-item notify-item"><span>Groups</span></a>
-                                <a href="./packages.php" class="dropdown-item notify-item"><span>Packages</span></a>
-                                <a href="./profiles.php" class="dropdown-item notify-item"><span>Transcode Profiles</span></a>
-                                <a href="./stream_categories.php" class="dropdown-item notify-item"><span>Categories</span></a>
-                                <a href="./useragents.php" class="dropdown-item notify-item"><span>Blocked User Agents</span></a>
                                 <a href="./ips.php" class="dropdown-item notify-item"><span>Blocked IP's</span></a>
-								<a href="./rtmp_ips.php" class="dropdown-item notify-item"><span>RTMP IP's</span></a>
-                                <a href="./mass_delete.php" class="dropdown-item notify-item"><span>Mass Delete</span></a>
+                                <a href="./useragents.php" class="dropdown-item notify-item"><span>Blocked User Agents</span></a>
+                                <a href="./stream_categories.php" class="dropdown-item notify-item"><span>Categories</span></a>
                                 <a href="./channel_order.php" class="dropdown-item notify-item"><span>Channel Order</span></a>
+                                <a href="./epgs.php" class="dropdown-item notify-item"><span>EPG's</span></a>
+                                <a href="./watch.php" class="dropdown-item notify-item"><span>Folder Watch</span></a>
+                                <a href="./groups.php" class="dropdown-item notify-item"><span>Groups</span></a>
+                                <a href="./mass_delete.php" class="dropdown-item notify-item"><span>Mass Delete</span></a>
+                                <a href="./packages.php" class="dropdown-item notify-item"><span>Packages</span></a>
+                                <a href="./rtmp_ips.php" class="dropdown-item notify-item"><span>RTMP IP's</span></a>
+                                <a href="./subresellers.php" class="dropdown-item notify-item"><span>Subresellers</span></a>
+                                <a href="./profiles.php" class="dropdown-item notify-item"><span>Transcode Profiles</span></a>
                             </div>
                         </li>
                         <?php } ?>
@@ -194,6 +195,7 @@
                                 <a href="#"> <i class="la la-video-camera"></i>VOD <div class="arrow-down"></div></a>
                                 <ul class="submenu">
                                     <li><a href="./movie.php">Add Movie</a></li>
+                                    <li><a href="./movie.php?import">Import Movies</a></li>
                                     <li><a href="./movies.php">Manage Movies</a></li>
                                     <li class="separator"></li>
                                     <li><a href="./serie.php">Add Series</a></li>
@@ -209,10 +211,11 @@
                                 <a href="#"> <i class="la la-play-circle-o"></i>Streams <div class="arrow-down"></div></a>
                                 <ul class="submenu">
                                     <li><a href="./stream.php">Add Stream</a></li>
+                                    <li><a href="./created_channel.php">Create Channel</a></li>
                                     <li><a href="./stream.php?import">Import Streams</a></li>
                                     <li><a href="./streams.php">Manage Streams</a></li>
-                                    <li><a href="./stream_mass.php">Mass Edit Streams</a></li>
                                     <li class="separator"></li>
+                                    <li><a href="./stream_mass.php">Mass Edit Streams</a></li>
                                     <li><a href="./stream_logs.php">Stream Logs</a></li>
 									<li><a href="./stream_tools.php">Stream Tools</a></li>
                                     <li><a href="./fingerprint.php">Fingerprint</a></li>

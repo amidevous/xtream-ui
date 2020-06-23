@@ -20,9 +20,16 @@ if (isset($_POST["submit_stream"])) {
         $rArray["movie_subtitles"] = Array();
     }
     $rArray["notes"] = $_POST["notes"];
-    $rArray["target_container"] = Array($_POST["target_container"]);
-    $rArray["custom_sid"] = $_POST["custom_sid"];
+    if (isset($_POST["target_container"])) {
+        $rArray["target_container"] = Array($_POST["target_container"]);
+    }
+    if (isset($_POST["custom_sid"])) {
+        $rArray["custom_sid"] = $_POST["custom_sid"];
+    }
     $rArray["transcode_profile_id"] = $_POST["transcode_profile_id"];
+    if (!$rArray["transcode_profile_id"]) {
+        $rArray["transcode_profile_id"] = 0;
+    }
     if ($rArray["transcode_profile_id"] > 0) {
         $rArray["enable_transcode"] = 1;
     }
@@ -71,7 +78,7 @@ if (isset($_POST["submit_stream"])) {
             $rSplit = explode("_", $rKey);
             if (($rSplit[0] == "episode") && ($rSplit[2] == "name")) {
                 if (strlen($_POST["episode_".$rSplit[1]."_num"]) > 0) {
-                    $rImportArray = Array("filename" => "", "properties" => Array(), "name" => "", "episode" => 0);
+                    $rImportArray = Array("filename" => "", "properties" => Array(), "name" => "", "episode" => 0, "target_container" => Array());
                     $rEpisodeNum = intval($_POST["episode_".$rSplit[1]."_num"]);
                     $rImportArray["filename"] = "s:".$_POST["server"].":".$_POST["season_folder"].$rFilename;
                     $rImage = "";
@@ -102,6 +109,8 @@ if (isset($_POST["submit_stream"])) {
                     if (strlen($rImportArray["name"]) == 0) {
                         $rImportArray["name"] = "No Episode Title";
                     }
+                    $rPathInfo = pathinfo($rFilename);
+                    $rImportArray["target_container"] = Array($rPathInfo["extension"]);
                     $rProcessArray[] = $rImportArray;
                 }
             }
@@ -118,10 +127,14 @@ if (isset($_POST["submit_stream"])) {
         }
         $rProcessArray[] = $rImportArray;
     }
+    $rRestartIDs = Array();
     foreach ($rProcessArray as $rImportArray) {
         $rArray["stream_source"] = Array($rImportArray["filename"]);
         $rArray["movie_propeties"] = $rImportArray["properties"];
         $rArray["stream_display_name"] = $rImportArray["name"];
+        if (isset($rImportArray["target_container"])) {
+            $rArray["target_container"] = $rImportArray["target_container"];
+        }
         $rCols = "`".implode('`,`', array_keys($rArray))."`";
         $rValues = null;
         foreach (array_values($rArray) as $rValue) {
@@ -184,23 +197,13 @@ if (isset($_POST["submit_stream"])) {
                 }
             }
             if ($rRestart) {
-                $rPost = Array("action" => "vod", "sub" => "start", "stream_ids" => Array($rInsertID));
-                $rContext = stream_context_create(array(
-                    'http' => array(
-                        'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                        'method'  => 'POST',
-                        'content' => http_build_query($rPost)
-                    )
-                ));
-                if ($rAdminSettings["local_api"]) {
-                    $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-                } else {
-                    $rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
-                }
-                $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+                $rRestartIDs[] = $rInsertID;
             }
             $db->query("UPDATE `series` SET `last_modified` = ".intval(time())." WHERE `id` = ".intval($_POST["series"]).";");
         }
+    }
+    if ($rRestart) {
+        APIRequest(Array("action" => "vod", "sub" => "start", "stream_ids" => $rRestartIDs));
     }
     if (isset($_POST["multi"])) {
         header("Location: ./episodes.php?series=".intval($_POST["series"]));
@@ -227,11 +230,14 @@ if (isset($_GET["id"])) {
     if ((!$rEpisode) or ($rEpisode["type"] <> 5)) {
         exit;
     }
-    $result = $db->query("SELECT `sort` FROM `series_episodes` WHERE `stream_id` = ".intval($rEpisode["id"]).";");
+    $result = $db->query("SELECT `season_num`, `sort` FROM `series_episodes` WHERE `stream_id` = ".intval($rEpisode["id"]).";");
     if (($result) && ($result->num_rows == 1)) {
-        $rEpisode["episode"] = intval($result->fetch_assoc()["sort"]);
+        $row = $result->fetch_assoc();
+        $rEpisode["episode"] = intval($row["sort"]);
+        $rEpisode["season"] = intval($row["season_num"]);
     } else {
         $rEpisode["episode"] = 0;
+        $rEpisode["season"] = 0;
     }
     $rEpisode["properties"] = json_decode($rEpisode["movie_propeties"], True);
     $rStreamSys = getStreamSys($_GET["id"]);
@@ -408,7 +414,7 @@ if ($rSettings["sidebar"]) {
                                                                 <input type="text" class="form-control" id="series_name" name="series_name" value="<?=$rSeries["title"]?>" readonly>
                                                             </div>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control text-center" id="season_num" name="season_num" placeholder="Season" value="<?php if (isset($rEpisode)) { echo $rEpisode["properties"]["season"]; } ?>" required data-parsley-trigger="change">
+                                                                <input type="text" class="form-control text-center" id="season_num" name="season_num" placeholder="Season" value="<?php if (isset($rEpisode)) { echo $rEpisode["season"]; } ?>" required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -561,26 +567,27 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-2">
                                                                 <input name="movie_symlink" id="movie_symlink" type="checkbox" <?php if (isset($rEpisode)) { if ($rEpisode["movie_symlink"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
-                                                            <label class="col-md-4 col-form-label" for="custom_sid">Custom Channel SID <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Here you can specify the SID of the channel in order to work with the epg on the enigma2 devices. You have to specify the code with the ':' but without the first number, 1 or 4097 . Example: if we have this code:  '1:0:1:13f:157c:13e:820000:0:0:0:2097' then you have to add on this field:  ':0:1:13f:157c:13e:820000:0:0:0:" class="mdi mdi-information"></i></label>
-                                                            <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="custom_sid" name="custom_sid" value="<?php if (isset($rEpisode)) { echo $rEpisode["custom_sid"]; } ?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="target_container">Target Container <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Which container to use for the final product, whether encoded or symlinked." class="mdi mdi-information"></i></label>
-                                                            <div class="col-md-2">
-                                                                <select name="target_container" id="target_container" class="form-control" data-toggle="select2">
-                                                                    <?php foreach (Array("mp4", "mkv", "avi", "mpg") as $rContainer) { ?>
-                                                                    <option <?php if (isset($rEpisode)) { if (json_decode($rEpisode["target_container"], True)[0] == $rContainer) { echo "selected "; } } ?>value="<?=$rContainer?>"><?=$rContainer?></option>
-                                                                    <?php } ?>
-                                                                </select>
-                                                            </div>
                                                             <label class="col-md-4 col-form-label" for="remove_subtitles">Remove Existing Subtitles <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Remove existing subtitles from file before encoding. You can't remove hardcoded subtitles using this method." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <input name="remove_subtitles" id="remove_subtitles" type="checkbox" <?php if (isset($rEpisode)) { if ($rEpisode["remove_subtitles"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
-                                                        <?php
+                                                        <?php if (!$rMulti) { ?>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="target_container">Target Container <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Which container to use for the final product, whether encoded or symlinked." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <select name="target_container" id="target_container" class="form-control" data-toggle="select2">
+                                                                    <?php foreach (Array("mp4", "mkv", "avi", "mpg", "flv") as $rContainer) { ?>
+                                                                    <option <?php if (isset($rEpisode)) { if (json_decode($rEpisode["target_container"], True)[0] == $rContainer) { echo "selected "; } } ?>value="<?=$rContainer?>"><?=$rContainer?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="custom_sid">Custom Channel SID <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Here you can specify the SID of the channel in order to work with the epg on the enigma2 devices. You have to specify the code with the ':' but without the first number, 1 or 4097 . Example: if we have this code:  '1:0:1:13f:157c:13e:820000:0:0:0:2097' then you have to add on this field:  ':0:1:13f:157c:13e:820000:0:0:0:" class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="custom_sid" name="custom_sid" value="<?php if (isset($rEpisode)) { echo $rEpisode["custom_sid"]; } ?>">
+                                                            </div>
+                                                        </div>
+                                                        <?php }
                                                         $rSubFile = "";
                                                         if (isset($rEpisode)) {
                                                             $rSubData = json_decode($rEpisode["movie_subtitles"], True);
@@ -589,7 +596,8 @@ if ($rSettings["sidebar"]) {
                                                             }
                                                         }
                                                         ?>
-                                                        <div class="form-group row mb-4 stream-url">
+                                                        <?php if (!$rMulti) { ?>
+                                                        <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="movie_subtitles"> Subtitle Location <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select a subtitle file to encoded into the output stream." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8 input-group">
                                                                 <input type="text" id="movie_subtitles" name="movie_subtitles" class="form-control" value="<?php if (isset($rEpisode)) { echo $rSubFile; } ?>">
@@ -598,6 +606,7 @@ if ($rSettings["sidebar"]) {
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        <?php } ?>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="transcode_profile_id">Transcoding Profile <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Sometimes, in order to make a stream compatible with most devices, it must be transcoded. Please note that the transcode will only be applied to the server(s) that take the stream directly from the source, all other servers attached to the transcoding server will not transcode the stream." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
@@ -759,6 +768,7 @@ if ($rSettings["sidebar"]) {
         
         <script>
         var changeTitle = false;
+        var rSwitches = [];
         var rEpisodes = {};
         
         (function($) {
@@ -819,6 +829,10 @@ if ($rSettings["sidebar"]) {
         function selectFile(rFile) {
             if ($('li.nav-item .active').attr('href') == "#stream-details") {
                 $("#stream_source").val("s:" + $("#server_id").val() + ":" + window.currentDirectory + rFile);
+                var rExtension = rFile.substr((rFile.lastIndexOf('.')+1));
+                if ($("#target_container option[value='" + rExtension + "']").length > 0) {
+                    $("#target_container").val(rExtension).trigger('change');
+                }
             } else {
                 $("#movie_subtitles").val("s:" + $("#server_id").val() + ":" + window.currentDirectory + rFile);
             }
@@ -851,6 +865,12 @@ if ($rSettings["sidebar"]) {
                     type: 'iframe'
                 }
             });
+        }
+        function setSwitch(switchElement, checkedBool) {
+            if((checkedBool && !switchElement.isChecked()) || (!checkedBool && switchElement.isChecked())) {
+                switchElement.setPosition(true);
+                switchElement.handleOnchange(true);
+            }
         }
         $(document).ready(function() {
             $('select').select2({width: '100%'});
@@ -890,7 +910,56 @@ if ($rSettings["sidebar"]) {
             var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
             elems.forEach(function(html) {
               var switchery = new Switchery(html);
+              window.rSwitches[$(html).attr("id")] = switchery;
             });
+            
+            $("#direct_source").change(function() {
+                evaluateDirectSource();
+            });
+            $("#movie_symlink").change(function() {
+                evaluateSymlink();
+            });
+            
+            function evaluateDirectSource() {
+                $(["movie_symlink", "read_native", "transcode_profile_id", "target_container", "remove_subtitles", "movie_subtitles"]).each(function(rID, rElement) {
+                    if ($(rElement)) {
+                        if ($("#direct_source").is(":checked")) {
+                            if (window.rSwitches[rElement]) {
+                                setSwitch(window.rSwitches[rElement], false);
+                                window.rSwitches[rElement].disable();
+                            } else {
+                                $("#" + rElement).prop("disabled", true);
+                            }
+                        } else {
+                            if (window.rSwitches[rElement]) {
+                                window.rSwitches[rElement].enable();
+                            } else {
+                                $("#" + rElement).prop("disabled", false);
+                            }
+                        }
+                    }
+                });
+            }
+            function evaluateSymlink() {
+                $(["direct_source", "read_native", "transcode_profile_id"]).each(function(rID, rElement) {
+                    if ($(rElement)) {
+                        if ($("#movie_symlink").is(":checked")) {
+                            if (window.rSwitches[rElement]) {
+                                setSwitch(window.rSwitches[rElement], false);
+                                window.rSwitches[rElement].disable();
+                            } else {
+                                $("#" + rElement).prop("disabled", true);
+                            }
+                        } else {
+                            if (window.rSwitches[rElement]) {
+                                window.rSwitches[rElement].enable();
+                            } else {
+                                $("#" + rElement).prop("disabled", false);
+                            }
+                        }
+                    }
+                });
+            }
             
             $("#select_folder").click(function() {
                 $("#season_folder").val(window.currentDirectory);
@@ -982,16 +1051,6 @@ if ($rSettings["sidebar"]) {
                 }
                 <?php } ?>
                 $("#server_tree_data").val(JSON.stringify($('#server_tree').jstree(true).get_json('#', {flat:true})));
-                rPass = false;
-                $.each($('#server_tree').jstree(true).get_json('#', {flat:true}), function(k,v) {
-                    if (v.parent == "source") {
-                        rPass = true;
-                    }
-                });
-                if (rPass == false) {
-                    e.preventDefault();
-                    $.toast("Select at least one server.");
-                }
             });
             
             $("#filebrowser").magnificPopup({
@@ -1083,7 +1142,7 @@ if ($rSettings["sidebar"]) {
                     $("#stream_display_name").val($("#series_name").val() + " - " + rFormat + " - " + rEpisode.name);
                     $("#movie_image").val("");
                     if (rEpisode.still_path.length > 0) {
-                        $("#movie_image").val("https://image.tmdb.org/t/p/w600_and_h900_bestv2" + rEpisode.still_path);
+                        $("#movie_image").val("https://image.tmdb.org/t/p/w300" + rEpisode.still_path);
                     }
                     $("#releasedate").val(rEpisode.air_date);
                     $("#episode_run_time").val('<?=$rSeries["episode_run_time"]?>');
@@ -1123,6 +1182,8 @@ if ($rSettings["sidebar"]) {
             $("form").attr('autocomplete', 'off');
             
             $("#changeDir").click();
+            evaluateDirectSource();
+            evaluateSymlink();
         });
         </script>
     </body>

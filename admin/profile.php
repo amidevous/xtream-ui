@@ -5,10 +5,10 @@ if (!$rPermissions["is_admin"]) { exit; }
 if (isset($_POST["submit_profile"])) {
     $rArray = Array("profile_name" => $_POST["profile_name"], "profile_options" => null);
     $rProfileOptions = Array();
-    if ((strlen($_POST["video_codec"]) > 0) && ($_POST["video_codec"] <> "copy")) {
+    if (strlen($_POST["video_codec"]) > 0) {
         $rProfileOptions["-vcodec"] = $_POST["video_codec"];
     }
-    if ((strlen($_POST["audio_codec"]) > 0) && ($_POST["audio_codec"] <> "copy")) {
+    if (strlen($_POST["audio_codec"]) > 0) {
         $rProfileOptions["-acodec"] = $_POST["audio_codec"];
     }
     if (strlen($_POST["preset"]) > 0) {
@@ -208,7 +208,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="audio_bitrate">Average Audio Bitrate <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Change audio bitrate." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="audio_bitrate" name="audio_bitrate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["4"]["val"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="audio_bitrate" name="audio_bitrate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["4"]["val"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -218,7 +218,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="max_tolerance">Maximum Bitrate Tolerance <i data-toggle="tooltip" data-placement="top" title="" data-original-title="-maxrate FFmpeg argument. Specify the maximum bitrate tolerance here in kbps. Enter number only." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="max_tolerance" name="max_tolerance" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["6"]["val"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="max_tolerance" name="max_tolerance" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["6"]["val"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -228,7 +228,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="crf_value">CRF Value <i data-toggle="tooltip" data-placement="top" title="" data-original-title="The range of the quantizer scale is 0-51: where 0 is lossless, 23 is default, and 51 is worst possible. A lower value is a higher quality and a subjectively sane range is 18-28. Consider 18 to be visually lossless or nearly so: it should look the same or nearly the same as the input but it isnt technically lossless. The range is exponential, so increasing the CRF value +6 is roughly half the bitrate while -6 is roughly twice the bitrate. General usage is to choose the highest CRF value that still provides an acceptable quality. If the output looks good, then try a higher value and if it looks bad then choose a lower value." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="crf_value" name="crf_value" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["8"]["val"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="crf_value" name="crf_value" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["8"]["val"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -238,7 +238,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="aspect_ratio">Aspect Ratio <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Change the target Video Aspect. (eg 16:9)" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="aspect_ratio" name="aspect_ratio" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["10"]["val"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="aspect_ratio" name="aspect_ratio" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["10"]["val"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -248,7 +248,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="samplerate">Audio Sample Rate <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set the Audio Sample rate in Hz." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="samplerate" name="samplerate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["12"]["val"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="samplerate" name="samplerate" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["12"]["val"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -258,7 +258,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-3 col-form-label" for="threads">Threads <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Specify the number of threads you want to use for the transcoding process. Entering 0 as value will make FFmpeg to choose the most optimal settings." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-3">
-                                                                <input type="text" class="form-control" id="threads" name="threads" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["15"]["val"]; } else { echo "0"; } ?>">
+                                                                <input type="text" class="form-control" id="threads" name="threads" value="<?php if (isset($rProfileArr)) { echo $rProfileOptions["15"]["val"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

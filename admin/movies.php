@@ -131,6 +131,7 @@ if ($rSettings["sidebar"]) {
                                                 <option value="3">Down</option>
                                                 <option value="4">Ready</option>
                                                 <option value="5">Direct</option>
+                                                <option value="6">No TMDb Match</option>
                                             </select>
                                         </div>
                                         <label class="col-md-1 col-form-label text-center" for="movies_show_entries">Show</label>

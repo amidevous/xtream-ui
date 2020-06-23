@@ -98,7 +98,9 @@ if ($rSettings["sidebar"]) {
                                                     <li class="list-inline-item">
                                                         <a href="javascript: void(0);" onClick="MoveUp('stream')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
                                                         <a href="javascript: void(0);" onClick="MoveDown('stream')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
-                                                        <a href="javascript: void(0);" onClick="AtoZ('stream')" class="btn btn-info">Sort All A to Z</a>
+                                                        <a href="javascript: void(0);" onClick="MoveTop('stream')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveBottom('stream')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('stream')" class="btn btn-info">A to Z</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
@@ -122,7 +124,9 @@ if ($rSettings["sidebar"]) {
                                                     <li class="list-inline-item">
                                                         <a href="javascript: void(0);" onClick="MoveUp('movie')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
                                                         <a href="javascript: void(0);" onClick="MoveDown('movie')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
-                                                        <a href="javascript: void(0);" onClick="AtoZ('movie')" class="btn btn-info">Sort All A to Z</a>
+                                                        <a href="javascript: void(0);" onClick="MoveTop('movie')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveBottom('movie')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('movie')" class="btn btn-info">A to Z</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
@@ -146,7 +150,9 @@ if ($rSettings["sidebar"]) {
                                                     <li class="list-inline-item">
                                                         <a href="javascript: void(0);" onClick="MoveUp('series')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
                                                         <a href="javascript: void(0);" onClick="MoveDown('series')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
-                                                        <a href="javascript: void(0);" onClick="AtoZ('series')" class="btn btn-info">Sort All A to Z</a>
+                                                        <a href="javascript: void(0);" onClick="MoveTop('series')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveBottom('series')" class="btn btn-pink"><i class="mdi mdi-chevron-triple-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('series')" class="btn btn-info">A to Z</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
@@ -223,6 +229,18 @@ if ($rSettings["sidebar"]) {
             var rSelected = $('#sort_' + rType + ' option:selected');
             if (rSelected.length) {
                 rSelected.last().next().after(rSelected);
+            }
+        }
+        function MoveTop(rType) {
+            var rSelected = $('#sort_' + rType + ' option:selected');
+            if (rSelected.length) {
+                rSelected.prependTo($('#sort_' + rType));
+            }
+        }
+        function MoveBottom(rType) {
+            var rSelected = $('#sort_' + rType + ' option:selected');
+            if (rSelected.length) {
+                rSelected.appendTo($('#sort_' + rType));
             }
         }
         $(document).ready(function() {
