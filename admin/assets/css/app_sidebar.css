@@ -3584,3 +3584,14 @@ body.authentication-bg-pattern {
 .font-large {
 	font-size: 15px !important;
 }
+#datatable-files_length, #datatable-files_filter {
+    display: none;
+}
+.white-popup-block{
+    background:#fff;
+    padding:20px 30px;
+    text-align:left;
+    max-width:830px;
+    margin:40px auto;
+    position:relative
+}

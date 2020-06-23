@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_stream"])) {
@@ -94,6 +94,8 @@ if (isset($_POST["submit_stream"])) {
     if ($rArray["transcode_profile_id"] > 0) {
         $rArray["enable_transcode"] = 1;
     }
+    $rBouquets = $_POST["bouquets"];
+    unset($_POST["bouquets"]);
     foreach($_POST as $rKey => $rValue) {
         if (isset($rArray[$rKey])) {
             $rArray[$rKey] = $rValue;
@@ -224,6 +226,14 @@ if (isset($_POST["submit_stream"])) {
                 if ((isset($_POST["http_proxy"])) && (strlen($_POST["http_proxy"]) > 0)) {
                     $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 2, '".$db->real_escape_string($_POST["http_proxy"])."');");
                 }
+                foreach ($rBouquets as $rBouquet) {
+                    addToBouquet("stream", $rBouquet, $rInsertID);
+                }
+                foreach (getBouquets() as $rBouquet) {
+                    if (!in_array($rBouquet["id"], $rBouquets)) {
+                        removeFromBouquet("stream", $rBouquet["id"], $rInsertID);
+                    }
+                }
                 $_STATUS = 0;
             } else {
                 $_STATUS = 1;
@@ -254,7 +264,7 @@ $rServerTree[] = Array("id" => "source", "parent" => "#", "text" => "<strong>Str
 if (isset($_GET["id"])) {
     if (isset($_GET["import"])) { exit; }
     $rStream = getStream($_GET["id"]);
-    if (!$rStream) {
+    if ((!$rStream) or ($rStream["type"] <> 1)) {
         exit;
     }
     $rStreamOptions = getStreamOptions($_GET["id"]);
@@ -330,8 +340,8 @@ if ($rSettings["sidebar"]) {
                                         <tr>
                                             <th></th>
                                             <th></th>
-                                            <th></th>
                                             <th>Server</th>
+                                            <th></th>
                                             <th>Clients</th>
                                             <th>Uptime</th>
                                             <th>Actions</th>
@@ -447,6 +457,16 @@ if ($rSettings["sidebar"]) {
                                                                 <select name="category_id" id="category_id" class="form-control" data-toggle="select2">
                                                                     <?php foreach ($rCategories as $rCategory) { ?>
                                                                     <option <?php if (isset($rStream)) { if (intval($rStream["category_id"]) == intval($rCategory["id"])) { echo "selected "; } } else if ((isset($_GET["category"])) && ($_GET["category"] == $rCategory["id"])) { echo "selected "; } ?>value="<?=$rCategory["id"]?>"><?=$rCategory["category_name"]?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="bouquets">Add To Bouquets</label>
+                                                            <div class="col-md-8">
+                                                                <select name="bouquets[]" id="bouquets" class="form-control select2-multiple" data-toggle="select2" multiple="multiple" data-placeholder="Choose...">
+                                                                    <?php foreach (getBouquets() as $rBouquet) { ?>
+                                                                    <option <?php if (isset($rStream)) { if (in_array($rStream["id"], json_decode($rBouquet["bouquet_channels"], True))) { echo "selected "; } } ?>value="<?=$rBouquet["id"]?>"><?=$rBouquet["bouquet_name"]?></option>
                                                                     <?php } ?>
                                                                 </select>
                                                             </div>
@@ -948,8 +968,8 @@ if ($rSettings["sidebar"]) {
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [3,4,5,6]},
-                    {"visible": false, "targets": [0,1,2,7]}
+                    {"className": "dt-center", "targets": [2,4,5,6]},
+                    {"visible": false, "targets": [0,1,3,7]}
                 ],
             });
             setTimeout(reloadStream, 5000);

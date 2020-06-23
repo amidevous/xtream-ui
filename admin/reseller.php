@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if ($rPermissions["is_admin"]) { exit; }
 $rStatusArray = Array(0 => "CLOSED", 1 => "OPEN", 2 => "RESPONDED", 3 => "READ");
 if ($rSettings["sidebar"]) {

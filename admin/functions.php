@@ -1,18 +1,82 @@
 <?php
 session_start();
-set_time_limit(10);
-ini_set('default_socket_timeout', 10);
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
+$rTimeout = 15;
+set_time_limit($rTimeout);
+ini_set('mysql.connect_timeout', $rTimeout);
+ini_set('max_execution_time', $rTimeout);
+ini_set('default_socket_timeout', $rTimeout);
+
 define("MAIN_DIR", "/home/xtreamcodes/iptv_xtream_codes/");
 define("CONFIG_CRYPT_KEY", "5709650b0d7806074842c6de575025b1");
 
-include realpath(dirname(__FILE__))."/mobiledetect.php";
-$detect = new Mobile_Detect;
+require_once realpath(dirname(__FILE__))."/mobiledetect.php";
+require_once realpath(dirname(__FILE__))."/gauth.php";
 
+$detect = new Mobile_Detect;
 $rStatusArray = Array(0 => "Stopped", 1 => "Running", 2 => "Starting", 3 => "<strong style='color:#cc9999'>DOWN</strong>", 4 => "On Demand", 5 => "Direct");
+
+// Exec replacement for remote machines.
+function sexec($rServerID, $rCommand) {
+    global $rServers, $rSettings;
+    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=BackgroundCLI&cmds[]=".urlencode($rCommand);
+    return file_get_contents($rAPI);
+}
+
+function listDir($rServerID, $rDirectory, $rAllowed=null) {
+    global $rServers, $_INFO, $rSettings;
+    set_time_limit(180);
+    ini_set('max_execution_time', 180);
+	$rReturn = Array("dirs" => Array(), "files" => Array());
+    if ($rServerID == $_INFO["server_id"]) {
+        $rFiles = scanDir($rDirectory);
+        foreach ($rFiles as $rKey => $rValue) {
+            if (!in_array($rValue, Array(".",".."))) {
+                if (is_dir($rDirectory."/".$rValue)) {
+                    $rReturn["dirs"][] = $rValue;
+                } else {
+                    $rExt = strtolower(pathinfo($rValue)["extension"]);
+                    if (((is_array($rAllowed)) && (in_array($rExt, $rAllowed))) OR (!$rAllowed)) {
+                        $rReturn["files"][] = $rValue;
+                    }
+                }
+            }
+        }
+    } else {
+        $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=viewDir&dir=".urlencode($rDirectory);
+        $rData = file_get_contents($rAPI);
+        $rDocument = new DOMDocument();
+        $rDocument->loadHTML($rData);
+        $rFiles = $rDocument->getElementsByTagName('li');
+        foreach($rFiles as $rFile) {
+            if (stripos($rFile->getAttribute('class'), "directory") !== false) {
+                $rReturn["dirs"][] = $rFile->nodeValue;
+            } else if (stripos($rFile->getAttribute('class'), "file") !== false) {
+                $rExt = strtolower(pathinfo($rFile->nodeValue)["extension"]);
+                if (((is_array($rAllowed)) && (in_array($rExt, $rAllowed))) OR (!$rAllowed)) {
+                    $rReturn["files"][] = $rFile->nodeValue;
+                }
+            }
+        }
+    }
+    return $rReturn;
+}
+
+function getTimeDifference($rServerID) {
+	global $rServers, $rSettings;
+    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=getDiff&main_time=".intval(time());
+    return intval(file_get_contents($rAPI));
+}
+
+function deleteMovieFile($rServerID, $rID) {
+	global $rServers, $rSettings;
+    $rCommand = "rm ".MAIN_DIR."movies/".$rID.".*";
+    $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=BackgroundCLI&cmds[]=".urlencode($rCommand);
+    return file_get_contents($rAPI);
+}
 
 function generateString($strength = 10) {
     $input = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -74,6 +138,18 @@ function getSettings() {
     global $db;
     $result = $db->query("SELECT * FROM `settings` LIMIT 1;");
     return $result->fetch_assoc();
+}
+
+function getStreamList() {
+    global $db;
+    $return = Array();
+    $result = $db->query("SELECT `streams`.`id`, `streams`.`stream_display_name`, `stream_categories`.`category_name` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` ORDER BY `streams`.`stream_display_name` ASC;");
+    if (($result) && ($result->num_rows > 0)) {
+        while ($row = $result->fetch_assoc()) {
+            $return[] = $row;
+        }
+    }
+    return $return;
 }
 
 function getStreams($category_id=null, $full=false, $stream_ids=null) {
@@ -291,6 +367,15 @@ function getRegisteredUser($rID) {
     return False;
 }
 
+function getRegisteredUserHash($rHash) {
+    global $db;
+    $result = $db->query("SELECT * FROM `reg_users` WHERE MD5(`username`) = '".$db->real_escape_string($rHash)."' LIMIT 1;");
+    if (($result) && ($result->num_rows == 1)) {
+        return $result->fetch_assoc();
+    }
+    return False;
+}
+
 function getEPG($rID) {
     global $db;
     $result = $db->query("SELECT * FROM `epg` WHERE `id` = ".intval($rID).";");
@@ -450,6 +535,42 @@ function getBouquet($rID) {
         return $result->fetch_assoc();
     }
     return null;
+}
+
+function addToBouquet($rType, $rBouquetID, $rID) {
+    global $db;
+    $rBouquet = getBouquet($rBouquetID);
+    if ($rBouquet) {
+        if ($rType == "stream") {
+            $rColumn = "bouquet_channels";
+        } else {
+            $rColumn = "bouquet_series";
+        }
+        $rChannels = json_decode($rBouquet[$rColumn], True);
+        if (!in_array($rID, $rChannels)) {
+            $rChannels[] = $rID;
+            if (count($rChannels) > 0) {
+                $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode($rChannels))."' WHERE `id` = ".intval($rBouquetID).";");
+            }
+        }
+    }
+}
+
+function removeFromBouquet($rType, $rBouquetID, $rID) {
+    global $db;
+    $rBouquet = getBouquet($rBouquetID);
+    if ($rBouquet) {
+        if ($rType == "stream") {
+            $rColumn = "bouquet_channels";
+        } else {
+            $rColumn = "bouquet_series";
+        }
+        $rChannels = json_decode($rBouquet[$rColumn], True);
+        if (($rKey = array_search($rID, $rChannels)) !== false) {
+            unset($rChannels[$rKey]);
+            $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode($rChannels))."' WHERE `id` = ".intval($rBouquetID).";");
+        }
+    }
 }
 
 function getPackages() {
@@ -681,24 +802,14 @@ function getPermissions($rID) {
 
 function doLogin($rUsername, $rPassword) {
     global $db;
-    $result = $db->query("SELECT `id`, `username`, `password`, `member_group_id` FROM `reg_users` WHERE `username` = '".$db->real_escape_string($rUsername)."' LIMIT 1;");
+    $result = $db->query("SELECT `id`, `username`, `password`, `member_group_id`, `google_2fa_sec`, `status` FROM `reg_users` WHERE `username` = '".$db->real_escape_string($rUsername)."' LIMIT 1;");
     if (($result) && ($result->num_rows == 1)) {
         $rRow = $result->fetch_assoc();
         if (cryptPassword($rPassword) == $rRow["password"]) {
-            $rPermissions = getPermissions($rRow["member_group_id"]);
-            $rUserInfo = getRegisteredUser($rRow["id"]);
-            if (($rPermissions) && ((($rPermissions["is_admin"]) OR ($rPermissions["is_reseller"])) && ((!$rPermissions["is_banned"]) && ($rUserInfo["status"] == 1)))) {
-                $db->query("UPDATE `reg_users` SET `last_login` = UNIX_TIMESTAMP(), `ip` = '".$db->real_escape_string(getIP())."' WHERE `id` = ".intval($rRow["id"]).";");
-                $_SESSION['user_id'] = $rRow["id"];
-                return 1;
-            } else if (($rPermissions) && ((($rPermissions["is_admin"]) OR ($rPermissions["is_reseller"])) && ($rPermissions["is_banned"]))) {
-                return -1;
-            } else if (($rPermissions) && ((($rPermissions["is_admin"]) OR ($rPermissions["is_reseller"])) && (!$rUserInfo["status"]))) {
-                return -2;
-            }
+            return $rRow;
         }
     }
-    return 0;
+    return null;
 }
 
 function getSubresellerSetups() {
@@ -775,6 +886,25 @@ function writeAdminSettings() {
     }
 }
 
+function downloadImage($rImage) {
+    if ((strlen($rImage) > 0) && (substr(strtolower($rImage), 0, 4) == "http")) {
+        $rExt = pathinfo($rImage, PATHINFO_EXTENSION);
+        if (in_array(strtolower($rExt), Array("jpg", "jpeg", "png"))) {
+            $rData = file_get_contents($rImage);
+            if (strlen($rData) > 0) {
+                $rFilename = generateString(32);
+                $rPath = MAIN_DIR . "wwwdir/images/".$rFilename.".".$rExt;
+                $rURL = "./images/".$rFilename.".".$rExt;
+                file_put_contents($rPath, $rData);
+                if (strlen(file_get_contents($rPath)) == strlen($rData)) {
+                    return $rURL;
+                }
+            }
+        }
+    }
+    return $rImage;
+}
+
 function getFooter() {
     // Don't be a dick. Leave it.
     global $rAdminSettings, $rPermissions, $rSettings;
@@ -785,24 +915,39 @@ function getFooter() {
     }
 }
 
-if (isset($_SESSION['user_id'])) {
-    $rUserInfo = getRegisteredUser($_SESSION['user_id']);
-    $rPermissions = getPermissions($rUserInfo['member_group_id']);
-    if ($rPermissions["is_admin"]) {
-        $rPermissions["is_reseller"] = 0; // Don't allow Admin & Reseller!
+function getURL() {
+    global $rServers, $_INFO;
+    if (strlen($rServers[$_INFO["server_id"]]["domain_name"]) > 0) {
+        return "http://".$rServers[$_INFO["server_id"]]["domain_name"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"];
+    } else if (strlen($rServers[$_INFO["server_id"]]["vpn_ip"]) > 0) {
+        return "http://".$rServers[$_INFO["server_id"]]["vpn_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"];
+    } else {
+        return "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"];
     }
-    $rAdminSettings = getAdminSettings();
-    $rSettings = getSettings();
-    $rSettings["sidebar"] = $rAdminSettings["sidebar"];
-    $rCategories = getCategories();
-    $rServers = getStreamingServers();
-    $rServerError = False;
-    foreach ($rServers as $rServer) {
-        if (((((time() - $rServer["last_check_ago"]) > 360)) OR ($rServer["status"] == 2)) AND ($rServer["can_delete"] == 1) AND ($rServer["status"] <> 3)) { $rServerError = True; }
-        if (($rServer["status"] == 3) && ($rServer["last_check_ago"] > 0)) {
-            $db->query("UPDATE `streaming_servers` SET `status` = 1 WHERE `id` = ".intval($rServer["id"]).";");
-            $rServers[intval($rServer["id"])]["status"] = 1;
+}
+
+if (isset($_SESSION['hash'])) {
+    $rUserInfo = getRegisteredUserHash($_SESSION['hash']);
+    if ($rUserInfo) {
+        $rPermissions = getPermissions($rUserInfo['member_group_id']);
+        if ($rPermissions["is_admin"]) {
+            $rPermissions["is_reseller"] = 0; // Don't allow Admin & Reseller!
         }
+        $rAdminSettings = getAdminSettings();
+        $rSettings = getSettings();
+        $rSettings["sidebar"] = $rAdminSettings["sidebar"];
+        $rCategories = getCategories();
+        $rServers = getStreamingServers();
+        $rServerError = False;
+        foreach ($rServers as $rServer) {
+            if (((((time() - $rServer["last_check_ago"]) > 360)) OR ($rServer["status"] == 2)) AND ($rServer["can_delete"] == 1) AND ($rServer["status"] <> 3)) { $rServerError = True; }
+            if (($rServer["status"] == 3) && ($rServer["last_check_ago"] > 0)) {
+                $db->query("UPDATE `streaming_servers` SET `status` = 1 WHERE `id` = ".intval($rServer["id"]).";");
+                $rServers[intval($rServer["id"])]["status"] = 1;
+            }
+        }
+    } else {
+        session_destroy();
     }
 }
 ?>

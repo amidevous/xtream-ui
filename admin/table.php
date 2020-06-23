@@ -4,7 +4,7 @@ ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 
-if (!isset($_SESSION['user_id'])) { exit; }
+if (!isset($_SESSION['hash'])) { exit; }
 
 $joinQuery = "";
 

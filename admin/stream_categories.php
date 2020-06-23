@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
 $rCategories = getCategories();
@@ -17,12 +17,6 @@ if (isset($_POST["categories"])) {
                     $db->query("UPDATE `stream_categories` SET `cat_order` = ".(intval($rChildOrder)+1).", `parent_id` = ".intval($rPostCategory["id"])." WHERE `id` = ".intval($rChildCategory["id"]).";");
                     $rKeep[] = $rChildCategory["id"];
                 }
-            }
-        }
-        foreach ($rCategories as $rCategoryID => $rCategoryData) {
-            if (!in_array($rCategoryID, $rKeep)) {
-                $db->query("DELETE FROM `stream_categories` WHERE `id` = ".intval($rCategoryID).";");
-                $db->query("UPDATE `streams` SET `category_id` = 0 WHERE `category_id` = ".intval($rCategoryID).";");
             }
         }
         $rCategories = getCategories(); // Update
@@ -88,7 +82,7 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <p class="sub-header">
-                                                            To re-order a category, drag it up or down the list using the <i class="mdi mdi-view-sequential"></i> icon. Categories can be added as a subcategory by dragging it right to offset it, then up or down to the category it belongs in. Click Save Changes at the bottom once finished.
+                                                            To re-order a category, drag it up or down the list using the <i class="mdi mdi-view-sequential"></i> icon. Click Save Changes at the bottom once finished.
                                                         </p>
                                                         <div class="custom-dd dd" id="category_order">
                                                             <ol class="dd-list">
@@ -192,7 +186,7 @@ if ($rSettings["sidebar"]) {
             }
         }
         $(document).ready(function() {
-            $("#category_order").nestable({maxDepth: 2});
+            $("#category_order").nestable({maxDepth: 1});
             $("#stream_categories_form").submit(function(e){
                 $("#categories_input").val(JSON.stringify($('.dd').nestable('serialize')));
             });

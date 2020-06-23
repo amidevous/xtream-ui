@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 
 $rCategories = getCategories("movie");
 
@@ -20,9 +20,9 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content<?php if ($rPermissions["is_reseller"]) { echo " boxed-layout"; } ?>"><div class="container-fluid">
+        <div class="content-page"><div class="content"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper<?php if ($rPermissions["is_reseller"]) { echo " boxed-layout"; } ?>"><div class="container-fluid">
+        <div class="wrapper"><div class="container-fluid">
         <?php } ?>
                 <!-- start page title -->
                 <div class="row">
@@ -71,11 +71,10 @@ if ($rSettings["sidebar"]) {
                             <div class="card-body" style="overflow-x:auto;">
                                 <div class="form-group row mb-4">
                                     <?php if ($rPermissions["is_reseller"]) { ?>
-                                    <div class="col-md-12" style="margin-bottom: 25px;">
+                                    <div class="col-md-3">
                                         <input type="text" class="form-control" id="stream_search" value="" placeholder="Search Movies...">
                                     </div>
-                                    <label class="col-md-2 col-form-label text-center" for="category_name">Category Name</label>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <select id="category_id" class="form-control" data-toggle="select2">
                                             <option value="" selected>All Categories</option>
                                             <?php foreach ($rCategories as $rCategory) { ?>
@@ -86,12 +85,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="col-md-3">
                                         <select id="filter" class="form-control" data-toggle="select2">
                                             <option value="" selected>No Filter</option>
-                                            <option value="1">Online</option>
-                                            <option value="2">Down</option>
-                                            <option value="3">Stopped</option>
-                                            <option value="4">Starting</option>
-                                            <option value="5">On Demand</option>
-                                            <option value="6">Direct</option>
+                                            <option value="1">Encoded</option>
+                                            <option value="2">Encoding</option>
+                                            <option value="3">Down</option>
+                                            <option value="4">Ready</option>
+                                            <option value="5">Direct</option>
                                         </select>
                                     </div>
                                     <label class="col-md-1 col-form-label text-center" for="show_entries">Show</label>
@@ -118,12 +116,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="col-md-2">
                                         <select id="filter" class="form-control" data-toggle="select2">
                                             <option value="" selected>No Filter</option>
-                                            <option value="1">Online</option>
-                                            <option value="2">Down</option>
-                                            <option value="3">Stopped</option>
-                                            <option value="4">Starting</option>
-                                            <option value="5">On Demand</option>
-                                            <option value="6">Direct</option>
+                                            <option value="1">Encoded</option>
+                                            <option value="2">Encoding</option>
+                                            <option value="3">Down</option>
+                                            <option value="4">Ready</option>
+                                            <option value="5">Direct</option>
                                         </select>
                                     </div>
                                     <label class="col-md-1 col-form-label text-center" for="show_entries">Show</label>
@@ -141,10 +138,9 @@ if ($rSettings["sidebar"]) {
                                         <tr style="<?php echo $background ?>">
                                             <th class="text-center">ID</th>
                                             <th>Name</th>
-                                            <th class="text-center">Current Source</th>
-                                            <th class="text-center">Server</th>
+                                            <th>Server</th>
                                             <th class="text-center">Clients</th>
-                                            <th class="text-center">Uptime</th>
+                                            <th class="text-center">Status</th>
                                             <th class="text-center">Actions</th>
                                             <th class="text-center">Player</th>
                                             <th class="text-center">Stream Info</th>
@@ -190,14 +186,18 @@ if ($rSettings["sidebar"]) {
         
         function api(rID, rServerID, rType) {
             if (rType == "delete") {
-                if (confirm('Are you sure you want to delete this stream?') == false) {
+                if (confirm('Are you sure you want to delete this movie?') == false) {
                     return;
                 }
             }
-            $.getJSON("./api.php?action=stream&sub=" + rType + "&stream_id=" + rID + "&server_id=" + rServerID, function(data) {
+            $.getJSON("./api.php?action=movie&sub=" + rType + "&stream_id=" + rID + "&server_id=" + rServerID, function(data) {
                 if (data.result == true) {
-                    if (rType == "delete") {
-                        $.toast("Stream successfully deleted.");
+                    if (rType == "start") {
+                        $.toast("Movie encoding has started. It will take some time before this movie is available.");
+                    } else if (rType == "stop") {
+                        $.toast("Movie encoding has been stopped.");
+                    } else if (rType == "delete") {
+                        $.toast("Movie successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
@@ -272,12 +272,10 @@ if ($rSettings["sidebar"]) {
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [0,2,3,4,5,6,7,8]},
-                    {"orderable": false, "targets": [6,7]},
+                    {"className": "dt-center", "targets": [0,3,4,5,6,7]},
+                    {"orderable": false, "targets": [5,6]},
                     <?php if ($rPermissions["is_reseller"]) { ?>
-                    {"visible": false, "targets": [2,5,6,7,8]}
-                    <?php } else { ?>
-                    {"visible": false, "targets": [2,8]}
+                    {"visible": false, "targets": [5,6]}
                     <?php } ?>
                 ],
                 order: [[ 0, "desc" ]],

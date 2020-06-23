@@ -204,6 +204,7 @@
                                     <li><a href="./stream.php">Add Stream</a></li>
                                     <li><a href="./stream.php?import">Import Streams</a></li>
                                     <li><a href="./streams.php">Manage Streams</a></li>
+                                    <li><a href="./stream_mass.php">Mass Edit Streams</a></li>
                                 </ul>
                             </li>
                             <?php }
@@ -212,7 +213,7 @@
                                 <a href="#"> <i class="la la-play-circle-o"></i>Content <div class="arrow-down"></div></a>
                                 <ul class="submenu">
                                     <li><a href="./streams.php">Streams</a></li>
-                                    <li><a href="#">Movies <i class="la la-exclamation-triangle"></i></a></li>
+                                    <li><a href="./movies.php">Movies</a></li>
                                     <li><a href="#">Series <i class="la la-exclamation-triangle"></i></a></li>
                                 </ul>
                             </li>

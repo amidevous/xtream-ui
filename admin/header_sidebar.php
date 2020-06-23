@@ -183,8 +183,8 @@
                             <li>
                                 <a href="javascript: void(0);"><i class="la la-video-camera"></i><span>VOD</span><span class="menu-arrow"></span></a>
                                 <ul class="nav-second-level" aria-expanded="false">
-                                    <li><a href="#">Add Movie <i class="la la-exclamation-triangle"></i></a></li>
-                                    <li><a href="#">Manage Movies <i class="la la-exclamation-triangle"></i></a></li>
+                                    <li><a href="./movie.php">Add Movie</a></li>
+                                    <li><a href="./movies.php">Manage Movies</a></li>
                                     <li class="separator"></li>
                                     <li><a href="#">Add TV Series <i class="la la-exclamation-triangle"></i></a></li>
                                     <li><a href="#">Manage TV Series <i class="la la-exclamation-triangle"></i></a></li>
@@ -199,6 +199,7 @@
                                     <li><a href="./stream.php">Add Stream</a></li>
                                     <li><a href="./stream.php?import">Import Streams</a></li>
                                     <li><a href="./streams.php">Manage Streams</a></li>
+                                    <li><a href="./stream_mass.php">Mass Edit Streams</a></li>
                                 </ul>
                             </li>
                             <?php }
@@ -207,7 +208,7 @@
                                 <a href="javascript: void(0);"><i class="la la-play-circle-o"></i><span>Content</span><span class="menu-arrow"></span></a>
                                 <ul class="nav-second-level" aria-expanded="false">
                                     <li><a href="./streams.php">Streams</a></li>
-                                    <li><a href="#">Movies <i class="la la-exclamation-triangle"></i></a></li>
+                                    <li><a href="./movies.php">Movies</li>
                                     <li><a href="#">Series <i class="la la-exclamation-triangle"></i></a></li>
                                 </ul>
                             </li>

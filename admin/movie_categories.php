@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
 $rCategories = getCategories("movie");
@@ -17,12 +17,6 @@ if (isset($_POST["categories"])) {
                     $db->query("UPDATE `stream_categories` SET `cat_order` = ".(intval($rChildOrder)+1).", `parent_id` = ".intval($rPostCategory["id"])." WHERE `id` = ".intval($rChildCategory["id"]).";");
                     $rKeep[] = $rChildCategory["id"];
                 }
-            }
-        }
-        foreach ($rCategories as $rCategoryID => $rCategoryData) {
-            if (!in_array($rCategoryID, $rKeep)) {
-                $db->query("DELETE FROM `stream_categories` WHERE `id` = ".intval($rCategoryID).";");
-                $db->query("UPDATE `streams` SET `category_id` = 0 WHERE `category_id` = ".intval($rCategoryID).";");
             }
         }
         $rCategories = getCategories(); // Update

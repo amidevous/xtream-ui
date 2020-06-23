@@ -1,8 +1,9 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
+$rTMDBLanguages = Array("" => "Default - EN", "aa" => "Afar", "af" => "Afrikaans", "ak" => "Akan", "an" => "Aragonese", "as" => "Assamese", "av" => "Avaric", "ae" => "Avestan", "ay" => "Aymara", "az" => "Azerbaijani", "ba" => "Bashkir", "bm" => "Bambara", "bi" => "Bislama", "bo" => "Tibetan", "br" => "Breton", "ca" => "Catalan", "cs" => "Czech", "ce" => "Chechen", "cu" => "Slavic", "cv" => "Chuvash", "kw" => "Cornish", "co" => "Corsican", "cr" => "Cree", "cy" => "Welsh", "da" => "Danish", "de" => "German", "dv" => "Divehi", "dz" => "Dzongkha", "eo" => "Esperanto", "et" => "Estonian", "eu" => "Basque", "fo" => "Faroese", "fj" => "Fijian", "fi" => "Finnish", "fr" => "French", "fy" => "Frisian", "ff" => "Fulah", "gd" => "Gaelic", "ga" => "Irish", "gl" => "Galician", "gv" => "Manx", "gn" => "Guarani", "gu" => "Gujarati", "ht" => "Haitian", "ha" => "Hausa", "sh" => "Serbo-Croatian", "hz" => "Herero", "ho" => "Hiri Motu", "hr" => "Croatian", "hu" => "Hungarian", "ig" => "Igbo", "io" => "Ido", "ii" => "Yi", "iu" => "Inuktitut", "ie" => "Interlingue", "ia" => "Interlingua", "id" => "Indonesian", "ik" => "Inupiaq", "is" => "Icelandic", "it" => "Italian", "ja" => "Japanese", "kl" => "Kalaallisut", "kn" => "Kannada", "ks" => "Kashmiri", "kr" => "Kanuri", "kk" => "Kazakh", "km" => "Khmer", "ki" => "Kikuyu", "rw" => "Kinyarwanda", "ky" => "Kirghiz", "kv" => "Komi", "kg" => "Kongo", "ko" => "Korean", "kj" => "Kuanyama", "ku" => "Kurdish", "lo" => "Lao", "la" => "Latin", "lv" => "Latvian", "li" => "Limburgish", "ln" => "Lingala", "lt" => "Lithuanian", "lb" => "Letzeburgesch", "lu" => "Luba-Katanga", "lg" => "Ganda", "mh" => "Marshall", "ml" => "Malayalam", "mr" => "Marathi", "mg" => "Malagasy", "mt" => "Maltese", "mo" => "Moldavian", "mn" => "Mongolian", "mi" => "Maori", "ms" => "Malay", "my" => "Burmese", "na" => "Nauru", "nv" => "Navajo", "nr" => "Ndebele", "nd" => "Ndebele", "ng" => "Ndonga", "ne" => "Nepali", "nl" => "Dutch", "nn" => "Norwegian Nynorsk", "nb" => "Norwegian Bokmal", "no" => "Norwegian", "ny" => "Chichewa", "oc" => "Occitan", "oj" => "Ojibwa", "or" => "Oriya", "om" => "Oromo", "os" => "Ossetian; Ossetic", "pi" => "Pali", "pl" => "Polish", "pt" => "Portuguese", "qu" => "Quechua", "rm" => "Raeto-Romance", "ro" => "Romanian", "rn" => "Rundi", "ru" => "Russian", "sg" => "Sango", "sa" => "Sanskrit", "si" => "Sinhalese", "sk" => "Slovak", "sl" => "Slovenian", "se" => "Northern Sami", "sm" => "Samoan", "sn" => "Shona", "sd" => "Sindhi", "so" => "Somali", "st" => "Sotho", "es" => "Spanish", "sq" => "Albanian", "sc" => "Sardinian", "sr" => "Serbian", "ss" => "Swati", "su" => "Sundanese", "sw" => "Swahili", "sv" => "Swedish", "ty" => "Tahitian", "ta" => "Tamil", "tt" => "Tatar", "te" => "Telugu", "tg" => "Tajik", "tl" => "Tagalog", "th" => "Thai", "ti" => "Tigrinya", "to" => "Tonga", "tn" => "Tswana", "ts" => "Tsonga", "tk" => "Turkmen", "tr" => "Turkish", "tw" => "Twi", "ug" => "Uighur", "uk" => "Ukrainian", "ur" => "Urdu", "uz" => "Uzbek", "ve" => "Venda", "vi" => "Vietnamese", "vo" => "Volapük", "wa" => "Walloon", "wo" => "Wolof", "xh" => "Xhosa", "yi" => "Yiddish", "za" => "Zhuang", "zu" => "Zulu", "ab" => "Abkhazian", "zh" => "Mandarin", "ps" => "Pushto", "am" => "Amharic", "ar" => "Arabic", "bg" => "Bulgarian", "cn" => "Cantonese", "mk" => "Macedonian", "el" => "Greek", "fa" => "Persian", "he" => "Hebrew", "hi" => "Hindi", "hy" => "Armenian", "en" => "English", "ee" => "Ewe", "ka" => "Georgian", "pa" => "Punjabi", "bn" => "Bengali", "bs" => "Bosnian", "ch" => "Chamorro", "be" => "Belarusian", "yo" => "Yoruba");
 checkTable("admin_settings");
 
 if (isset($_POST["submit_settings"])) {
@@ -27,6 +28,18 @@ if (isset($_POST["submit_settings"])) {
     } else {
         $rAdminSettings["sidebar"] = false;
     }
+    if (isset($_POST["download_images"])) {
+        $rAdminSettings["download_images"] = true;
+        unset($_POST["download_images"]);
+    } else {
+        $rAdminSettings["download_images"] = false;
+    }
+    if (isset($_POST["google_2factor"])) {
+        $rAdminSettings["google_2factor"] = true;
+        unset($_POST["google_2factor"]);
+    } else {
+        $rAdminSettings["google_2factor"] = false;
+    }
     if (isset($_POST["default_entries"])) {
         $rAdminSettings["default_entries"] = $_POST["default_entries"];
     }
@@ -42,9 +55,13 @@ if (isset($_POST["submit_settings"])) {
         $rAdminSettings["forum_username"] = $_POST["forum_username"];
         unset($_POST["forum_username"]);
     }
-    if (isset($_POST["forum_password"])) {
+    if ((isset($_POST["forum_password"])) && (strlen($_POST["forum_password"]) > 0)) {
         $rAdminSettings["forum_password"] = $_POST["forum_password"];
         unset($_POST["forum_password"]);
+    }
+    if (isset($_POST["tmdb_language"])) {
+        $rAdminSettings["tmdb_language"] = $_POST["tmdb_language"];
+        unset($_POST["tmdb_language"]);
     }
     writeAdminSettings();
     foreach($_POST as $rKey => $rValue) {
@@ -207,7 +224,7 @@ if ($rSettings["sidebar"]) {
                                                                 <input type="text" placeholder="Forum Username" class="form-control" id="forum_username" name="forum_username" value="<?=$rAdminSettings["forum_username"]?>">
                                                             </div>
                                                             <div class="col-md-4">
-                                                                <input type="text" placeholder="Forum Password" class="form-control" id="forum_password" name="forum_password" value="<?=$rAdminSettings["forum_password"]?>">
+                                                                <input type="password" placeholder="<?php if (strlen($rAdminSettings["forum_password"]) > 0) { echo str_repeat("*", strlen($rAdminSettings["forum_password"])); } else { echo "Forum Password"; } ?>" class="form-control" id="forum_password" name="forum_password" value="">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -228,6 +245,32 @@ if ($rSettings["sidebar"]) {
                                                                     <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
                                                                     <?php } ?>
                                                                 </select>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="google_2factor">Two Factor Authentication <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable Two Factor Authentication using the Google Authenticator application. This will require all users use this method." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="google_2factor" id="google_2factor" type="checkbox"<?php if ($rAdminSettings["google_2factor"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="tmdb_api_key">TMDB Key</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="tmdb_api_key" name="tmdb_api_key" value="<?=$rSettings["tmdb_api_key"]?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="tmdb_language">TMDB Language <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select which language to prioritise when utilising TMDb data." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <select name="tmdb_language" id="tmdb_language" class="form-control" data-toggle="select2">
+                                                                    <?php foreach ($rTMDBLanguages as $rKey => $rLanguage) { ?>
+                                                                    <option<?php if ($rAdminSettings["tmdb_language"] == $rKey) { echo " selected"; } ?> value="<?=$rKey?>"><?=$rLanguage?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="download_images">Download Images <i data-toggle="tooltip" data-placement="top" title="" data-original-title="If this option is set, images from TMDb for example will be downloaded to the master server." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="download_images" id="download_images" type="checkbox"<?php if ($rAdminSettings["download_images"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                     </div>

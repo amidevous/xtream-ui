@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 
 if (isset($_GET["category"])) {
     if (!isset($rCategories[$_GET["category"]])) {
@@ -18,9 +18,9 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content<?php if ($rPermissions["is_reseller"]) { echo " boxed-layout"; } ?>"><div class="container-fluid">
+        <div class="content-page"><div class="content"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper<?php if ($rPermissions["is_reseller"]) { echo " boxed-layout"; } ?>"><div class="container-fluid">
+        <div class="wrapper"><div class="container-fluid">
         <?php } ?>
                 <!-- start page title -->
                 <div class="row">
@@ -69,11 +69,10 @@ if ($rSettings["sidebar"]) {
                             <div class="card-body" style="overflow-x:auto;">
                                 <div class="form-group row mb-4">
                                     <?php if ($rPermissions["is_reseller"]) { ?>
-                                    <div class="col-md-12" style="margin-bottom: 25px;">
+                                    <div class="col-md-3">
                                         <input type="text" class="form-control" id="stream_search" value="" placeholder="Search Streams...">
                                     </div>
-                                    <label class="col-md-2 col-form-label text-center" for="category_name">Category Name</label>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <select id="category_id" class="form-control" data-toggle="select2">
                                             <option value="" selected>All Categories</option>
                                             <?php foreach ($rCategories as $rCategory) { ?>
@@ -146,8 +145,8 @@ if ($rSettings["sidebar"]) {
                                         <tr style="<?php echo $background ?>">
                                             <th class="text-center">ID</th>
                                             <th>Name</th>
+                                            <th>Server</th>
                                             <th class="text-center">Current Source</th>
-                                            <th class="text-center">Server</th>
                                             <th class="text-center">Clients</th>
                                             <th class="text-center">Uptime</th>
                                             <th class="text-center">Actions</th>
@@ -287,10 +286,10 @@ if ($rSettings["sidebar"]) {
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [0,2,3,4,5,6,7,8]},
+                    {"className": "dt-center", "targets": [0,3,4,5,6,7,8]},
                     {"orderable": false, "targets": [6,7]},
                     <?php if ($rPermissions["is_reseller"]) { ?>
-                    {"visible": false, "targets": [2,5,6,7]}
+                    {"visible": false, "targets": [3,5,6,7]}
                     <?php } ?>
                 ],
                 order: [[ 0, "desc" ]],

@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_server"])) {
@@ -92,6 +92,8 @@ if (isset($_POST["submit_server"])) {
             } else {
                 $rInsertID = $db->insert_id;
             }
+			$rDifference = getTimeDifference($rInsertID);
+			$db->query("UPDATE `streaming_servers` SET `diff_time_main` = ".intval($rDifference)." WHERE `id` = ".intval($rInsertID).";");
             $_STATUS = 0;
             $rServers = getStreamingServers();
             if (!isset($_GET["id"])) {
@@ -241,7 +243,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <label class="col-md-4 col-form-label" for="diff_time_main">Time Difference - Seconds</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="diff_time_main" name="diff_time_main" value="<?php if (isset($rServerArr)) { echo $rServerArr["diff_time_main"]; } else { echo "0"; } ?>">
+                                                                <input type="text" disabled class="form-control" id="diff_time_main" name="diff_time_main" value="<?php if (isset($rServerArr)) { echo $rServerArr["diff_time_main"]; } else { echo "0"; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

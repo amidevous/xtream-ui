@@ -1,6 +1,6 @@
 <?php
 include "functions.php";
-if (!isset($_SESSION['user_id'])) { header("Location: ./login.php"); exit; }
+if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_category"])) {
@@ -122,17 +122,6 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="category_name">Category Name</label>
                                                             <div class="col-md-8">
                                                                 <input type="text" class="form-control" id="category_name" name="category_name" value="<?php if (isset($rCategoryArr)) { echo $rCategoryArr["category_name"]; } ?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="parent">Parent</label>
-                                                            <div class="col-md-8">
-                                                                <select name="parent_id" id="parent_id" class="form-control" data-toggle="select2">
-                                                                    <option <?php if (isset($rCategoryArr)) { if (intval($rCategoryArr["parent_id"]) == 0) { echo "selected "; } } ?>value="0">No Parent Category</option>
-                                                                    <?php foreach ($rCategories as $rCategory) { ?>
-                                                                    <option <?php if (isset($rCategoryArr)) { if (intval($rCategoryArr["parent_id"]) == intval($rCategory["id"])) { echo "selected "; } } ?>value="<?=$rCategory["id"]?>"><?=$rCategory["category_name"]?></option>
-                                                                    <?php } ?>
-                                                                </select>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
