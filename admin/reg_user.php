@@ -18,6 +18,16 @@ if (isset($_POST["submit_user"])) {
         $_STATUS = 1;
     }
     if (!isset($_STATUS)) {
+        $rOverride = Array();
+        foreach($_POST as $rKey => $rValue) {
+            if (substr($rKey, 0, 9) == "override_") {
+                $rID = intval(explode("override_", $rKey)[1]);
+                $rCredits = $rValue;
+                $rOverride[$rID] = Array("assign" => 1, "official_credits" => $rCredits);
+                unset($_POST[$rKey]);
+            }
+        }
+        $rArray["override_packages"] = json_encode($rOverride);
         if (isset($_POST["verified"])) {
             $rArray["verified"] = 1;
             unset($_POST["verified"]);
@@ -139,6 +149,12 @@ if ($rSettings["sidebar"]) {
                                                     <span class="d-none d-sm-inline">Details</span>
                                                 </a>
                                             </li>
+                                            <li class="nav-item">
+                                                <a href="#package-override" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <i class="mdi mdi-package mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Package Override</span>
+                                                </a>
+                                            </li>
                                         </ul>
                                         <div class="tab-content b-0 mb-0 pt-0">
                                             <div class="tab-pane" id="user-details">
@@ -214,7 +230,51 @@ if ($rSettings["sidebar"]) {
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
-                                                    <li class="next list-inline-item float-right">
+                                                    <li class="list-inline-item float-right">
+                                                        <input name="submit_user" type="submit" class="btn btn-primary" value="<?php if (isset($rUser)) { echo "Edit"; } else { echo "Add"; } ?> User" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="package-override">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <p class="sub-header">
+                                                            Leave the override cell blank to disable package override for the selected package.
+                                                        </p>
+                                                        <table class="table table-centered mb-0">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th class="text-center">#</th>
+                                                                    <th>Package</th>
+                                                                    <th class="text-center">Credits</th>
+                                                                    <th class="text-center">Override</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <?php
+                                                                if (isset($rUser)) {
+                                                                    $rOverride = json_decode($rUser["override_packages"], True);
+                                                                } else {
+                                                                    $rOverride = Array();
+                                                                }
+                                                                foreach (getPackages() as $rPackage) {
+                                                                if ($rPackage["is_official"]) { ?>
+                                                                <tr>
+                                                                    <td class="text-center"><?=$rPackage["id"]?></td>
+                                                                    <td><?=$rPackage["package_name"]?></td>
+                                                                    <td class="text-center"><?=$rPackage["official_credits"]?></td>
+                                                                    <td align="center">
+                                                                        <input onkeypress="return isNumberKey(event)" name="override_<?=$rPackage["id"]?>" type="text" value="<?php if (isset($rOverride[$rPackage["id"]])) { echo $rOverride[$rPackage["id"]]["official_credits"]; } ?>" style="width:100px;" class="text-center" />
+                                                                    </td>
+                                                                </tr>
+                                                                <?php }
+                                                                } ?>
+                                                            </tbody>
+                                                        </table><br/><br/>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="list-inline-item float-right">
                                                         <input name="submit_user" type="submit" class="btn btn-primary" value="<?php if (isset($rUser)) { echo "Edit"; } else { echo "Add"; } ?> User" />
                                                     </li>
                                                 </ul>
@@ -248,6 +308,7 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/select2/select2.min.js"></script>
         <script src="assets/libs/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
         <script src="assets/libs/bootstrap-maxlength/bootstrap-maxlength.min.js"></script>
+        <script src="assets/libs/jquery-tabledit/jquery.tabledit.min.js"></script>
         <script src="assets/libs/clockpicker/bootstrap-clockpicker.min.js"></script>
         <script src="assets/libs/moment/moment.min.js"></script>
         <script src="assets/libs/daterangepicker/daterangepicker.js"></script>

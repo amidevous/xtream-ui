@@ -20,7 +20,7 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
-                                        <button type="button" class="btn btn-dark waves-effect waves-light btn-sm" onClick="forceUpdate();">
+                                        <button type="button" class="btn btn-dark waves-effect waves-light btn-sm" onClick="forceUpdate();" id="force_update">
                                             <i class="mdi mdi-refresh"></i> Force EPG Reload
                                         </button>
                                         <a href="epg.php">
@@ -126,9 +126,11 @@ if ($rSettings["sidebar"]) {
         }
         
         function forceUpdate() {
+			$("#force_update").attr("disabled", true);
             $.toast("Updating EPG in the background...");
             $.getJSON("./api.php?action=force_epg", function(data) {
                 $.toast("EPG update complete!");
+				$("#force_update").attr("disabled", false);
             });
         }
         

@@ -58,7 +58,6 @@ if ($rSettings["sidebar"]) {
                                             <td class="text-center"><?=date("Y-m-d", $rIP["date"])?></td>
                                             <td class="text-center"><?=$rIP["attempts_blocked"]?></td>
                                             <td class="text-center">
-                                                <a href="./useragent.php?id=<?=$rIP["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                                                 <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rIP["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
                                             </td>
                                         </tr>
@@ -105,18 +104,22 @@ if ($rSettings["sidebar"]) {
             if (rType == "delete") {
                 if (confirm('Are you sure you want to delete this IP? This cannot be undone!') == false) {
                     return;
-                }
-            }
-            $.getJSON("./api.php?action=ip&sub=" + rType + "&ip=" + rID, function(data) {
-                if (data.result === true) {
-                    if (rType == "delete") {
+                } else {
+					$.toast("The IP is being unblocked from each server...");
+					if (rType == "delete") {
                         $("#ip-" + rID).remove();
-                        $.toast("IP successfully deleted.");
                     }
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
                     });
-                    $('[data-toggle="tooltip"]').tooltip();
+					$('[data-toggle="tooltip"]').tooltip();
+				}
+            }
+            $.getJSON("./api.php?action=ip&sub=" + rType + "&ip=" + rID, function(data) {
+                if (data.result === true) {
+                    if (rType == "delete") {
+                        $.toast("IP successfully deleted.");
+                    }
                 } else {
                     $.toast("An error occured while processing your request.");
                 }

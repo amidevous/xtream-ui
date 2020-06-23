@@ -170,6 +170,8 @@ if ($rSettings["sidebar"]) {
                         $.toast("User has been enabled.");
                     } else if (rType == "disable") {
                         $.toast("User has been disabled.");
+					} else if (rType == "reset") {
+                        $.toast("Two factor authentication has been reset for this user.");
                     }
                     $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload(null, false);
@@ -223,6 +225,7 @@ if ($rSettings["sidebar"]) {
             $('#datatable-users').DataTable().search($("#reg_search").val());
             $('#datatable-users').DataTable().page.len($('#reg_show_entries').val());
             $("#datatable-users").DataTable().page(0).draw('page');
+            $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-users").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
@@ -278,11 +281,13 @@ if ($rSettings["sidebar"]) {
             });
             $('#reg_filter').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });
             $('#reg_reseller').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });

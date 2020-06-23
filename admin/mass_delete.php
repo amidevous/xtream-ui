@@ -2,6 +2,9 @@
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
+set_time_limit(0);
+ini_set('max_execution_time', 0);
+
 if (isset($_POST["submit_streams"])) {
     $rStreams = json_decode($_POST["streams"], True);
     foreach ($rStreams as $rStream) {
@@ -17,7 +20,7 @@ if (isset($_POST["submit_movies"])) {
         $result = $db->query("SELECT `server_id` FROM `streams_sys` WHERE `stream_id` = ".intval($rMovie).";");
         if (($result) && ($result->num_rows > 0)) {
             while ($row = $result->fetch_assoc()) {
-                deleteMovieFile($row["server_id"], $rStreamID);
+                deleteMovieFile($row["server_id"], $rMovie);
             }
         }
         $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".intval($rMovie).";");
@@ -35,6 +38,44 @@ if (isset($_POST["submit_users"])) {
         $db->query("DELETE FROM `mag_devices` WHERE `user_id` = ".intval($rUser).";");
     }
     $_STATUS = 2;
+}
+
+if (isset($_POST["submit_series"])) {
+    $rSeries = json_decode($_POST["series"], True);
+    foreach ($rSeries as $rSerie) {
+        $db->query("DELETE FROM `series` WHERE `id` = ".intval($rSerie).";");
+        $rResult = $db->query("SELECT `stream_id` FROM `series_episodes` WHERE `series_id` = ".intval($rSerie).";");
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rResultB = $db->query("SELECT `server_id` FROM `streams_sys` WHERE `stream_id` = ".intval($rRow["stream_id"]).";");
+                if (($rResultB) && ($rResultB->num_rows > 0)) {
+                    while ($rRowB = $rResultB->fetch_assoc()) {
+                        deleteMovieFile($rRowB["server_id"], $rRow["stream_id"]);
+                    }
+                }
+                $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".intval($rRow["stream_id"]).";");
+                $db->query("DELETE FROM `streams` WHERE `id` = ".intval($rRow["stream_id"]).";");
+            }
+            $db->query("DELETE FROM `series_episodes` WHERE `series_id` = ".intval($rSerie).";");
+        }
+    }
+    scanBouquets();
+    $_STATUS = 3;
+}
+
+if (isset($_POST["submit_episodes"])) {
+    $rEpisodes = json_decode($_POST["episodes"], True);
+    foreach ($rEpisodes as $rEpisode) {
+        $result = $db->query("SELECT `server_id` FROM `streams_sys` WHERE `stream_id` = ".intval($rEpisode).";");
+        if (($result) && ($result->num_rows > 0)) {
+            while ($row = $result->fetch_assoc()) {
+                deleteMovieFile($row["server_id"], $rEpisode);
+            }
+        }
+        $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".intval($rEpisode).";");
+        $db->query("DELETE FROM `streams` WHERE `id` = ".intval($rEpisode).";");
+    }
+    $_STATUS = 4;
 }
 
 if ((isset($_POST["submit_streams"])) OR (isset($_POST["submit_movies"]))) {
@@ -83,6 +124,20 @@ if ($rSettings["sidebar"]) {
                             </button>
                             Mass user delete was successfully executed!
                         </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 3)) { ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            Mass series delete was successfully executed!
+                        </div>
+                        <?php } else if ((isset($_STATUS)) && ($_STATUS == 4)) { ?>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            Mass episode delete was successfully executed!
+                        </div>
                         <?php } ?>
                         <div class="card">
                             <div class="card-body">
@@ -98,6 +153,18 @@ if ($rSettings["sidebar"]) {
                                             <a href="#movie-selection" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                 <i class="mdi mdi-account-card-details-outline mr-1"></i>
                                                 <span class="d-none d-sm-inline">Movies</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="#series-selection" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
+                                                <i class="mdi mdi-youtube-tv mr-1"></i>
+                                                <span class="d-none d-sm-inline">Series</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="#episodes-selection" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
+                                                <i class="mdi mdi-folder-open-outline mr-1"></i>
+                                                <span class="d-none d-sm-inline">Episodes</span>
                                             </a>
                                         </li>
                                         <li class="nav-item">
@@ -206,6 +273,107 @@ if ($rSettings["sidebar"]) {
                                                 <ul class="list-inline wizard mb-0" style="margin-top:20px;">
                                                     <li class="list-inline-item float-right">
                                                         <input name="submit_movies" type="submit" class="btn btn-primary" value="Delete Movies" />
+                                                    </li>
+                                                </ul>
+                                            </form>
+                                        </div>
+                                        <div class="tab-pane" id="series-selection">
+                                            <form action="./mass_delete.php" method="POST" id="series_form">
+                                                <input type="hidden" name="series" id="series" value="" />
+                                                <div class="row">
+                                                    <div class="col-md-6 col-6">
+                                                        <input type="text" class="form-control" id="series_search" value="" placeholder="Search Series...">
+                                                    </div>
+                                                    <div class="col-md-3 col-6">
+                                                        <select id="series_category_search" class="form-control" data-toggle="select2">
+                                                            <option value="" selected>All Categories</option>
+                                                            <?php foreach (getCategories("series") as $rCategory) { ?>
+                                                            <option value="<?=$rCategory["id"]?>"<?php if ((isset($_GET["category"])) && ($_GET["category"] == $rCategory["id"])) { echo " selected"; } ?>><?=$rCategory["category_name"]?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-2 col-8">
+                                                        <select id="series_show_entries" class="form-control" data-toggle="select2">
+                                                            <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
+                                                            <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-1 col-2">
+                                                        <button type="button" class="btn btn-info waves-effect waves-light" onClick="toggleSeries()">
+                                                            <i class="mdi mdi-selection"></i>
+                                                        </button>
+                                                    </div>
+                                                    <table id="datatable-md4" class="table table-borderless mb-0">
+                                                        <thead class="bg-light">
+                                                            <tr>
+                                                                <th class="text-center">ID</th>
+                                                                <th>Series Name</th>
+                                                                <th>Category</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody></tbody>
+                                                    </table>
+                                                </div>
+                                                <ul class="list-inline wizard mb-0" style="margin-top:20px;">
+                                                    <li class="list-inline-item float-right">
+                                                        <input name="submit_series" type="submit" class="btn btn-primary" value="Delete Series" />
+                                                    </li>
+                                                </ul>
+                                            </form>
+                                        </div>
+                                        <div class="tab-pane" id="episodes-selection">
+                                            <form action="./mass_delete.php" method="POST" id="episodes_form">
+                                                <input type="hidden" name="episodes" id="episodes" value="" />
+                                                <div class="row">
+                                                    <div class="col-md-3 col-6">
+                                                        <input type="text" class="form-control" id="episode_search" value="" placeholder="Search Episodes...">
+                                                    </div>
+                                                    <div class="col-md-3 col-6">
+                                                        <select id="episode_series" class="form-control" data-toggle="select2">
+                                                            <option value="">All Series</option>
+															<?php foreach (getSeries() as $rSerie) { ?>
+															<option value="<?=$rSerie["id"]?>"><?=$rSerie["title"]?></option>
+															<?php } ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3 col-6">
+                                                        <select id="episode_filter" class="form-control" data-toggle="select2">
+                                                            <option value="" selected>No Filter</option>
+                                                            <option value="1">Encoded</option>
+                                                            <option value="2">Encoding</option>
+                                                            <option value="3">Down</option>
+                                                            <option value="4">Ready</option>
+                                                            <option value="5">Direct</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-2 col-8">
+                                                        <select id="episode_show_entries" class="form-control" data-toggle="select2">
+                                                            <?php foreach (Array(10, 25, 50, 250, 500, 1000) as $rShow) { ?>
+                                                            <option<?php if ($rAdminSettings["default_entries"] == $rShow) { echo " selected"; } ?> value="<?=$rShow?>"><?=$rShow?></option>
+                                                            <?php } ?>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-1 col-2">
+                                                        <button type="button" class="btn btn-info waves-effect waves-light" onClick="toggleEpisodes()">
+                                                            <i class="mdi mdi-selection"></i>
+                                                        </button>
+                                                    </div>
+                                                    <table id="datatable-md5" class="table table-borderless mb-0">
+                                                        <thead class="bg-light">
+                                                            <tr>
+                                                                <th class="text-center">ID</th>
+                                                                <th>Episode Name</th>
+                                                                <th>Series</th>
+                                                                <th class="text-center">Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody></tbody>
+                                                    </table>
+                                                </div>
+                                                <ul class="list-inline wizard mb-0" style="margin-top:20px;">
+                                                    <li class="list-inline-item float-right">
+                                                        <input name="submit_episodes" type="submit" class="btn btn-primary" value="Delete Episodes" />
                                                     </li>
                                                 </ul>
                                             </form>
@@ -326,6 +494,8 @@ if ($rSettings["sidebar"]) {
         <script>
         var rStreams = [];
         var rMovies = [];
+        var rSeries = [];
+        var rEpisodes = [];
         var rUsers = [];
         
         function getStreamCategory() {
@@ -334,11 +504,20 @@ if ($rSettings["sidebar"]) {
         function getMovieCategory() {
             return $("#movie_category_search").val();
         }
+        function getSeriesCategory() {
+            return $("#series_category_search").val();
+        }
         function getMovieFilter() {
             return $("#movie_filter").val();
         }
         function getUserFilter() {
             return $("#user_filter").val();
+        }
+        function getEpisodeFilter() {
+            return $("#episode_filter").val();
+        }
+        function getEpisodeSeries() {
+            return $("#episode_series").val();
         }
         function getReseller() {
             return $("#reseller_search").val();
@@ -370,6 +549,36 @@ if ($rSettings["sidebar"]) {
                     $(this).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     if ($(this).find("td:eq(0)").html()) {
                         window.rMovies.push($(this).find("td:eq(0)").html());
+                    }
+                }
+            });
+        }
+        function toggleSeries() {
+            $("#datatable-md4 tr").each(function() {
+                if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rSeries.splice($.inArray($(this).find("td:eq(0)").html(), window.rSeries), 1);
+                    }
+                } else {            
+                    $(this).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rSeries.push($(this).find("td:eq(0)").html());
+                    }
+                }
+            });
+        }
+        function toggleEpisodes() {
+            $("#datatable-md5 tr").each(function() {
+                if ($(this).hasClass('selected')) {
+                    $(this).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rEpisodes.splice($.inArray($(this).find("td:eq(0)").html(), window.rEpisodes), 1);
+                    }
+                } else {            
+                    $(this).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                    if ($(this).find("td:eq(0)").html()) {
+                        window.rEpisodes.push($(this).find("td:eq(0)").html());
                     }
                 }
             });
@@ -419,6 +628,20 @@ if ($rSettings["sidebar"]) {
                     $.toast("Select at least one movie to delete.");
                 }
             });
+            $("#series_form").submit(function(e){
+                $("#series").val(JSON.stringify(window.rSeries));
+                if (window.rSeries.length == 0) {
+                    e.preventDefault();
+                    $.toast("Select at least one series to delete.");
+                }
+            });
+            $("#episodes_form").submit(function(e){
+                $("#episodes").val(JSON.stringify(window.rEpisodes));
+                if (window.rEpisodes.length == 0) {
+                    e.preventDefault();
+                    $.toast("Select at least one episode to delete.");
+                }
+            });
             $("#user_form").submit(function(e){
                 $("#users").val(JSON.stringify(window.rUsers));
                 if (window.rUsers.length == 0) {
@@ -455,7 +678,7 @@ if ($rSettings["sidebar"]) {
                     {"className": "dt-center", "targets": [0]}
                 ],
                 "rowCallback": function(row, data) {
-                    if ($.inArray(data[0], window.rSelected) !== -1) {
+                    if ($.inArray(data[0], window.rStreams) !== -1) {
                         $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
@@ -494,7 +717,7 @@ if ($rSettings["sidebar"]) {
                     {"className": "dt-center", "targets": [0,3]}
                 ],
                 "rowCallback": function(row, data) {
-                    if ($.inArray(data[0], window.rSelected) !== -1) {
+                    if ($.inArray(data[0], window.rMovies) !== -1) {
                         $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
@@ -512,7 +735,86 @@ if ($rSettings["sidebar"]) {
             $('#movie_filter').change(function(){
                 rTable.ajax.reload( null, false );
             })
-            
+            gTable = $("#datatable-md4").DataTable({
+                language: {
+                    paginate: {
+                        previous: "<i class='mdi mdi-chevron-left'>",
+                        next: "<i class='mdi mdi-chevron-right'>"
+                    }
+                },
+                drawCallback: function() {
+                    $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+                },
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "./table_search.php",
+                    "data": function(d) {
+                        d.id = "series_list",
+                        d.category = getSeriesCategory()
+                    }
+                },
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0]}
+                ],
+                "rowCallback": function(row, data) {
+                    if ($.inArray(data[0], window.rSeries) !== -1) {
+                        $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                    }
+                },
+                pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>
+            });
+            $('#series_search').keyup(function(){
+                gTable.search($(this).val()).draw();
+            })
+            $('#series_show_entries').change(function(){
+                gTable.page.len($(this).val()).draw();
+            })
+            $('#series_category_search').change(function(){
+                gTable.ajax.reload(null, false);
+            })
+            eTable = $("#datatable-md5").DataTable({
+                language: {
+                    paginate: {
+                        previous: "<i class='mdi mdi-chevron-left'>",
+                        next: "<i class='mdi mdi-chevron-right'>"
+                    }
+                },
+                drawCallback: function() {
+                    $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+                },
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: "./table_search.php",
+                    "data": function(d) {
+                        d.id = "episode_list",
+                        d.series = getEpisodeSeries(),
+                        d.filter = getEpisodeFilter()
+                    }
+                },
+                columnDefs: [
+                    {"className": "dt-center", "targets": [0,3]}
+                ],
+                "rowCallback": function(row, data) {
+                    if ($.inArray(data[0], window.rSeries) !== -1) {
+                        $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                    }
+                },
+                pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>
+            });
+            $('#episode_search').keyup(function(){
+                eTable.search($(this).val()).draw();
+            })
+            $('#episode_show_entries').change(function(){
+                eTable.page.len($(this).val()).draw();
+            })
+            $('#episode_series').change(function(){
+                eTable.ajax.reload(null, false);
+            })
+            $('#episode_filter').change(function(){
+                eTable.ajax.reload( null, false );
+            })
             uTable = $("#datatable-md3").DataTable({
                 language: {
                     paginate: {
@@ -539,7 +841,7 @@ if ($rSettings["sidebar"]) {
                     {"visible": false, "targets": [2,5,8,10,11]}
                 ],
                 "rowCallback": function(row, data) {
-                    if ($.inArray(data[0], window.rSelected) !== -1) {
+                    if ($.inArray(data[0], window.rUsers) !== -1) {
                         $(row).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                     }
                 },
@@ -557,7 +859,6 @@ if ($rSettings["sidebar"]) {
             $('#user_filter').change(function(){
                 uTable.ajax.reload( null, false );
             })
-            
             $("#datatable-md1").selectable({
                 filter: 'tr',
                 selected: function (event, ui) {
@@ -579,6 +880,30 @@ if ($rSettings["sidebar"]) {
                     } else {            
                         $(ui.selected).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
                         window.rMovies.push($(ui.selected).find("td:eq(0)").html());
+                    }
+                }
+            });
+            $("#datatable-md4").selectable({
+                filter: 'tr',
+                selected: function (event, ui) {
+                    if ($(ui.selected).hasClass('selectedfilter')) {
+                        $(ui.selected).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                        window.rSeries.splice($.inArray($(ui.selected).find("td:eq(0)").html(), window.rSeries), 1);
+                    } else {            
+                        $(ui.selected).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                        window.rSeries.push($(ui.selected).find("td:eq(0)").html());
+                    }
+                }
+            });
+            $("#datatable-md5").selectable({
+                filter: 'tr',
+                selected: function (event, ui) {
+                    if ($(ui.selected).hasClass('selectedfilter')) {
+                        $(ui.selected).removeClass('selectedfilter').removeClass('ui-selected').removeClass("selected");
+                        window.rEpisodes.splice($.inArray($(ui.selected).find("td:eq(0)").html(), window.rEpisodes), 1);
+                    } else {            
+                        $(ui.selected).addClass('selectedfilter').addClass('ui-selected').addClass("selected");
+                        window.rEpisodes.push($(ui.selected).find("td:eq(0)").html());
                     }
                 }
             });

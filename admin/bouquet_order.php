@@ -119,31 +119,20 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <p class="sub-header">
-                                                            To re-order a stream, drag it up or down the list using the order column. Click individual stream names to select multiple. Click Save Changes at the bottom once finished.
+                                                            To re-order a stream, select it and use the <i class="mdi mdi-chevron-up"></i> and <i class="mdi mdi-chevron-down"></i> buttons to move it. Select multiple by dragging or using CTRL. Click Save Changes at the bottom once finished.
                                                         </p>
-                                                        <table id="datatable-md1" class="table table-borderless mb-0">
-                                                            <thead class="bg-light">
-                                                                <tr>
-                                                                    <th class="text-center">Order</th>
-                                                                    <th>Stream Name</th>
-                                                                    <th>Category</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php $i = 0; foreach ($rOrdered["stream"] as $rStream) { $i ++; ?>
-                                                                <tr data-id="<?=$rStream["id"]?>">
-                                                                    <td class="text-center"><?=$i?></td>
-                                                                    <td><?=$rStream["stream_display_name"]?></td>
-                                                                    <td><?=$rStream["category_name"]?></td>
-                                                                </tr>
-                                                                <?php } ?>
-                                                            </tbody>
-                                                        </table>
+                                                        <select multiple id="sort_stream" class="form-control" style="min-height:400px;">
+                                                        <?php foreach ($rOrdered["stream"] as $rStream) { ?>
+                                                            <option value="<?=$rStream["id"]?>"><?=$rStream["stream_display_name"]?></option>
+                                                        <?php } ?>
+                                                        </select>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0 add-margin-top-20">
                                                     <li class="list-inline-item">
-                                                       <a href="javascript: void(0);" onClick="AtoZ('stream')" class="btn btn-info">Sort All A to Z</a>
+                                                        <a href="javascript: void(0);" onClick="MoveUp('stream')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveDown('stream')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('stream')" class="btn btn-info">Sort All A to Z</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
@@ -154,31 +143,20 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <p class="sub-header">
-                                                            To re-order a movie, drag it up or down the list using the order column. Click individual movie names to select multiple. Click Save Changes at the bottom once finished.
+                                                            To re-order a movie, select it and use the <i class="mdi mdi-chevron-up"></i> and <i class="mdi mdi-chevron-down"></i> buttons to move it. Select multiple by dragging or using CTRL. Click Save Changes at the bottom once finished.
                                                         </p>
-                                                        <table id="datatable-md2" class="table table-borderless mb-0">
-                                                            <thead class="bg-light">
-                                                                <tr>
-                                                                    <th class="text-center">Order</th>
-                                                                    <th>Movie Name</th>
-                                                                    <th>Category</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php $i = 0; foreach ($rOrdered["movie"] as $rStream) { $i ++; ?>
-                                                                <tr data-id="<?=$rStream["id"]?>">
-                                                                    <td class="text-center"><?=$i?></td>
-                                                                    <td><?=$rStream["stream_display_name"]?></td>
-                                                                    <td><?=$rStream["category_name"]?></td>
-                                                                </tr>
-                                                                <?php } ?>
-                                                            </tbody>
-                                                        </table>
+                                                        <select multiple id="sort_movie" class="form-control" style="min-height:400px;">
+                                                        <?php foreach ($rOrdered["movie"] as $rStream) { ?>
+                                                            <option value="<?=$rStream["id"]?>"><?=$rStream["stream_display_name"]?></option>
+                                                        <?php } ?>
+                                                        </select>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0 add-margin-top-20">
                                                     <li class="list-inline-item">
-                                                       <a href="javascript: void(0);" onClick="AtoZ('movie')" class="btn btn-info">Sort All A to Z</a>
+                                                        <a href="javascript: void(0);" onClick="MoveUp('movie')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveDown('movie')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('movie')" class="btn btn-info">Sort All A to Z</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
@@ -189,31 +167,20 @@ if ($rSettings["sidebar"]) {
                                                 <div class="row">
                                                     <div class="col-12">
                                                         <p class="sub-header">
-                                                            To re-order a movie, drag it up or down the list using the order column. Click individual movie names to select multiple. Click Save Changes at the bottom once finished.
+                                                            To re-order a series, select it and use the <i class="mdi mdi-chevron-up"></i> and <i class="mdi mdi-chevron-down"></i> buttons to move it. Select multiple by dragging or using CTRL. Click Save Changes at the bottom once finished.
                                                         </p>
-                                                        <table id="datatable-md3" class="table table-borderless mb-0">
-                                                            <thead class="bg-light">
-                                                                <tr>
-                                                                    <th class="text-center">Order</th>
-                                                                    <th>Movie Name</th>
-                                                                    <th>Category</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                <?php $i = 0; foreach ($rOrdered["series"] as $rStream) { $i ++; ?>
-                                                                <tr data-id="<?=$rStream["id"]?>">
-                                                                    <td class="text-center"><?=$i?></td>
-                                                                    <td><?=$rStream["title"]?></td>
-                                                                    <td><?=$rStream["category_name"]?></td>
-                                                                </tr>
-                                                                <?php } ?>
-                                                            </tbody>
-                                                        </table>
+                                                        <select multiple id="sort_series" class="form-control" style="min-height:400px;">
+                                                        <?php foreach ($rOrdered["series"] as $rStream) { ?>
+                                                            <option value="<?=$rStream["id"]?>"><?=$rStream["stream_display_name"]?></option>
+                                                        <?php } ?>
+                                                        </select>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0 add-margin-top-20">
                                                     <li class="list-inline-item">
-                                                       <a href="javascript: void(0);" onClick="AtoZ('series')" class="btn btn-info">Sort All A to Z</a>
+                                                        <a href="javascript: void(0);" onClick="MoveUp('series')" class="btn btn-purple"><i class="mdi mdi-chevron-up"></i></a>
+                                                        <a href="javascript: void(0);" onClick="MoveDown('series')" class="btn btn-purple"><i class="mdi mdi-chevron-down"></i></a>
+                                                        <a href="javascript: void(0);" onClick="AtoZ('series')" class="btn btn-info">Sort All A to Z</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
                                                         <button type="submit" class="btn btn-primary waves-effect waves-light">Save Changes</button>
@@ -273,161 +240,39 @@ if ($rSettings["sidebar"]) {
         
         <script>
         function AtoZ(rType) {
-            $.getJSON("./api.php?action=sort_bouquet&bouquet_id=<?=$rBouquet["id"]?>&type=" + rType, function(rData) {
-                if (rData.result === true) {
-                    location.reload();
-                }
-            });
+            $("#sort_" + rType).append($("#sort_" + rType + " option").remove().sort(function(a, b) {
+                var at = $(a).text().toUpperCase(), bt = $(b).text().toUpperCase();
+                return (at > bt) ? 1 : ((at < bt) ? -1 : 0);
+            }));
         }
-        function fixTables() {
-            $($.fn.dataTable.tables(true)).css('width', '100%');
-            $($.fn.dataTable.tables(true)).DataTable().columns.adjust().draw();
+        function MoveUp(rType) {
+            var rSelected = $('#sort_' + rType + ' option:selected');
+            if (rSelected.length) {
+                var rPrevious = rSelected.first().prev()[0];
+                if ($(rPrevious).html() != '') {
+                    rSelected.first().prev().before(rSelected);
+                }
+            }
+        }
+        function MoveDown(rType) {
+            var rSelected = $('#sort_' + rType + ' option:selected');
+            if (rSelected.length) {
+                rSelected.last().next().after(rSelected);
+            }
         }
         $(document).ready(function() {
-            $(".nav li").click(function() {
-                setTimeout(fixTables, 100); // Temporary fix.
-            });
             $("#bouquet_order_form").submit(function(e){
                 var rOrder = {"stream": [], "movie": [], "series": []};
-                $("#datatable-md1 tr").each(function() {
-                    if ($(this).data("id")) {
-                        rOrder["stream"].push($(this).data("id"));
-                    }
+                $('#sort_stream option').each(function() {
+                    rOrder["stream"].push($(this).val());
                 });
-                $("#datatable-md2 tr").each(function() {
-                    if ($(this).data("id")) {
-                        rOrder["movie"].push($(this).data("id"));
-                    }
+                $('#sort_movie option').each(function() {
+                    rOrder["movie"].push($(this).val());
                 });
-                $("#datatable-md3.order-series tr").each(function() {
-                    if ($(this).data("id")) {
-                        rOrder["series"].push($(this).data("id"));
-                    }
+                $('#sort_series option').each(function() {
+                    rOrder["series"].push($(this).val());
                 });
                 $("#stream_order_array").val(JSON.stringify(rOrder));
-            });
-            $("#datatable-md1").DataTable({
-                "paging"            : false,
-                "info"              : false,
-                "responsive"        : false,
-                "scrollY"           : "500px",
-                "scrollX"           : true,
-                "processing"        : true,
-                "autoWidth"         : false,
-                responsive: {
-                    details: false
-                },
-                "searching"         : false,
-                "lengthChange"      : false,
-                "dom"               : '<"toolbar">Bfrtip',
-                "buttons"           :  [],
-                select: {
-                    style:    'multi+shift'
-                },
-                rowReorder: {
-                    snapX : true,
-                    selector : 'td.reorder',
-                    placeholder : "sortable-placeholder"
-                },
-                "drawCallback": function ( settings ) {
-                    
-                },
-                "createdRow": function ( row, data, index ) {
-                    $(row).addClass('otb-block-table-tr');
-                },
-                columnDefs: [
-                    {orderable: true, targets: 0, className: 'reorder'},
-                    {orderable: false, targets: '_all' }
-                ],
-            }).on( 'row-reorder', function ( e, diff, edit ) {
-                for (var i=0, ien=diff.length ; i<ien ; i++) {
-                    $(diff[i].node).addClass("reordered");
-                }
-                if (diff.length > 0) {
-                    $.toast("Rows re-ordered!");
-                }
-            });
-            $("#datatable-md2").DataTable({
-                "paging"            : false,
-                "info"              : false,
-                "responsive"        : false,
-                "scrollY"           : "500px",
-                "scrollX"           : true,
-                "processing"        : true,
-                "autoWidth"         : false,
-                responsive: {
-                    details: false
-                },
-                "searching"         : false,
-                "lengthChange"      : false,
-                "dom"               : '<"toolbar">Bfrtip',
-                "buttons"           :  [],
-                select: {
-                    style:    'multi+shift'
-                },
-                rowReorder: {
-                    snapX : true,
-                    selector : 'td.reorder',
-                    placeholder : "sortable-placeholder"
-                },
-                "drawCallback": function ( settings ) {
-                    
-                },
-                "createdRow": function ( row, data, index ) {
-                    $(row).addClass('otb-block-table-tr');
-                },
-                columnDefs: [
-                    {orderable: true, targets: 0, className: 'reorder'},
-                    {orderable: false, targets: '_all' }
-                ],
-            }).on( 'row-reorder', function ( e, diff, edit ) {
-                for (var i=0, ien=diff.length ; i<ien ; i++) {
-                    $(diff[i].node).addClass("reordered");
-                }
-                if (diff.length > 0) {
-                    $.toast("Rows re-ordered!");
-                }
-            });
-            $("#datatable-md3").DataTable({
-                "paging"            : false,
-                "info"              : false,
-                "responsive"        : false,
-                "scrollY"           : "500px",
-                "scrollX"           : true,
-                "processing"        : true,
-                "autoWidth"         : false,
-                responsive: {
-                    details: false
-                },
-                "searching"         : false,
-                "lengthChange"      : false,
-                "dom"               : '<"toolbar">Bfrtip',
-                "buttons"           :  [],
-                select: {
-                    style:    'multi+shift'
-                },
-                rowReorder: {
-                    snapX : true,
-                    selector : 'td.reorder',
-                    placeholder : "sortable-placeholder"
-                },
-                "drawCallback": function ( settings ) {
-                    
-                },
-                "createdRow": function ( row, data, index ) {
-                    $(row).addClass('otb-block-table-tr');
-                },
-                columnDefs: [
-                    {orderable: true, targets: 0, className: 'reorder'},
-                    {orderable: false, targets: '_all' }
-                ],
-            }).on( 'row-reorder', function ( e, diff, edit ) {
-                for (var i=0, ien=diff.length ; i<ien ; i++) {
-                    $(diff[i].node).addClass("reordered");
-                }
-                if (diff.length > 0) {
-                    $.toast("Rows re-ordered!");
-                }
             });
         });
         </script>

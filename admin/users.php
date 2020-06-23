@@ -370,6 +370,7 @@ if ($rSettings["sidebar"]) {
             $('#datatable-users').DataTable().search($("#user_search").val());
             $('#datatable-users').DataTable().page.len($('#user_show_entries').val());
             $("#datatable-users").DataTable().page(0).draw('page');
+            $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-users").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
@@ -426,11 +427,13 @@ if ($rSettings["sidebar"]) {
             });
             $('#user_filter').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });
             $('#user_reseller').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });

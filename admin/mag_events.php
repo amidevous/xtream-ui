@@ -90,6 +90,7 @@ if ($rSettings["sidebar"]) {
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
                     });
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable").DataTable().ajax.reload(null, false);
                 } else {
                     $.toast("An error occured while processing your request.");

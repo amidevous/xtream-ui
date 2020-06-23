@@ -102,6 +102,9 @@ if (isset($_POST["submit_user"])) {
                 $rArray[$rKey] = $rValue;
             }
         }
+        if (!$rArray["member_id"]) {
+            $rArray["member_id"] = -1;
+        }
         $rArray["created_by"] = $rArray["member_id"];
         $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rArray))."`");
         foreach (array_values($rArray) as $rValue) {
@@ -305,6 +308,7 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="member_id">Owner</label>
                                                             <div class="col-md-8">
                                                                 <select name="member_id" id="member_id" class="form-control select2" data-toggle="select2">
+                                                                    <option value="-1">No Owner</option>
                                                                     <?php foreach ($rRegisteredUsers as $rRegisteredUser) { ?>
                                                                     <option <?php if (isset($rUser)) { if (intval($rUser["member_id"]) == intval($rRegisteredUser["id"])) { echo "selected "; } } else { if (intval($rUserInfo["id"]) == intval($rRegisteredUser["id"])) { echo "selected "; } } ?>value="<?=$rRegisteredUser["id"]?>"><?=$rRegisteredUser["username"]?></option>
                                                                     <?php } ?>
@@ -447,7 +451,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="allowed_ips">&nbsp;</label>
                                                             <div class="col-md-8">
-                                                                <select class="form-control" id="allowed_ips" name="allowed_ips" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <select class="form-control" id="allowed_ips" name="allowed_ips[]" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
                                                                 <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ips"], True) as $rIP) { ?>
                                                                 <option value="<?=$rIP?>"><?=$rIP?></option>
                                                                 <?php } } ?>
@@ -467,7 +471,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="allowed_ua">&nbsp;</label>
                                                             <div class="col-md-8">
-                                                                <select class="form-control" id="allowed_ua" name="allowed_ua" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <select class="form-control" id="allowed_ua" name="allowed_ua[]" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
                                                                 <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ua"], True) as $rUA) { ?>
                                                                 <option value="<?=$rUA?>"><?=$rUA?></option>
                                                                 <?php } } ?>

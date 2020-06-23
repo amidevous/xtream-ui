@@ -230,6 +230,7 @@ if ($rSettings["sidebar"]) {
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
                     });
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 } else {
                     $.toast("An error occured while processing your request.");
@@ -248,6 +249,7 @@ if ($rSettings["sidebar"]) {
         }
         function reloadStreams() {
             if (autoRefresh == true) {
+                $('[data-toggle="tooltip"]').tooltip("hide");
                 $("#datatable-streampage").DataTable().ajax.reload( null, false );
             }
             setTimeout(reloadStreams, 5000);
@@ -286,6 +288,7 @@ if ($rSettings["sidebar"]) {
             $('#datatable-streampage').DataTable().search($("#movies_search").val());
             $('#datatable-streampage').DataTable().page.len($('#movies_show_entries').val());
             $("#datatable-streampage").DataTable().page(0).draw('page');
+            $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-streampage").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
@@ -348,16 +351,19 @@ if ($rSettings["sidebar"]) {
             })
             $('#movies_category_id').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })
             $('#movies_server').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })
             $('#movies_filter').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })

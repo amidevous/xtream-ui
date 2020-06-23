@@ -63,10 +63,19 @@ if (isset($_POST["submit_stream"])) {
         $_POST["movie_image"] = downloadImage($_POST["movie_image"]);
         $_POST["backdrop_path"] = downloadImage($_POST["backdrop_path"]);
     }
+	if (isset($_POST["restart_on_edit"])) {
+		$rRestart = true;
+		unset($_POST["restart_on_edit"]);
+	} else {
+		$rRestart = false;
+	}
     $rBouquets = $_POST["bouquets"];
     unset($_POST["bouquets"]);
     $rSeconds = intval($_POST["episode_run_time"]) * 60;
     $rArray["movie_propeties"] = Array("kinopoisk_url" => $rTMDBURL, "tmdb_id" => $_POST["tmdb_id"], "name" => $rArray["stream_display_name"], "o_name" => $rArray["stream_display_name"], "cover_big" => $_POST["movie_image"], "movie_image" => $_POST["movie_image"], "releasedate" => $_POST["releasedate"], "episode_run_time" => $_POST["episode_run_time"], "youtube_trailer" => $_POST["youtube_trailer"], "director" => $_POST["director"], "actors" => $_POST["cast"], "cast" => $_POST["cast"], "description" => $_POST["plot"], "plot" => $_POST["plot"], "age" => "", "mpaa_rating" => "", "rating_count_kinopoisk" => 0, "country" => $_POST["country"], "genre" => $_POST["genre"], "backdrop_path" => Array($_POST["backdrop_path"]), "duration_secs" => $rSeconds, "duration" => sprintf('%02d:%02d:%02d', ($rSeconds/3600),($rSeconds/60%60), $rSeconds%60), "video" => Array(), "audio" => Array(), "bitrate" => 0, "rating" => $_POST["rating"]);
+    if (strlen($rArray["movie_propeties"]["backdrop_path"][0]) == 0) {
+        unset($rArray["movie_propeties"]["backdrop_path"]);
+    }
     $rCols = "`".implode('`,`', array_keys($rArray))."`";
     $rValues = null;
     foreach (array_values($rArray) as $rValue) {
@@ -90,6 +99,15 @@ if (isset($_POST["submit_stream"])) {
             $rInsertID = intval($_POST["edit"]);
         } else {
             $rInsertID = $db->insert_id;
+        }
+        $rStreamExists = Array();
+        if (isset($_POST["edit"])) {
+            $result = $db->query("SELECT `server_stream_id`, `server_id` FROM `streams_sys` WHERE `stream_id` = ".intval($rInsertID).";");
+            if (($result) && ($result->num_rows > 0)) {
+                while ($row = $result->fetch_assoc()) {
+                    $rStreamExists[intval($row["server_id"])] = intval($row["server_stream_id"]);
+                }
+            }
         }
         if (isset($_POST["server_tree_data"])) {
             $rStreamsAdded = Array();
@@ -116,6 +134,22 @@ if (isset($_POST["submit_stream"])) {
                 }
             }
         }
+		if ($rRestart) {
+			$rPost = Array("action" => "vod", "sub" => "start", "stream_ids" => Array($rInsertID));
+			$rContext = stream_context_create(array(
+				'http' => array(
+					'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+					'method'  => 'POST',
+					'content' => http_build_query($rPost)
+				)
+			));
+			if ($rAdminSettings["local_api"]) {
+				$rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+			} else {
+				$rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+			}
+			$rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+		}
         foreach ($rBouquets as $rBouquet) {
             addToBouquet("stream", $rBouquet, $rInsertID);
         }
@@ -529,6 +563,12 @@ if ($rSettings["sidebar"]) {
                                                                 <div id="server_tree"></div>
                                                             </div>
                                                         </div>
+														<div class="form-group row mb-4">
+															<label class="col-md-4 col-form-label" for="restart_on_edit"><?php if (isset($rMovie)) { ?>Re-process on Edit<?php } else { ?>Process Movie<?php } ?></label>
+															<div class="col-md-2">
+																<input name="restart_on_edit" id="restart_on_edit" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+															</div>
+														</div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
@@ -615,29 +655,6 @@ if ($rSettings["sidebar"]) {
         </div>
         <!-- end wrapper -->
         <?php if ($rSettings["sidebar"]) { echo "</div>"; } ?>
-        <!-- file preview template -->
-        <div class="d-none" id="uploadPreviewTemplate">
-            <div class="card mt-1 mb-0 shadow-none border">
-                <div class="p-2">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <img data-dz-thumbnail class="avatar-sm rounded bg-light" alt="">
-                        </div>
-                        <div class="col pl-0">
-                            <a href="javascript:void(0);" class="text-muted font-weight-bold" data-dz-name></a>
-                            <p class="mb-0" data-dz-size></p>
-                        </div>
-                        <div class="col-auto">
-                            <!-- Button -->
-                            <a href="" class="btn btn-link btn-lg text-muted" data-dz-remove>
-                                <i class="mdi mdi-close-circle"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Footer Start -->
         <footer class="footer">
             <div class="container-fluid">
@@ -956,13 +973,13 @@ if ($rSettings["sidebar"]) {
                     if ($("#stream_display_name").val().length > 0) {
                         $.getJSON("./api.php?action=tmdb_search&type=movie&term=" + $("#stream_display_name").val(), function(data) {
                             if (data.result == true) {
-                                if (data.data.results.length > 0) {
-                                    newOption = new Option("Found " + data.data.results.length + " results", -1, true, true);
+                                if (data.data.length > 0) {
+                                    newOption = new Option("Found " + data.data.length + " results", -1, true, true);
                                 } else {
                                     newOption = new Option("No results found", -1, true, true);
                                 }
                                 $("#tmdb_search").append(newOption).trigger('change');
-                                $(data.data.results).each(function(id, item) {
+                                $(data.data).each(function(id, item) {
                                     if (item.release_date.length > 0) {
                                         rTitle = item.title + " - " + item.release_date.substring(0, 4);
                                     } else {
@@ -998,14 +1015,12 @@ if ($rSettings["sidebar"]) {
                             $("#releasedate").val(data.data.release_date);
                             $("#episode_run_time").val(data.data.runtime);
                             $("#youtube_trailer").val("");
-                            $(data.data.videos.youtube).each(function(id, youtube) {
-                                if (youtube.type == "Trailer") {
-                                    $("#youtube_trailer").val(youtube.source);
-                                }
-                            });
+                            if (data.data.trailer) {
+                                $("#youtube_trailer").val(data.data.trailer);
+                            }
                             rCast = "";
                             rMemberID = 0;
-                            $(data.data.cast.cast).each(function(id, member) {
+                            $(data.data.credits.cast).each(function(id, member) {
                                 rMemberID += 1;
                                 if (rMemberID <= 5) {
                                     if (rCast.length > 0) {
@@ -1028,7 +1043,7 @@ if ($rSettings["sidebar"]) {
                             });
                             $("#genre").val(rGenres);
                             $("#director").val("");
-                            $(data.data.cast.crew).each(function(id, member) {
+                            $(data.data.credits.crew).each(function(id, member) {
                                 if (member.department == "Directing") {
                                     $("#director").val(member.name);
                                     return true;
@@ -1073,7 +1088,6 @@ if ($rSettings["sidebar"]) {
             $("#runtime").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("form").attr('autocomplete', 'off');
             
-            $("#stream_display_name").val($("#stream_display_name").val());
             $("#changeDir").click();
         });
         </script>

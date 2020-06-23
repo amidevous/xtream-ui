@@ -129,6 +129,56 @@ if ($rSettings["sidebar"]) {
                 <!-- end row-->
             </div> <!-- end container -->
         </div>
+		<?php if ($rPermissions["is_admin"]) { ?>
+		<div class="modal fade messageModal" role="dialog" aria-labelledby="messageModal" aria-hidden="true" style="display: none;" data-id="">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h4 class="modal-title" id="messageModal">MAG Event</h4>
+						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+					</div>
+					<div class="modal-body">
+						<div class="col-12">
+							<select id="message_type" class="form-control" data-toggle="select2" >
+								<option value="" selected>Select an Event:</option>
+								<optgroup label="">
+									<option value="play_channel">Play Channel</option>
+									<option value="reload_portal">Reload Portal</option>
+									<option value="reboot">Reboot Device</option>
+									<option value="send_msg">Send Message</option>
+									<option value="cut_off">Close Portal</option>
+								</optgroup>
+							</select>
+						</div>
+						<div class="col-12" style="margin-top:20px;display:none;" id="send_msg_form">
+							<div class="form-group row mb-4">
+								<div class="col-md-12">
+									<textarea id="message" name="message" class="form-control" rows="3" placeholder="Enter a custom message..."></textarea>
+								</div>
+							</div>
+							<div class="form-group row mb-4">
+								<label class="col-md-9 col-form-label" for="reboot_portal">Reboot Portal on Confirmation</label>
+								<div class="col-md-3">
+									<input name="reboot_portal" id="reboot_portal" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+								</div>
+							</div>
+						</div>
+						<div class="col-12" style="margin-top:20px;display:none;" id="play_channel_form">
+							<div class="form-group row mb-4">
+								<label class="col-md-3 col-form-label" for="selected_channel">Channel</label>
+								<div class="col-md-9">
+									<select id="selected_channel" name="selected_channel" class="form-control" data-toggle="select2" style="width:100%;"></select>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button disabled id="message_submit" type="button" class="btn btn-primary waves-effect">Send Event</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+		<?php } ?>
         <!-- end wrapper -->
         <?php if ($rSettings["sidebar"]) { echo "</div>"; } ?>
         <!-- Footer Start -->
@@ -145,6 +195,7 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/jquery-toast/jquery.toast.min.js"></script>
         <script src="assets/libs/datatables/jquery.dataTables.min.js"></script>
         <script src="assets/libs/datatables/dataTables.bootstrap4.js"></script>
+		<script src="assets/libs/switchery/switchery.min.js"></script>
         <script src="assets/libs/select2/select2.min.js"></script>
         <script src="assets/libs/datatables/dataTables.responsive.min.js"></script>
         <script src="assets/libs/datatables/responsive.bootstrap4.min.js"></script>
@@ -191,7 +242,6 @@ if ($rSettings["sidebar"]) {
                 }
             });
         }
-        
         function toggleAuto() {
             if (autoRefresh == true) {
                 autoRefresh = false;
@@ -201,7 +251,6 @@ if ($rSettings["sidebar"]) {
                 $(".auto-text").html("Auto-Refresh");
             }
         }
-        
         function getFilter() {
             return $("#mag_filter").val();
         }
@@ -239,14 +288,30 @@ if ($rSettings["sidebar"]) {
             $('#datatable-users').DataTable().search($("#mag_search").val());
             $('#datatable-users').DataTable().page.len($('#mag_show_entries').val());
             $("#datatable-users").DataTable().page(0).draw('page');
+            $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-users").DataTable().ajax.reload( null, false );
         }
+		<?php if ($rPermissions["is_admin"]) { ?>
+		function message(id, mac) {
+            $('.messageModal').data('id', id);
+			$("#messageModal").text("Send Event - " + mac.toUpperCase());
+			$("#message_type").val("").trigger("change");
+			$("#message").val("");
+			$("#selected_channel").val("");
+			$("#send_msg_form").hide();
+			$("#play_channel_form").hide();
+            $('.messageModal').modal('show');
+        }
+		<?php } ?>
         $(document).ready(function() {
             formCache.init();
             formCache.fetch();
             
             $.fn.dataTable.ext.errMode = 'none';
             $('select').select2({width: '100%'});
+			$(".js-switch").each(function (index, element) {
+                var init = new Switchery(element);
+            });
             $("#datatable-users").DataTable({
                 language: {
                     paginate: {
@@ -295,20 +360,99 @@ if ($rSettings["sidebar"]) {
             });
             $('#mag_filter').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });
             $('#mag_reseller').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });
-            <?php if (!$detect->isMobile()) { ?>
+			<?php if ($rPermissions["is_admin"]) { ?>
+			$("#message_type").change(function(){
+				if ($(this).val() == "send_msg") {
+					$("#send_msg_form").show();
+					$("#play_channel_form").hide();
+					$("#message_submit").attr("disabled", false);
+				} else if ($(this).val() == "play_channel") {
+					$("#send_msg_form").hide();
+					$("#play_channel_form").show();
+					$("#message_submit").attr("disabled", false);
+				} else {
+					$("#send_msg_form").hide();
+					$("#play_channel_form").hide();
+					if ($(this).val() == "") {
+						$("#message_submit").attr("disabled", true);
+					} else {
+						$("#message_submit").attr("disabled", false);
+					}
+				}
+			});
+			$('#selected_channel').select2({
+              ajax: {
+                url: './api.php',
+                dataType: 'json',
+                data: function (params) {
+                  return {
+                    search: params.term,
+                    action: 'streamlist',
+                    page: params.page
+                  };
+                },
+                processResults: function (data, params) {
+                  params.page = params.page || 1;
+                  return {
+                    results: data.items,
+                    pagination: {
+                        more: (params.page * 100) < data.total_count
+                    }
+                  };
+                },
+                cache: true
+              },
+              placeholder: 'Start typing to search...',
+			  width: "100%"
+            });
+			$("#message_submit").click(function() {
+				rArray = {"id": $('.messageModal').data('id'), "type": $("#message_type").val()};
+				if (rArray.type.length > 0) {
+					if (rArray.type == "send_msg") {
+						rArray.message = $("#message").val();
+						if ($("#reboot_portal").is(":checked")) {
+							rArray.reboot_portal = 1;
+						} else {
+							rArray.reboot_portal = 0;
+						}
+					} else if (rArray.type == "play_channel") {
+						rArray.channel = $("#selected_channel").val();
+						if (!rArray.channel) {
+							rArray.channel = "";
+						}
+					}
+					if ((rArray.type == "send_msg") && (rArray.message.length == 0)) {
+						$.toast("Please enter a message to send to the MAG device.");
+					} else if ((rArray.type == "play_channel") && (rArray.channel.length == 0)) {
+						$.toast("Please select a channel.");
+					} else {
+						$('.messageModal').modal('hide');
+						$.getJSON("./api.php?action=send_event&data=" + encodeURIComponent(JSON.stringify(rArray)), function(data) {
+							if (data.result === true) {
+								$.toast("MAG event has been submitted.");
+							} else {
+								$.toast("MAG event could not be submitted.");
+							}
+						});
+					}
+				}
+			});
+            <?php }
+			if (!$detect->isMobile()) { ?>
             setTimeout(reloadUsers, 10000);
             <?php } ?>
             $('#datatable-users').DataTable().search($(this).val()).draw();
         });
-        
         $(window).bind('beforeunload', function() {
             formCache.save();
         });

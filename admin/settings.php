@@ -7,7 +7,7 @@ checkTable("admin_settings");
 
 if (isset($_POST["submit_settings"])) {
     $rArray = getSettings();
-    foreach (Array("disallow_empty_user_agents", "show_all_category_mag", "show_not_on_air_video", "show_banned_video", "show_expired_video", "new_sorting_bouquet") as $rSetting) {
+    foreach (Array("disallow_empty_user_agents", "persistent_connections", "show_all_category_mag", "show_not_on_air_video", "show_banned_video", "show_expired_video", "new_sorting_bouquet", "rtmp_random", "use_buffer", "audio_restart_loss", "save_closed_connection", "client_logs_save", "case_sensitive_line", "county_override_1st", "disallow_2nd_ip_con", "firewall", "use_mdomain_in_lists", "mag_security", "always_enabled_subtitles", "enable_connection_problem_indication", "show_tv_channel_logo", "show_channel_logo_in_preview", "stb_change_pass", "enable_debug_stalker") as $rSetting) {
         if (isset($_POST[$rSetting])) {
             $rArray[$rSetting] = 1;
             unset($_POST[$rSetting]);
@@ -32,6 +32,18 @@ if (isset($_POST["submit_settings"])) {
         unset($_POST["download_images"]);
     } else {
         $rAdminSettings["download_images"] = false;
+    }
+    if (isset($_POST["local_api"])) {
+        $rAdminSettings["local_api"] = true;
+        unset($_POST["local_api"]);
+    } else {
+        $rAdminSettings["local_api"] = false;
+    }
+    if (isset($_POST["change_usernames"])) {
+        $rAdminSettings["change_usernames"] = true;
+        unset($_POST["change_usernames"]);
+    } else {
+        $rAdminSettings["change_usernames"] = false;
     }
     if (isset($_POST["reseller_restrictions"])) {
         $rAdminSettings["reseller_restrictions"] = true;
@@ -102,9 +114,9 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content boxed-layout"><div class="container-fluid">
+        <div class="content-page"><div class="content boxed-layout-ext"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper boxed-layout"><div class="container-fluid">
+        <div class="wrapper boxed-layout-ext"><div class="container-fluid">
         <?php } ?>
                 <form action="./settings.php" method="POST" id="category_form">
                     <!-- start page title -->
@@ -139,37 +151,36 @@ if ($rSettings["sidebar"]) {
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
                                             <li class="nav-item">
                                                 <a href="#general-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-account-card-details-outline mr-1"></i>
                                                     <span class="d-none d-sm-inline">General</span>
+                                                </a>
+                                            </li>
+											<li class="nav-item">
+                                                <a href="#xui" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <span class="d-none d-sm-inline">Xtream UI</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#ddos" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-hazard-lights mr-1"></i>
                                                     <span class="d-none d-sm-inline">DDOS</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#streaming" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-play mr-1"></i>
                                                     <span class="d-none d-sm-inline">Streaming</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
-                                                <a href="#video" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-file-video mr-1"></i>
-                                                    <span class="d-none d-sm-inline">Video</span>
+                                                <a href="#mag" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+                                                    <span class="d-none d-sm-inline">MAG</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#backups" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-floppy mr-1"></i>
                                                     <span class="d-none d-sm-inline">Backups</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
                                                 <a href="#database" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
-                                                    <i class="mdi mdi-database-edit mr-1"></i>
                                                     <span class="d-none d-sm-inline">Database</span>
                                                 </a>
                                             </li>
@@ -208,6 +219,17 @@ if ($rSettings["sidebar"]) {
                                                                 <input type="text" class="form-control" id="live_streaming_pass" name="live_streaming_pass" value="<?=$rSettings["live_streaming_pass"]?>">
                                                             </div>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="list-inline-item float-right">
+                                                        <input name="submit_settings" type="submit" class="btn btn-primary" value="Save Changes" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="xui">
+                                                <div class="row">
+                                                    <div class="col-12">
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="copyrights_text">Reseller Footer Copyright</label>
                                                             <div class="col-md-8">
@@ -230,6 +252,22 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <div class="col-md-4">
                                                                 <input type="password" placeholder="<?php if (strlen($rAdminSettings["forum_password"]) > 0) { echo str_repeat("*", strlen($rAdminSettings["forum_password"])); } else { echo "Forum Password"; } ?>" class="form-control" id="forum_password" name="forum_password" value="">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="tmdb_api_key">TMDB Key</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="tmdb_api_key" name="tmdb_api_key" value="<?=$rSettings["tmdb_api_key"]?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="tmdb_language">TMDB Language <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select which language to prioritise when utilising TMDb data." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <select name="tmdb_language" id="tmdb_language" class="form-control" data-toggle="select2">
+                                                                    <?php foreach ($rTMDBLanguages as $rKey => $rLanguage) { ?>
+                                                                    <option<?php if ($rAdminSettings["tmdb_language"] == $rKey) { echo " selected"; } ?> value="<?=$rKey?>"><?=$rLanguage?></option>
+                                                                    <?php } ?>
+                                                                </select>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -257,22 +295,6 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="tmdb_api_key">TMDB Key</label>
-                                                            <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="tmdb_api_key" name="tmdb_api_key" value="<?=$rSettings["tmdb_api_key"]?>">
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="tmdb_language">TMDB Language <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select which language to prioritise when utilising TMDb data." class="mdi mdi-information"></i></label>
-                                                            <div class="col-md-8">
-                                                                <select name="tmdb_language" id="tmdb_language" class="form-control" data-toggle="select2">
-                                                                    <?php foreach ($rTMDBLanguages as $rKey => $rLanguage) { ?>
-                                                                    <option<?php if ($rAdminSettings["tmdb_language"] == $rKey) { echo " selected"; } ?> value="<?=$rKey?>"><?=$rLanguage?></option>
-                                                                    <?php } ?>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="download_images">Download Images <i data-toggle="tooltip" data-placement="top" title="" data-original-title="If this option is set, images from TMDb for example will be downloaded to the master server." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <input name="download_images" id="download_images" type="checkbox"<?php if ($rAdminSettings["download_images"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
@@ -280,6 +302,16 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="reseller_restrictions">Reseller Restrictions <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set this option to allow resellers to restrict by User-Agent and IP address." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <input name="reseller_restrictions" id="reseller_restrictions" type="checkbox"<?php if ($rAdminSettings["reseller_restrictions"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="local_api">Localhost API <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you're having issues with starting and stopping streams." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="local_api" id="local_api" type="checkbox"<?php if ($rAdminSettings["local_api"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="change_usernames">Resellers Change Username <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you'd like Resellers to still be able to change usernames even if they can't change the passwords." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="change_usernames" id="change_usernames" type="checkbox"<?php if ($rAdminSettings["change_usernames"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -327,29 +359,27 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="client_prebuffer">Prebuffer in Seconds <i data-toggle="tooltip" data-placement="top" title="" data-original-title="How much data will be sent to the client when connecting to a stream. Larger values will create larger prebuffers." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="client_prebuffer">Client Prebuffer <i data-toggle="tooltip" data-placement="top" title="" data-original-title="How much data will be sent to the client when connecting to a stream. Larger values will create larger prebuffers." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <input type="text" class="form-control" id="client_prebuffer" name="client_prebuffer" value="<?=$rSettings["client_prebuffer"]?>">
                                                             </div>
-                                                            <label class="col-md-4 col-form-label" for="show_all_category_mag">MAG - Show All <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Show All category on MAG devices." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="restreamer_prebuffer">Restreamer Prebuffer <i data-toggle="tooltip" data-placement="top" title="" data-original-title="How much data will be sent to the client when connecting to a stream. Larger values will create larger prebuffers." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input name="show_all_category_mag" id="show_all_category_mag" type="checkbox"<?php if ($rSettings["show_all_category_mag"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input type="text" class="form-control" id="restreamer_prebuffer" name="restreamer_prebuffer" value="<?=$rSettings["restreamer_prebuffer"]?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="split_clients">Split Clients</label>
-                                                            <div class="col-md-8">
+                                                            <div class="col-md-2">
                                                                 <select name="split_clients" id="split_clients" class="form-control" data-toggle="select2">
                                                                     <option<?php if ($rSettings["split_clients"] == "equal") { echo " selected"; } ?> value="equal">Equally</option>
                                                                     <option<?php if ($rSettings["split_clients"] == "load") { echo " selected"; } ?> value="load">Load</option>
                                                                 </select>
                                                             </div>
-                                                        </div>
-                                                        <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="split_by">Split By</label>
-                                                            <div class="col-md-8">
+                                                            <div class="col-md-2">
                                                                 <select name="split_by" id="split_by" class="form-control" data-toggle="select2">
-                                                                    <option<?php if ($rSettings["split_by"] == "conn") { echo " selected"; } ?> value="conn">Total Connections</option>
+                                                                    <option<?php if ($rSettings["split_by"] == "conn") { echo " selected"; } ?> value="conn">Connections</option>
                                                                     <option<?php if ($rSettings["split_by"] == "maxclients") { echo " selected"; } ?> value="maxclients">Max Clients</option>
                                                                     <option<?php if ($rSettings["split_by"] == "guar_band") { echo " selected"; } ?> value="guar_band">Network Speed</option>
                                                                 </select>
@@ -378,23 +408,72 @@ if ($rSettings["sidebar"]) {
                                                                 <input type="text" class="form-control" id="probesize" name="probesize" value="<?=$rSettings["probesize"]?>">
                                                             </div>
                                                         </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="allowed_ips_admin">Admin Streaming IP's <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Allowed IP's to access admin_live.php using the Live Streaming Pass. Separate each IP with a comma." class="mdi mdi-information"></i></label>
-                                                            <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="allowed_ips_admin" name="allowed_ips_admin" value="<?=$rSettings["allowed_ips_admin"]?>">
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="persistent_connections">Persistent Connections <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable PHP persistent connections." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="persistent_connections" id="persistent_connections" type="checkbox"<?php if ($rSettings["persistent_connections"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="rtmp_random">Random RTMP IP <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Use random IP for RMTP." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="rtmp_random" id="rtmp_random" type="checkbox"<?php if ($rSettings["rtmp_random"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
-                                                    </div> <!-- end col -->
-                                                </div> <!-- end row -->
-                                                <ul class="list-inline wizard mb-0">
-                                                    <li class="list-inline-item float-right">
-                                                        <input name="submit_settings" type="submit" class="btn btn-primary" value="Save Changes" />
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                            <div class="tab-pane" id="video">
-                                                <div class="row">
-                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="stream_start_delay">Stream Start Delay <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Delay in milliseconds before starting stream." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="stream_start_delay" name="stream_start_delay" value="<?=$rSettings["stream_start_delay"]?>">
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="online_capacity_interval">Online Capacity Interval <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Interval at which to check server activity for connection limits." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="online_capacity_interval" name="online_capacity_interval" value="<?=$rSettings["online_capacity_interval"]?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="use_buffer">Use Nginx Buffer <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Sets the proxy buffering for this connection. Setting this to “no” will allow unbuffered responses suitable for Comet and HTTP streaming applications. Setting this to “yes” will allow the response to be cached." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="use_buffer" id="use_buffer" type="checkbox"<?php if ($rSettings["use_buffer"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="audio_restart_loss">Restart on Audio Loss <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Restart stream periodically if no audio is detected." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="audio_restart_loss" id="audio_restart_loss" type="checkbox"<?php if ($rSettings["audio_restart_loss"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="save_closed_connection">Save Connection Logs <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Save closed connection logs to database." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="save_closed_connection" id="save_closed_connection" type="checkbox"<?php if ($rSettings["save_closed_connection"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="client_logs_save">Save Client Logs <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Save client logs to database." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="client_logs_save" id="client_logs_save" type="checkbox"<?php if ($rSettings["client_logs_save"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="case_sensitive_line">Case Sensitive Details <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Case sensitive username and password." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="case_sensitive_line" id="case_sensitive_line" type="checkbox"<?php if ($rSettings["case_sensitive_line"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="county_override_1st">Override Country with First <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Override country with first connected." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="county_override_1st" id="county_override_1st" type="checkbox"<?php if ($rSettings["county_override_1st"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="disallow_2nd_ip_con">Disallow 2nd IP Connection <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Disallow connection from different IP when a connection is in use." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="disallow_2nd_ip_con" id="disallow_2nd_ip_con" type="checkbox"<?php if ($rSettings["disallow_2nd_ip_con"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="firewall">Enable XC Firewall <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable Xtream Codes firewall." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="firewall" id="firewall" type="checkbox"<?php if ($rSettings["firewall"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="use_mdomain_in_lists">Use Domain in Lists <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Use domain name in lists." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="use_mdomain_in_lists" id="use_mdomain_in_lists" type="checkbox"<?php if ($rSettings["use_mdomain_in_lists"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="show_not_on_air_video">Stream Down Video <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Show this video when a stream isn't on air." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
@@ -420,6 +499,111 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                             <div class="col-md-6">
                                                                 <input type="text" class="form-control" id="expired_video_path" name="expired_video_path" value="<?=$rSettings["expired_video_path"]?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="allowed_ips_admin">Admin Streaming IP's <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Allowed IP's to access admin_live.php using the Live Streaming Pass. Separate each IP with a comma." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="allowed_ips_admin" name="allowed_ips_admin" value="<?=$rSettings["allowed_ips_admin"]?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="api_ips">API IP's <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Allowed IP's to access the official XC API. Separate each IP with a comma." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="api_ips" name="api_ips" value="<?=$rSettings["api_ips"]?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="message_of_day">Message of the Day <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Message to display in player API." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="message_of_day" name="message_of_day" value="<?=$rSettings["message_of_day"]?>">
+                                                            </div>
+                                                        </div>
+                                                    </div> <!-- end col -->
+                                                </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="list-inline-item float-right">
+                                                        <input name="submit_settings" type="submit" class="btn btn-primary" value="Save Changes" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="mag">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="show_all_category_mag">Show All Categories <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Show All category on MAG devices." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="show_all_category_mag" id="show_all_category_mag" type="checkbox"<?php if ($rSettings["show_all_category_mag"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="mag_security">MAG Security <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable additional mag security." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="mag_security" id="mag_security" type="checkbox"<?php if ($rSettings["mag_security"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="always_enabled_subtitles">Always Enabled Subtitles <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Force subtitles to be enabled at all times." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="always_enabled_subtitles" id="always_enabled_subtitles" type="checkbox"<?php if ($rSettings["always_enabled_subtitles"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="enable_connection_problem_indication">Connection Problem Indiciation</label>
+                                                            <div class="col-md-2">
+                                                                <input name="enable_connection_problem_indication" id="enable_connection_problem_indication" type="checkbox"<?php if ($rSettings["enable_connection_problem_indication"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="show_tv_channel_logo">Show Channel Logos</label>
+                                                            <div class="col-md-2">
+                                                                <input name="show_tv_channel_logo" id="show_tv_channel_logo" type="checkbox"<?php if ($rSettings["show_tv_channel_logo"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="show_channel_logo_in_preview">Show Preview Channel Logos</label>
+                                                            <div class="col-md-2">
+                                                                <input name="show_channel_logo_in_preview" id="show_channel_logo_in_preview" type="checkbox"<?php if ($rSettings["show_channel_logo_in_preview"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="stb_change_pass">Allow STB Password Change</label>
+                                                            <div class="col-md-2">
+                                                                <input name="stb_change_pass" id="stb_change_pass" type="checkbox"<?php if ($rSettings["stb_change_pass"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="enable_debug_stalker">Stalker Debug</label>
+                                                            <div class="col-md-2">
+                                                                <input name="enable_debug_stalker" id="enable_debug_stalker" type="checkbox"<?php if ($rSettings["enable_debug_stalker"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="mag_container">Default Container</label>
+                                                            <div class="col-md-2">
+                                                                <select name="mag_container" id="mag_container" class="form-control" data-toggle="select2">
+                                                                    <?php
+                                                                    foreach (Array("ts" => "TS", "m3u8" => "M3U8") as $rValue => $rText) { ?>
+                                                                    <option <?php if ($rSettings["mag_container"] == $rValue) { echo "selected "; } ?>value="<?=$rValue?>"><?=$rText?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="stalker_theme">Default Theme</label>
+                                                            <div class="col-md-2">
+                                                                <select name="stalker_theme" id="stalker_theme" class="form-control" data-toggle="select2">
+                                                                    <?php
+                                                                    foreach (Array("default" => "Default", "digital" => "Digital", "emerald" => "Emerald", "cappucino" => "Cappucino", "ocean_blue" => "Ocean Blue") as $rValue => $rText) { ?>
+                                                                    <option <?php if ($rSettings["stalker_theme"] == $rValue) { echo "selected "; } ?>value="<?=$rValue?>"><?=$rText?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="record_max_length">Recording Max Length</label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="record_max_length" name="record_max_length" value="<?=$rSettings["record_max_length"]?>">
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="max_local_recordings">Max Local Recordings</label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="max_local_recordings" name="max_local_recordings" value="<?=$rSettings["max_local_recordings"]?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="playback_limit">Playback Limit</label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="playback_limit" name="playback_limit" value="<?=$rSettings["playback_limit"]?>">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -478,9 +662,13 @@ if ($rSettings["sidebar"]) {
                                                         <p class="sub-header" style="margin-top:30px;">
                                                             We have integrated a freeware PHP based MySQL editor into the system to allow you to manage your database manually. You can access it below.
                                                         </p>
-                                                        <a href="./database.php"><button type="button" class="btn btn-info waves-effect waves-light btn-xl"><i class="mdi mdi-database-edit-btc"></i> Database Editor</button></a>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
+                                                <ul class="list-inline wizard mb-0" style="margin-top:30px;">
+                                                    <li class="list-inline-item">
+                                                        <a href="./database.php"><button type="button" class="btn btn-info waves-effect waves-light btn-xl"><i class="mdi mdi-database-edit-btc"></i> Database Editor</button></a>
+                                                    </li>
+                                                </ul>
                                             </div>
                                         </div> <!-- tab-content -->
                                     </div> <!-- end #basicwizard-->
@@ -543,6 +731,8 @@ if ($rSettings["sidebar"]) {
 				}
             } else if (rType == "backup") {
                 $("#create_backup").attr("disabled", true);
+            } else if (rType == "download") {
+                window.location.href = "./api.php?action=download&filename=" + encodeURIComponent(rID);
             }
             $.getJSON("./api.php?action=backup&sub=" + rType + "&filename=" + encodeURIComponent(rID), function(data) {
                 if (data.result === true) {
@@ -636,6 +826,7 @@ if ($rSettings["sidebar"]) {
             $("#probesize").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#stream_max_analyze").inputFilter(function(value) { return /^\d*$/.test(value); });
             $("#client_prebuffer").inputFilter(function(value) { return /^\d*$/.test(value); });
+            $("#restreamer_prebuffer").inputFilter(function(value) { return /^\d*$/.test(value); });
         });
         </script>
     </body>

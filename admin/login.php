@@ -23,10 +23,18 @@ if ((isset($_POST["username"])) && (isset($_POST["password"]))) {
                 $db->query("UPDATE `reg_users` SET `last_login` = UNIX_TIMESTAMP(), `ip` = '".$db->real_escape_string(getIP())."' WHERE `id` = ".intval($rUserInfo["id"]).";");
                 $_SESSION['hash'] = md5($rUserInfo["username"]);
                 if ($rPermissions["is_admin"]) {
-                    header("Location: ./dashboard.php");
+                    if (strlen($_POST["referrer"]) > 0) {
+                        header("Location: .".$_POST["referrer"]);
+                    } else {
+                        header("Location: ./dashboard.php");
+                    }
                 } else {
                     $db->query("INSERT INTO `reg_userlog`(`owner`, `username`, `password`, `date`, `type`) VALUES(".intval($rUserInfo["id"]).", '', '', ".intval(time()).", '[<b>UserPanel</b> -> <u>Logged In</u>]');");
-                    header("Location: ./reseller.php");
+                    if (strlen($_POST["referrer"]) > 0) {
+                        header("Location: .".$_POST["referrer"]);
+                    } else {
+                        header("Location: ./reseller.php");
+                    }
                 }
             } else if (($rPermissions) && ((($rPermissions["is_admin"]) OR ($rPermissions["is_reseller"])) && ($rPermissions["is_banned"]))) {
                 $_STATUS = 2;
@@ -122,6 +130,7 @@ if ((isset($_POST["username"])) && (isset($_POST["password"]))) {
                                 </div>
                                 <h5 class="auth-title">Admin & Reseller Interface</h5>
                                 <form action="./login.php" method="POST" data-parsley-validate="">
+                                    <input type="hidden" name="referrer" value="<?=$_GET["referrer"]?>" />
                                     <?php if (!isset($rQR)) { ?>
                                     <div class="form-group mb-3">
                                         <label for="username">Username</label>

@@ -147,6 +147,7 @@ if ($rSettings["sidebar"]) {
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
                     });
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-activity").DataTable().ajax.reload(null, false);
                 } else {
                     $.toast("An error occured while processing your request.");
@@ -155,6 +156,7 @@ if ($rSettings["sidebar"]) {
         }
         function reloadUsers() {
             if (autoRefresh == true) {
+                $('[data-toggle="tooltip"]').tooltip("hide");
                 $("#datatable-activity").DataTable().ajax.reload(null, false);
             }
             setTimeout(reloadUsers, 2000);
@@ -171,6 +173,7 @@ if ($rSettings["sidebar"]) {
             $('#datatable-activity').DataTable().search($("#live_search").val());
             $('#datatable-activity').DataTable().page.len($('#live_show_entries').val());
             $("#datatable-activity").DataTable().page(0).draw('page');
+            $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-activity").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
@@ -230,6 +233,7 @@ if ($rSettings["sidebar"]) {
             })
             $('#live_filter').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-activity").DataTable().ajax.reload( null, false );
                 }
             })

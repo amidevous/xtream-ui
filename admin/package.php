@@ -7,7 +7,7 @@ if (isset($_POST["submit_package"])) {
         $rArray = getPackage($_POST["edit"]);
         unset($rArray["id"]);
     } else {
-        $rArray = Array("package_name" => "", "is_trial" => 0, "is_official" => 0, "trial_credits" => 0, "official_credits" => 0, "trial_duration_in" => "hours", "official_duration" => 1, "official_duration_in" => "years", "groups" => Array(), "bouquets" => Array(), "can_gen_mag" => 1, "only_mag" => 0, "output_formats" => Array(1,2,3), "is_isplock" => 0, "max_connections" => 1, "is_restreamer" => 0, "force_server_id" => 0, "only_e2" => 0, "can_gen_e2" => 1, "forced_country" => "", "lock_device" => 0);
+        $rArray = Array("package_name" => "", "is_trial" => 0, "is_official" => 0, "trial_credits" => 0, "official_credits" => 0, "trial_duration_in" => "hours", "trial_duration" => 0, "official_duration" => 1, "official_duration_in" => "years", "groups" => Array(), "bouquets" => Array(), "can_gen_mag" => 1, "only_mag" => 0, "output_formats" => Array(1,2,3), "is_isplock" => 0, "max_connections" => 1, "is_restreamer" => 0, "force_server_id" => 0, "only_e2" => 0, "can_gen_e2" => 1, "forced_country" => "", "lock_device" => 0);
     }
     if (strlen($_POST["package_name"]) == 0) {
         $_STATUS = 1;

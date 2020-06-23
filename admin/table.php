@@ -31,7 +31,7 @@ if ($_GET["id"] == "mag_events") {
         array('db' => 'msg', 'dt' => 4),
         array('db' => 'id', 'dt' => 5,
             'formatter' => function( $d, $row ) {
-                $rButtons = '<button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$d.', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$d.', \'delete\');"><i class="mdi mdi-close"></i></button>';
                 return $rButtons;
             }
         )
@@ -97,6 +97,25 @@ if ($_GET["id"] == "mag_events") {
         array('db' => 'id', 'dt' => 2,
             'formatter' => function( $d, $row) {
                 return '<a href="./movie.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Movie" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+            }
+        )
+    );
+} else if ($_GET["id"] == "series_short") {
+    if (!$rPermissions["is_admin"]) { exit; }
+    $table = 'series';
+    $get = $_GET["id"];
+    $primaryKey = 'id';
+    if ((isset($_GET["category_id"])) && (strlen($_GET["category_id"]) > 0)) {
+        $extraWhere = "`category_id` = ".intval($_GET["category_id"]);
+    } else {
+        $extraWhere = "";
+    }
+    $columns = array(
+        array('db' => 'id', 'dt' => 0),
+        array('db' => 'title', 'dt' => 1),
+        array('db' => 'id', 'dt' => 2,
+            'formatter' => function( $d, $row) {
+                return '<a href="./series.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Series" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
             }
         )
     );

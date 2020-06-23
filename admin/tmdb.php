@@ -1,956 +1,926 @@
 <?php
 /**
- * TMDb PHP API class - API 'themoviedb.org'
- * API Documentation: http://help.themoviedb.org/kb/api/
+ * TMDB API v3 PHP class - wrapper to API version 3 of 'themoviedb.org
+ * API Documentation: http://help.themoviedb.org/kb/api/about-3
  * Documentation and usage in README file
  *
- * @author Jonas De Smet - Glamorous
- * @since 09.11.2009
- * @date 16.11.2012
- * @copyright Jonas De Smet - Glamorous
- * @version 1.5.1
+ * @pakage TMDB_V3_API_PHP
+ * @author adangq <adangq@gmail.com>
+ * @copyright 2012 pixelead0
+ * @date 2012-02-12
+ * @link http://www.github.com/pixelead
+ * @version 0.0.2
  * @license BSD http://www.opensource.org/licenses/bsd-license.php
+ *
+ *
+ * Portions of this file are based on pieces of TMDb PHP API class - API 'themoviedb.org'
+ * @Copyright Jonas De Smet - Glamorous | https://github.com/glamorous/TMDb-PHP-API
+ * Licensed under BSD (http://www.opensource.org/licenses/bsd-license.php)
+ * @date 10.12.2010
+ * @version 0.9.10
+ * @author Jonas De Smet - Glamorous
+ * @link {https://github.com/glamorous/TMDb-PHP-API}
+ *
+ * Added config file + some formal corrections inside comments + some code changes to use config + (hopefully) corrected versioning
+ * @Copyright Deso85 | https://github.com/deso85/tmdb_v3-PHP-API-
+ * Licensed under BSD (http://www.opensource.org/licenses/bsd-license.php)
+ * @date 01.04.2016
+ * @version 0.4
+ * @author Deso85
+ * @link {https://github.com/deso85/tmdb_v3-PHP-API-}
+ *
+ * 	Function List
+ *   	public function  __construct($apikey,$lang,$adult,$debug)
+ *   	public function setLang($lang="en")
+ *   	public function getLang()
+ *   	public function setAdult($adult=false);
+ *   	public function getAdult();
+ *   	public function setDebug($debug=false);
+ *   	public function getDebug();
+ *   	public function setImageURL($config)
+ *   	public function getImageURL($size="original")
+ *   	public function movieTitles($idMovie)
+ *   	public function movieTrans($idMovie)
+ *   	public function movieTrailer($idMovie,$source="")
+ *   	public function movieDetail($idMovie)
+ *   	public function moviePoster($idMovie)
+ *   	public function movieCast($idMovie)
+ *   	public function movieInfo($idMovie,$option="",$print=false)
+ *   	public function searchMovie($movieTitle)
+ *   	public function getAPIConfig()
+ *   	public function latestMovie()
+ *   	public function nowPlayingMovies($page=1)
+ *
+ *   	private function _getDataArray($action,$text,$lang="")
+ *   	private function setApikey($apikey)
+ *   	private function getApikey()
+ *
+ *
+ * 	URL LIST:
+ *   	configuration		http://api.themoviedb.org/3/configuration
+ * 		Image				http://cf2.imgobject.com/t/p/original/IMAGEN.jpg #### echar un ojo ####
+ * 		Search Movie		http://api.themoviedb.org/3/search/movie
+ * 		Search Person		http://api.themoviedb.org/3/search/person
+ * 		Movie Info			http://api.themoviedb.org/3/movie/11
+ * 		Casts				http://api.themoviedb.org/3/movie/11/casts
+ * 		Posters				http://api.themoviedb.org/3/movie/11/images
+ * 		Trailers			http://api.themoviedb.org/3/movie/11/trailers
+ * 		translations		http://api.themoviedb.org/3/movie/11/translations
+ * 		Alternative titles 	http://api.themoviedb.org/3/movie/11/alternative_titles
+ *
+ * 		Collection Info 	http://api.themoviedb.org/3/collection/11
+ * 		Person images		http://api.themoviedb.org/3/person/287/images
  */
 
-class TMDb
-{
-	const POST = 'post';
-	const GET = 'get';
-	const HEAD = 'head';
+include("data/Movie.php");
+include("data/TVShow.php");
+include("data/Season.php");
+include("data/Episode.php");
+include("data/Person.php");
+include("data/Role.php");
+include("data/roles/MovieRole.php");
+include("data/roles/TVShowRole.php");
+include("data/Collection.php");
+include("data/Company.php");
+include("data/Genre.php");
+include("data/config/APIConfiguration.php");
 
-	const IMAGE_BACKDROP = 'backdrop';
-	const IMAGE_POSTER = 'poster';
-	const IMAGE_PROFILE = 'profile';
+class TMDB {
+	
+	#@var string url of API TMDB
+	const _API_URL_ = "http://api.themoviedb.org/3/";
 
-	const API_VERSION = '3';
-	const API_URL = 'api.themoviedb.org';
-	const API_SCHEME = 'http://';
-	const API_SCHEME_SSL = 'https://';
+	#@var string Version of this class
+	const VERSION = '0.0.3.0';
 
-	const VERSION = '1.5.0';
+	#@var array of config parameters
+	private $_config;
+	
+	#@var string API KEY
+	private $_apikey;
 
+	#@var string Default language
+	private $_lang;
+	
+	#@var string for adult content
+	private $_adult;
+	
+	#@var array of TMDB config
+    private $_apiconfiguration;
+    
+	#@var boolean for testing
+	private $_debug;
+
+	
+	
 	/**
-	 * The API-key
+	 * 	Construct Class<br />
+	 * 	If any param is not specified, will load from config.
 	 *
-	 * @var string
+	 * 	@param string $apikey The API key token
+	 * 	@param string $lang The language to work with
+	 *  @param boolean $adult The flag for adult content
+	 *  @param boolean $debug The flag for debug output
 	 */
-	protected $_apikey;
+	public function __construct($apikey = null, $lang = null, $adult = null, $debug = null) {
+		require_once("data/config/config.php");
+		
+		// Set config params
+		$this->setConfig($cnf);
+		
+		// Sets the API key
+		$this->setApikey((isset($apikey)) ? $apikey : $cnf['apikey']);
 
-	/**
-	 * The default language
-	 *
-	 * @var string
-	 */
-	protected $_lang;
+		// Setting Language
+		$this->setLang((isset($lang)) ? $lang : $cnf['lang']);
+		
+		// Set if adult content shall be displayed
+		$this->setAdult((isset($adult)) ? $adult : $cnf['adult']);
+		
+		// Set the debug mode
+		$this->setDebug((isset($debug)) ? $debug : $cnf['debug']);
 
-	/**
-	 * The TMDb-config
-	 *
-	 * @var object
-	 */
-	protected $_config;
-
-	/**
-	 * Stored Session Id
-	 *
-	 * @var string
-	 */
-	protected $_session_id;
-
-	/**
-	 * API Scheme
-	 *
-	 * @var string
-	 */
-	protected $_apischeme;
-
-	/**
-	 * Default constructor
-	 *
-	 * @param string $apikey			API-key recieved from TMDb
-	 * @param string $defaultLang		Default language (ISO 3166-1)
-	 * @param boolean $config			Load the TMDb-config
-	 * @return void
-	 */
-	public function __construct($apikey, $default_lang = 'en', $config = FALSE, $scheme = TMDb::API_SCHEME)
-	{
-		$this->_apikey = (string) $apikey;
-		$this->_apischeme = ($scheme == TMDb::API_SCHEME) ? TMDb::API_SCHEME : TMDb::API_SCHEME_SSL;
-		$this->setLang($default_lang);
-
-		if($config === TRUE)
-		{
-			$this->getConfiguration();
+		// Load the API configuration
+		if (! $this->_loadConfig()){
+			echo _("Unable to read configuration, verify that the API key is valid");
+			exit;
 		}
 	}
 
+	//------------------------------------------------------------------------------
+	// Configuration Parameters
+	//------------------------------------------------------------------------------
+	
 	/**
-	 * Search a movie by querystring
+	 *  Set configuration parameters
 	 *
-	 * @param string $text				Query to search after in the TMDb database
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param bool $adult				Whether of not to include adult movies in the results (default FALSE)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
+	 * 	@param array $config
 	 */
-	public function searchMovie($query, $page = 1, $adult = FALSE, $year = NULL, $lang = NULL)
-	{
-		$params = array(
-			'query' => $query,
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-			'include_adult' => (bool) $adult,
-			'year' => $year,
-		);
-		return $this->_makeCall('search/movie', $params);
-	}
-
-	/**
-	 * Search a person by querystring
-	 *
-	 * @param string $text				Query to search after in the TMDb database
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param bool $adult				Whether of not to include adult movies in the results (default FALSE)
-	 * @return TMDb result array
-	 */
-	public function searchPerson($query, $page = 1, $adult = FALSE)
-	{
-		$params = array(
-			'query' => $query,
-			'page' => (int) $page,
-			'include_adult' => (bool) $adult,
-		);
-		return $this->_makeCall('search/person', $params);
-	}
-
-	/**
-	 * Search a company by querystring
-	 *
-	 * @param string $text				Query to search after in the TMDb database
-	 * @param int $page					Number of the page with results (default first page)
-	 * @return TMDb result array
-	 */
-	public function searchCompany($query, $page = 1)
-	{
-		$params = array(
-			'query' => $query,
-			'page' => $page,
-		);
-		return $this->_makeCall('search/company', $params);
-	}
-
-	/**
-	 * Retrieve information about a collection
-	 *
-	 * @param int $id					Id from a collection (retrieved with getMovie)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getCollection($id, $lang = NULL)
-	{
-		$params = array(
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('collection/'.$id, $params);
-	}
-
-	/**
-	 * Retrieve all basic information for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getMovie($id, $lang = NULL)
-	{
-		$params = array(
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/'.$id, $params);
-	}
-
-	/**
-	 * Retrieve alternative titles for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @params string $country			Only include titles for a particular country (ISO 3166-1)
-	 * @return TMDb result array
-	 */
-	public function getMovieTitles($id, $country = NULL)
-	{
-		$params = array(
-			'country' => $country,
-		);
-		return $this->_makeCall('movie/'.$id.'/alternative_titles', $params);
-	}
-
-	/**
-	 * Retrieve all of the movie cast information for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @return TMDb result array
-	 */
-	public function getMovieCast($id)
-	{
-		return $this->_makeCall('movie/'.$id.'/casts');
-	}
-
-	/**
-	 * Retrieve all of the keywords for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @return TMDb result array
-	 */
-	public function getMovieKeywords($id)
-	{
-		return $this->_makeCall('movie/'.$id.'/keywords');
-	}
-
-	/**
-	 * Retrieve all the release and certification data for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @return TMDb result array
-	 */
-	public function getMovieReleases($id)
-	{
-		return $this->_makeCall('movie/'.$id.'/releases');
-	}
-
-	/**
-	 * Retrieve available translations for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @return TMDb result array
-	 */
-	public function getMovieTranslations($id)
-	{
-		return $this->_makeCall('movie/'.$id.'/translations');
-	}
-
-	/**
-	 * Retrieve available trailers for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getMovieTrailers($id, $lang = NULL)
-	{
-		$params = array(
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/'.$id.'/trailers', $params);
-	}
-
-	/**
-	 * Retrieve all images for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getMovieImages($id, $lang = NULL)
-	{
-		$params = array(
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/'.$id.'/images', $params);
-	}
-
-	/**
-	 * Retrieve similar movies for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getSimilarMovies($id, $page = 1, $lang = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/'.$id.'/similar_movies', $params);
-	}
-
-	/**
-	 * Retrieve newest movie added to TMDb
-	 *
-	 * @return TMDb result array
-	 */
-	public function getLatestMovie()
-	{
-		return $this->_makeCall('movie/latest');
-	}
-
-	/**
-	 * Retrieve movies arriving to theatres within the next few weeks
-	 *
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getUpcomingMovies($page = 1, $lang = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/upcoming', $params);
-	}
-
-	/**
-	 * Retrieve movies currently in theatres
-	 *
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getNowPlayingMovies($page = 1, $lang = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/now_playing', $params);
-	}
-
-	/**
-	 * Retrieve popular movies (list is updated daily)
-	 *
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getPopularMovies($page = 1, $lang = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/popular', $params);
-	}
-
-	/**
-	 * Retrieve top-rated movies
-	 *
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getTopRatedMovies($page = 1, $lang = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('movie/top_rated', $params);
-	}
-
-	/**
-	 * Retrieve changes for a particular movie
-	 *
-	 * @param mixed $id					TMDb-id or IMDB-id
-	 * @return TMDb result array
-	 */
-	public function getMovieChanges($id)
-	{
-		return $this->_makeCall('movie/'.$id.'/changes');
-	}
-
-	/**
-	 * Retrieve all id's from changed movies
-	 *
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param string $start_date		String start date as YYYY-MM-DD
-	 * @param string $end_date			String end date as YYYY-MM-DD (not inclusive)
-	 * @return TMDb result array
-	 */
-	public function getChangedMovies($page = 1, $start_date = NULL, $end_date = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'start_date' => $start_date,
-			'end_date' => $end_date,
-		);
-		return $this->_makeCall('movie/changes', $params);
-	}
-
-	/**
-	 * Retrieve all basic information for a particular person
-	 *
-	 * @param int $id					TMDb person-id
-	 * @return TMDb result array
-	 */
-	public function getPerson($id)
-	{
-		return $this->_makeCall('person/'.$id);
-	}
-
-	/**
-	 * Retrieve all cast and crew information for a particular person
-	 *
-	 * @param int $id					TMDb person-id
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getPersonCredits($id, $lang = NULL)
-	{
-		$params = array(
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('person/'.$id.'/credits', $params);
-	}
-
-	/**
-	 * Retrieve all images for a particular person
-	 *
-	 * @param mixed $id					TMDb person-id
-	 * @return TMDb result array
-	 */
-	public function getPersonImages($id)
-	{
-		return $this->_makeCall('person/'.$id.'/images');
-	}
-
-	/**
-	 * Retrieve changes for a particular person
-	 *
-	 * @param mixed $id					TMDb person-id
-	 * @return TMDb result array
-	 */
-	public function getPersonChanges($id)
-	{
-		return $this->_makeCall('person/'.$id.'/changes');
-	}
-
-	/**
-	 * Retrieve all id's from changed persons
-	 *
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param string $start_date		String start date as YYYY-MM-DD
-	 * @param string $end_date			String end date as YYYY-MM-DD (not inclusive)
-	 * @return TMDb result array
-	 */
-	public function getChangedPersons($page = 1, $start_date = NULL, $end_date = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'start_date' => $start_date,
-			'start_date' => $end_date,
-		);
-		return $this->_makeCall('person/changes', $params);
-	}
-
-	/**
-	 * Retrieve all basic information for a particular production company
-	 *
-	 * @param int $id					TMDb company-id
-	 * @return TMDb result array
-	 */
-	public function getCompany($id)
-	{
-		return $this->_makeCall('company/'.$id);
-	}
-
-	/**
-	 * Retrieve movies for a particular production company
-	 *
-	 * @param int $id					TMDb company-id
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getMoviesByCompany($id, $page = 1, $lang = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('company/'.$id.'/movies', $params);
-	}
-
-	/**
-	 * Retrieve a list of genres used on TMDb
-	 *
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getGenres($lang = NULL)
-	{
-		$params = array(
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('genre/list', $params);
-	}
-
-	/**
-	 * Retrieve movies for a particular genre
-	 *
-	 * @param int $id					TMDb genre-id
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Filter the result with a language (ISO 3166-1) other then default, use FALSE to retrieve results from all languages
-	 * @return TMDb result array
-	 */
-	public function getMoviesByGenre($id, $page = 1, $lang = NULL)
-	{
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : $this->getLang(),
-		);
-		return $this->_makeCall('genre/'.$id.'/movies', $params);
-	}
-
-	/**
-	 * Authentication: retrieve authentication token
-	 * More information about the authentication process: http://help.themoviedb.org/kb/api/user-authentication
-	 *
-	 * @return TMDb result array
-	 */
-	public function getAuthToken()
-	{
-		$result = $this->_makeCall('authentication/token/new');
-
-		if( ! isset($result['request_token']))
-		{
-			if($this->getDebugMode())
-			{
-				throw new TMDbException('No valid request token from TMDb');
-			}
-			else
-			{
-				return FALSE;
-			}
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Authentication: retrieve authentication session and set it to the class
-	 * More information about the authentication process: http://help.themoviedb.org/kb/api/user-authentication
-	 *
-	 * @param string $token
-	 * @return TMDb result array
-	 */
-	public function getAuthSession($token)
-	{
-		$params = array(
-			'request_token' => $token,
-		);
-
-		$result = $this->_makeCall('authentication/session/new', $params);
-
-		if(isset($result['session_id']))
-		{
-			$this->setAuthSession($result['session_id']);
-		}
-
-		return $result;
-	}
-
-	/**
-	 * Authentication: set retrieved session id in the class for authenticated requests
-	 * More information about the authentication process: http://help.themoviedb.org/kb/api/user-authentication
-	 *
-	 * @param string $session_id
-	 */
-	public function setAuthSession($session_id)
-	{
-		$this->_session_id = $session_id;
-	}
-
-	/**
-	 * Retrieve basic account information
-	 *
-	 * @param string $session_id		Set session_id for the account you want to retrieve information from
-	 * @return TMDb result array
-	 */
-	public function getAccount($session_id = NULL)
-	{
-		$session_id = ($session_id === NULL) ? $this->_session_id : $session_id;
-		return $this->_makeCall('account', NULL, $session_id);
-	}
-
-	/**
-	 * Retrieve favorite movies for a particular account
-	 *
-	 * @param int $account_id			TMDb account-id
-	 * @param string $session_id		Set session_id for the account you want to retrieve information from
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Get result in other language then default for this user account (ISO 3166-1)
-	 * @return TMDb result array
-	 */
-	public function getAccountFavoriteMovies($account_id, $session_id = NULL, $page = 1, $lang = FALSE)
-	{
-		$session_id = ($session_id === NULL) ? $this->_session_id : $session_id;
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : '',
-		);
-		return $this->_makeCall('account/'.$account_id.'/favorite_movies', $params, $session_id);
-	}
-
-	/**
-	 * Retrieve rated movies for a particular account
-	 *
-	 * @param int $account_id			TMDb account-id
-	 * @param string $session_id		Set session_id for the account you want to retrieve information from
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Get result in other language then default for this user account (ISO 3166-1)
-	 * @return TMDb result array
-	 */
-	public function getAccountRatedMovies($account_id, $session_id = NULL, $page = 1, $lang = FALSE)
-	{
-		$session_id = ($session_id === NULL) ? $this->_session_id : $session_id;
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : '',
-		);
-		return $this->_makeCall('account/'.$account_id.'/rated_movies', $params, $session_id);
-	}
-
-	/**
-	 * Retrieve movies that have been marked in a particular account watchlist
-	 *
-	 * @param int $account_id			TMDb account-id
-	 * @param string $session_id		Set session_id for the account you want to retrieve information from
-	 * @param int $page					Number of the page with results (default first page)
-	 * @param mixed $lang				Get result in other language then default for this user account (ISO 3166-1)
-	 * @return TMDb result array
-	 */
-	public function getAccountWatchlistMovies($account_id, $session_id = NULL, $page = 1, $lang = FALSE)
-	{
-		$session_id = ($session_id === NULL) ? $this->_session_id : $session_id;
-		$params = array(
-			'page' => (int) $page,
-			'language' => ($lang !== NULL) ? $lang : '',
-		);
-		return $this->_makeCall('account/'.$account_id.'/movie_watchlist', $params, $session_id);
-	}
-
-	/**
-	 * Add a movie to the account favorite movies
-	 *
-	 * @param int $account_id			TMDb account-id
-	 * @param string $session_id		Set session_id for the account you want to retrieve information from
-	 * @param int $movie_id				TMDb movie-id
-	 * @param bool $favorite			Add to favorites or remove from favorites (default TRUE)
-	 * @return TMDb result array
-	 */
-	public function addFavoriteMovie($account_id, $session_id = NULL, $movie_id = 0, $favorite = TRUE)
-	{
-		$session_id = ($session_id === NULL) ? $this->_session_id : $session_id;
-		$params = array(
-			'movie_id' => (int) $movie_id,
-			'favorite' => (bool) $favorite,
-		);
-		return $this->_makeCall('account/'.$account_id.'/favorite', $params, $session_id, TMDb::POST);
-	}
-
-	/**
-	 * Add a movie to the account watchlist
-	 *
-	 * @param int $account_id			TMDb account-id
-	 * @param string $session_id		Set session_id for the account you want to retrieve information from
-	 * @param int $movie_id				TMDb movie-id
-	 * @param bool $watchlist			Add to watchlist or remove from watchlist (default TRUE)
-	 * @return TMDb result array
-	 */
-	public function addMovieToWatchlist($account_id, $session_id = NULL, $movie_id = 0, $watchlist = TRUE)
-	{
-		$session_id = ($session_id === NULL) ? $this->_session_id : $session_id;
-		$params = array(
-			'movie_id' => (int) $movie_id,
-			'movie_watchlist' => (bool) $watchlist,
-		);
-		return $this->_makeCall('account/'.$account_id.'/movie_watchlist', $params, $session_id, TMDb::POST);
-	}
-
-	/**
-	 * Add a rating to a movie
-	 *
-	 * @param string $session_id		Set session_id for the account you want to retrieve information from
-	 * @param int $movie_id				TMDb movie-id
-	 * @param float $value				Value between 1 and 10
-	 * @return TMDb result array
-	 */
-	public function addMovieRating($session_id = NULL, $movie_id = 0, $value = 0)
-	{
-		$session_id = ($session_id === NULL) ? $this->_session_id : $session_id;
-		$params = array(
-			'value' => is_numeric($value) ? floatval($value) : 0,
-		);
-		return $this->_makeCall('movie/'.$movie_id.'/rating', $params, $session_id, TMDb::POST);
-	}
-
-	/**
-	 * Get configuration from TMDb
-	 *
-	 * @return TMDb result array
-	 */
-	public function getConfiguration()
-	{
-		$config = $this->_makeCall('configuration');
-
-		if( ! empty($config))
-		{
-			$this->setConfig($config);
-		}
-
-		return $config;
-	}
-
-	/**
-	 * Get Image URL
-	 *
-	 * @param string $filepath			Filepath to image
-	 * @param const $imagetype			Image type: TMDb::IMAGE_BACKDROP, TMDb::IMAGE_POSTER, TMDb::IMAGE_PROFILE
-	 * @param string $size				Valid size for the image
-	 * @return string
-	 */
-	public function getImageUrl($filepath, $imagetype, $size)
-	{
-		$config = $this->getConfig();
-
-		if(isset($config['images']))
-		{
-			$base_url = $config['images']['base_url'];
-			$available_sizes = $this->getAvailableImageSizes($imagetype);
-
-			if(in_array($size, $available_sizes))
-			{
-				return $base_url.$size.$filepath;
-			}
-			else
-			{
-				throw new TMDbException('The size "'.$size.'" is not supported by TMDb');
-			}
-		}
-		else
-		{
-			throw new TMDbException('No configuration available for image URL generation');
-		}
-	}
-
-	/**
-	 * Get available image sizes for a particular image type
-	 *
-	 * @param const $imagetype			Image type: TMDb::IMAGE_BACKDROP, TMDb::IMAGE_POSTER, TMDb::IMAGE_PROFILE
-	 * @return array
-	 */
-	public function getAvailableImageSizes($imagetype)
-	{
-		$config = $this->getConfig();
-
-		if(isset($config['images'][$imagetype.'_sizes']))
-		{
-			return $config['images'][$imagetype.'_sizes'];
-		}
-		else
-		{
-			throw new TMDbException('No configuration available to retrieve available image sizes');
-		}
-	}
-
-	/**
-	 * Get ETag to keep track of state of the content
-	 *
-	 * @param string $uri				Use an URI to know the version of it. For example: 'movie/550'
-	 * @return string
-	 */
-	public function getVersion($uri)
-	{
-		$headers = $this->_makeCall($uri, NULL, NULL, TMDb::HEAD);
-		return isset($headers['Etag']) ? $headers['Etag'] : '';
-	}
-
-	/**
-	 * Makes the call to the API
-	 *
-	 * @param string $function			API specific function name for in the URL
-	 * @param array $params				Unencoded parameters for in the URL
-	 * @param string $session_id		Session_id for authentication to the API for specific API methods
-	 * @param const $method				TMDb::GET or TMDb:POST (default TMDb::GET)
-	 * @return TMDb result array
-	 */
-	private function _makeCall($function, $params = NULL, $session_id = NULL, $method = TMDb::GET)
-	{
-		$params = ( ! is_array($params)) ? array() : $params;
-		$auth_array = array('api_key' => $this->_apikey);
-
-		if($session_id !== NULL)
-		{
-			$auth_array['session_id'] = $session_id;
-		}
-
-		$url = $this->_apischeme.TMDb::API_URL.'/'.TMDb::API_VERSION.'/'.$function.'?'.http_build_query($auth_array, '', '&');
-
-		if($method === TMDb::GET)
-		{
-			if(isset($params['language']) AND $params['language'] === FALSE)
-			{
-				unset($params['language']);
-			}
-
-			$url .= ( ! empty($params)) ? '&'.http_build_query($params, '', '&') : '';
-		}
-
-		$results = '{}';
-
-		if (extension_loaded('curl'))
-		{
-			$headers = array(
-				'Accept: application/json',
-			);
-
-			$ch = curl_init();
-
-			if($method == TMDB::POST)
-			{
-				$json_string = json_encode($params);
-				curl_setopt($ch,CURLOPT_POST, 1);
-				curl_setopt($ch,CURLOPT_POSTFIELDS, $json_string);
-				$headers[] = 'Content-Type: application/json';
-				$headers[] = 'Content-Length: '.strlen($json_string);
-			}
-			elseif($method == TMDb::HEAD)
-			{
-				curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'HEAD');
-				curl_setopt($ch, CURLOPT_NOBODY, 1);
-			}
-
-			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-			curl_setopt($ch, CURLOPT_HEADER, 1);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-			$response = curl_exec($ch);
-
-			$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-			$header = substr($response, 0, $header_size);
-			$body = substr($response, $header_size);
-
-			$error_number = curl_errno($ch);
-			$error_message = curl_error($ch);
-
-			if($error_number > 0)
-			{
-				throw new TMDbException('Method failed: '.$function.' - '.$error_message);
-			}
-
-			curl_close($ch);
-		}
-		else
-		{
-			throw new TMDbException('CURL-extension not loaded');
-		}
-
-		$results = json_decode($body, TRUE);
-
-		if(strpos($function, 'authentication/token/new') !== FALSE)
-		{
-			$parsed_headers = $this->_http_parse_headers($header);
-			$results['Authentication-Callback'] = $parsed_headers['Authentication-Callback'];
-		}
-
-		if($results !== NULL)
-		{
-			return $results;
-		}
-		elseif($method == TMDb::HEAD)
-		{
-			return $this->_http_parse_headers($header);
-		}
-		else
-		{
-			throw new TMDbException('Server error on "'.$url.'": '.$response);
-		}
-	}
-
-	/**
-	 * Setter for the default language
-	 *
-	 * @param string $lang		(ISO 3166-1)
-	 * @return void
-	 */
-	public function setLang($lang)
-	{
-		$this->_lang = $lang;
-	}
-
-	/**
-	 * Setter for the TMDB-config
-	 *
-	 * $param array $config
-	 * @return void
-	 */
-	public function setConfig($config)
-	{
+	private function setConfig($config) {
 		$this->_config = $config;
 	}
+	
+	/**
+	 * 	Get the config parameters
+	 *
+	 * 	@return array $config
+	 */
+	private function getConfig() {
+		return $this->_config;
+	}
+	
+	//------------------------------------------------------------------------------
+	// Api Key
+	//------------------------------------------------------------------------------
 
 	/**
-	 * Getter for the default language
+	 * 	Set the API key
 	 *
-	 * @return string
+	 * 	@param string $apikey
+	 * 	@return void
 	 */
-	public function getLang()
-	{
+	private function setApikey($apikey) {
+		$this->_apikey = (string) $apikey;
+	}
+
+	/**
+	 * 	Get the API key
+	 *
+	 * 	@return string
+	 */
+	private function getApikey() {
+		return $this->_apikey;
+	}
+
+	//------------------------------------------------------------------------------
+	// Language
+	//------------------------------------------------------------------------------
+
+	/**
+	 *  Set the language
+	 *	By default english
+	 *
+	 * 	@param string $lang
+	 */
+	public function setLang($lang = 'en') {
+		$this->_lang = (string) $lang;
+	}
+
+	/**
+	 * 	Get the language
+	 *
+	 * 	@return string
+	 */
+	public function getLang() {
 		return $this->_lang;
 	}
 
-	/**
-	 * Getter for the TMDB-config
-	 *
-	 * @return array
-	 */
-	public function getConfig()
-	{
-		if(empty($this->_config))
-		{
-			$this->_config = $this->getConfiguration();
-		}
+	//------------------------------------------------------------------------------
+	// Adult Content
+	//------------------------------------------------------------------------------
 
-		return $this->_config;
+	/**
+	 *  Set adult content flag
+	 *	By default false
+	 *
+	 * 	@param boolean $adult
+	 */
+	public function setAdult($adult = false) {
+		$this->_adult = $adult;
 	}
 
-	/*
-	 * Internal function to parse HTTP headers because of lack of PECL extension installed by many
+	/**
+	 * 	Get the adult content flag
 	 *
-	 * @param string $header
-	 * @return array
+	 * 	@return string
 	 */
-	protected function _http_parse_headers($header)
-	{
-		$return = array();
-		$fields = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $header));
-		foreach($fields as $field)
-		{
-			if(preg_match('/([^:]+): (.+)/m', $field, $match))
-			{
-				$match[1] = preg_replace('/(?<=^|[\x09\x20\x2D])./e', 'strtoupper("\0")', strtolower(trim($match[1])));
-				if( isset($return[$match[1]]) )
-				{
-					$return[$match[1]] = array($return[$match[1]], $match[2]);
-				}
-				else
-				{
-					$return[$match[1]] = trim($match[2]);
-				}
-			}
+	public function getAdult() {
+		return ($this->_adult) ? 'true' : 'false';
+	}
+	
+	//------------------------------------------------------------------------------
+	// Debug Mode
+	//------------------------------------------------------------------------------
+	
+	/**
+	 *  Set debug mode
+	 *	By default false
+	 *
+	 * 	@param boolean $debug
+	 */
+	public function setDebug($debug = false) {
+		$this->_debug = $debug;
+	}
+	
+	/**
+	 * 	Get debug status
+	 *
+	 * 	@return boolean
+	 */
+	public function getDebug() {
+		return $this->_debug;
+	}
+
+	//------------------------------------------------------------------------------
+	// Config
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Loads the configuration of the API
+	 *
+	 * 	@return boolean
+	 */
+	private function _loadConfig() {
+		$this->_apiconfiguration = new APIConfiguration($this->_call('configuration'));
+
+		return ! empty($this->_apiconfiguration);
+	}
+
+	/**
+	 * 	Get Configuration of the API (Revisar)
+	 *
+	 * 	@return Configuration
+	 */
+	public function getAPIConfig() {
+		return $this->_apiconfiguration;
+	}
+
+	//------------------------------------------------------------------------------
+	// Get Variables
+	//------------------------------------------------------------------------------
+
+	/**
+	 *	Get the URL images
+	 * 	You can specify the width, by default original
+	 *
+	 * 	@param String $size A String like 'w185' where you specify the image width
+	 * 	@return string
+	 */
+	public function getImageURL($size = 'original') {
+		return $this->_apiconfiguration->getImageBaseURL().$size;
+	}
+
+	//------------------------------------------------------------------------------
+	// Get Lists of Discover
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Discover Movies
+	 *	@add by tnsws
+	 *
+	 * 	@return Movie[]
+	 */
+	public function getDiscoverMovies($page = 1) {
+
+		$movies = array();
+
+		$result = $this->_call('discover/movie', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
 		}
-		return $return;
+
+		return $movies;
+	}
+
+	/**
+	 * 	Discover TVShows
+	 *	@add by tnsws
+	 *
+	 * 	@return TVShow[]
+	 */
+	public function getDiscoverTVShows($page = 1) {
+
+		$tvShows = array();
+
+		$result = $this->_call('discover/tv', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$tvShows[] = new TVShow($data);
+		}
+
+		return $tvShows;
+	}
+
+	//------------------------------------------------------------------------------
+	// Get Lists of Discover
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Get latest Movie
+	 *	@add by tnsws
+	 *
+	 * 	@return Movie
+	 */
+	public function getDiscoverMovie($page = 1) {
+
+		$movies = array();
+
+		$result = $this->_call('discover/movie', 'page='. $page);
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
+		}
+
+		return $movies;
+	}
+
+	//------------------------------------------------------------------------------
+	// Get Featured Movies
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Get latest Movie
+	 *
+	 * 	@return Movie
+	 */
+	public function getLatestMovie() {
+		return new Movie($this->_call('movie/latest'));
+	}
+
+	/**
+	 *  Get Now Playing Movies
+	 *
+	 * 	@param integer $page
+	 * 	@return Movie[]
+	 */
+	public function getNowPlayingMovies($page = 1) {
+
+		$movies = array();
+
+		$result = $this->_call('movie/now_playing', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
+		}
+
+		return $movies;
+	}
+
+	/**
+	 *  Get Popular Movies
+	 *
+	 * 	@param integer $page
+	 * 	@return Movie[]
+	 */
+	public function getPopularMovies($page = 1) {
+
+		$movies = array();
+
+		$result = $this->_call('movie/popular', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
+		}
+
+		return $movies;
+	}
+
+	/**
+	 *  Get Top Rated Movies
+	 *	@add by tnsws
+	 *
+	 * 	@param integer $page
+	 * 	@return Movie[]
+	 */
+	public function getTopRatedMovies($page = 1) {
+
+		$movies = array();
+
+		$result = $this->_call('movie/top_rated', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
+		}
+
+		return $movies;
+	}
+
+	/**
+	 *  Get Upcoming Movies
+	 *	@add by tnsws
+	 *
+	 * 	@param integer $page
+	 * 	@return Movie[]
+	 */
+	public function getUpcomingMovies($page = 1) {
+
+		$movies = array();
+
+		$result = $this->_call('movie/upcoming', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
+		}
+
+		return $movies;
+	}
+
+
+	//------------------------------------------------------------------------------
+	// Get Featured TVShows
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Get latest TVShow
+	 *
+	 * 	@return TVShow
+	 */
+	public function getLatestTVShow() {
+		return new TVShow($this->_call('tv/latest'));
+	}
+
+	/**
+	 *  Get On The Air TVShows
+	 *
+	 * 	@param integer $page
+	 * 	@return TVShow[]
+	 */
+	public function getOnTheAirTVShows($page = 1) {
+
+		$tvShows = array();
+
+		$result = $this->_call('tv/on_the_air', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$tvShows[] = new TVShow($data);
+		}
+
+		return $tvShows;
+	}
+
+	/**
+	 *  Get Airing Today TVShows
+	 *
+	 * 	@param integer $page
+	 * 	@param string $timezone
+	 * 	@return TVShow[]
+	 */
+	public function getAiringTodayTVShows($page = 1, $timeZone = 'Europe/Madrid') {
+
+		$tvShows = array();
+
+		$result = $this->_call('tv/airing_today', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$tvShows[] = new TVShow($data);
+		}
+
+		return $tvShows;
+	}
+
+	/**
+	 *  Get Top Rated TVShows
+	 *
+	 * 	@param integer $page
+	 * 	@return TVShow[]
+	 */
+	public function getTopRatedTVShows($page = 1) {
+
+		$tvShows = array();
+
+		$result = $this->_call('tv/top_rated', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$tvShows[] = new TVShow($data);
+		}
+
+		return $tvShows;
+	}
+
+	/**
+	 *  Get Popular TVShows
+	 *
+	 * 	@param integer $page
+	 * 	@return TVShow[]
+	 */
+	public function getPopularTVShows($page = 1) {
+
+		$tvShows = array();
+
+		$result = $this->_call('tv/popular', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$tvShows[] = new TVShow($data);
+		}
+
+		return $tvShows;
+	}
+
+	//------------------------------------------------------------------------------
+	// Get Featured Persons
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Get latest Person
+	 *
+	 * 	@return Person
+	 */
+	public function getLatestPerson() {
+		return new Person($this->_call('person/latest'));
+	}
+
+	/**
+	 * 	Get Popular Persons
+	 *
+	 * 	@return Person[]
+	 */
+	public function getPopularPersons($page = 1) {
+		$persons = array();
+
+		$result = $this->_call('person/popular', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$persons[] = new Person($data);
+		}
+
+		return $persons;
+	}
+
+	//------------------------------------------------------------------------------
+	// API Call
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Makes the call to the API and retrieves the data as a JSON
+	 *
+	 * 	@param string $action	API specific function name for in the URL
+	 * 	@param string $appendToResponse	The extra append of the request
+	 * 	@return string
+	 */
+	private function _call($action, $appendToResponse = '') {
+
+		$url = self::_API_URL_.$action .'?api_key='. $this->getApikey() .'&language='.$this->getLang().'&append_to_response='.implode(',', (array) $appendToResponse).'&include_adult='.$this->getAdult();
+
+		if ($this->_debug) {
+			echo '<pre><a href="' . $url . '">check request</a></pre>';
+		}
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_FAILONERROR, 1);
+
+		$results = curl_exec($ch);
+
+		curl_close($ch);
+
+		return (array) json_decode(($results), true);
+	}
+
+	//------------------------------------------------------------------------------
+	// Get Data Objects
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Get a Movie
+	 *
+	 * 	@param int $idMovie The Movie id
+	 * 	@param array $appendToResponse The extra append of the request
+	 * 	@return Movie
+	 */
+	public function getMovie($idMovie, $appendToResponse = null) {
+		$appendToResponse = (isset($appendToResponse)) ? $appendToResponse : $this->getConfig()['appender']['movie']['default'];
+
+		return new Movie($this->_call('movie/' . $idMovie, $appendToResponse));
+	}
+
+	/**
+	 * 	Get a TVShow
+	 *
+	 * 	@param int $idTVShow The TVShow id
+	 * 	@param array $appendToResponse The extra append of the request
+	 * 	@return TVShow
+	 */
+	public function getTVShow($idTVShow, $appendToResponse = null) {
+		$appendToResponse = (isset($appendToResponse)) ? $appendToResponse : $this->getConfig()['appender']['tvshow']['default'];
+		
+		return new TVShow($this->_call('tv/' . $idTVShow, $appendToResponse));
+	}
+
+	/**
+	 * 	Get a Season
+	 *
+	 *  @param int $idTVShow The TVShow id
+	 *  @param int $numSeason The Season number
+	 * 	@param array $appendToResponse The extra append of the request
+	 * 	@return Season
+	 */
+	public function getSeason($idTVShow, $numSeason, $appendToResponse = null) {
+		$appendToResponse = (isset($appendToResponse)) ? $appendToResponse : $this->getConfig()['appender']['season']['default'];
+		
+		return new Season($this->_call('tv/'. $idTVShow .'/season/' . $numSeason, $appendToResponse), $idTVShow);
+	}
+
+	/**
+	 * 	Get a Episode
+	 *
+	 *  @param int $idTVShow The TVShow id
+	 *  @param int $numSeason The Season number
+	 *  @param int $numEpisode the Episode number
+	 * 	@param array $appendToResponse The extra append of the request
+	 * 	@return Episode
+	 */
+	public function getEpisode($idTVShow, $numSeason, $numEpisode, $appendToResponse = null) {
+		$appendToResponse = (isset($appendToResponse)) ? $appendToResponse : $this->getConfig()['appender']['episode']['default'];
+		
+		return new Episode($this->_call('tv/'. $idTVShow .'/season/'. $numSeason .'/episode/'. $numEpisode, $appendToResponse), $idTVShow);
+	}
+
+	/**
+	 * 	Get a Person
+	 *
+	 * 	@param int $idPerson The Person id
+	 * 	@param array $appendToResponse The extra append of the request
+	 * 	@return Person
+	 */
+	public function getPerson($idPerson, $appendToResponse = null) {
+		$appendToResponse = (isset($appendToResponse)) ? $appendToResponse : $this->getConfig()['appender']['person']['default'];
+		
+		return new Person($this->_call('person/' . $idPerson, $appendToResponse));
+	}
+
+	/**
+	 * 	Get a Collection
+	 *
+	 * 	@param int $idCollection The Person id
+	 * 	@param array $appendToResponse The extra append of the request
+	 * 	@return Collection
+	 */
+	public function getCollection($idCollection, $appendToResponse = null) {
+		$appendToResponse = (isset($appendToResponse)) ? $appendToResponse : $this->getConfig()['appender']['collection']['default'];
+		
+		return new Collection($this->_call('collection/' . $idCollection, $appendToResponse));
+	}
+
+	/**
+	 * 	Get a Company
+	 *
+	 * 	@param int $idCompany The Person id
+	 * 	@param array $appendToResponse The extra append of the request
+	 * 	@return Company
+	 */
+	public function getCompany($idCompany, $appendToResponse = null) {
+		$appendToResponse = (isset($appendToResponse)) ? $appendToResponse : $this->getConfig()['appender']['company']['default'];
+		
+		return new Company($this->_call('company/' . $idCompany, $appendToResponse));
+	}
+
+	//------------------------------------------------------------------------------
+	// Searches
+	//------------------------------------------------------------------------------
+
+	/**
+	 *  Search Movie
+	 *
+	 * 	@param string $movieTitle The title of a Movie
+	 * 	@return Movie[]
+	 */
+	public function searchMovie($movieTitle){
+
+		$movies = array();
+
+		$result = $this->_call('search/movie', '&query='. urlencode($movieTitle));
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
+		}
+
+		return $movies;
+	}
+
+	/**
+	 *  Search TVShow
+	 *
+	 * 	@param string $tvShowTitle The title of a TVShow
+	 * 	@return TVShow[]
+	 */
+	public function searchTVShow($tvShowTitle){
+
+		$tvShows = array();
+
+		$result = $this->_call('search/tv', '&query='. urlencode($tvShowTitle));
+
+		foreach($result['results'] as $data){
+			$tvShows[] = new TVShow($data);
+		}
+
+		return $tvShows;
+	}
+
+	/**
+	 *  Search Person
+	 *
+	 * 	@param string $personName The name of the Person
+	 * 	@return Person[]
+	 */
+	public function searchPerson($personName){
+
+		$persons = array();
+
+		$result = $this->_call('search/person', '&query='. urlencode($personName));
+
+		foreach($result['results'] as $data){
+			$persons[] = new Person($data);
+		}
+
+		return $persons;
+	}
+
+	/**
+	 *  Search Collection
+	 *
+	 * 	@param string $collectionName The name of the Collection
+	 * 	@return Collection[]
+	 */
+	public function searchCollection($collectionName){
+
+		$collections = array();
+
+		$result = $this->_call('search/collection', '&query='. urlencode($collectionName));
+
+		foreach($result['results'] as $data){
+			$collections[] = new Collection($data);
+		}
+
+		return $collections;
+	}
+
+	/**
+	 *  Search Company
+	 *
+	 * 	@param string $companyName The name of the Company
+	 * 	@return Company[]
+	 */
+	public function searchCompany($companyName){
+
+		$companies = array();
+
+		$result = $this->_call('search/company', '&query='. urlencode($companyName));
+
+		foreach($result['results'] as $data){
+			$companies[] = new Company($data);
+		}
+
+		return $companies;
+	}
+
+	//------------------------------------------------------------------------------
+	// Find
+	//------------------------------------------------------------------------------
+
+	/**
+	 *  Find
+	 *
+	 * 	@param string $companyName The name of the Company
+	 * 	@return array
+	 */
+	public function find($id, $external_source = 'imdb_id'){
+
+		$found = array();
+
+		$result = $this->_call('find/'.$id, '&external_source='. urlencode($external_source));
+
+		foreach($result['movie_results'] as $data){
+			$found['movies'][] = new Movie($data);
+		}
+		foreach($result['person_results'] as $data){
+			$found['persons'][] = new Person($data);
+		}
+		foreach($result['tv_results'] as $data){
+			$found['tvshows'][] = new TVShow($data);
+		}
+		foreach($result['tv_season_results'] as $data){
+			$found['seasons'][] = new Season($data);
+		}
+		foreach($result['tv_episode_results'] as $data){
+			$found['episodes'][] = new Episode($data);
+		}
+
+		return $found;
+	}
+
+	//------------------------------------------------------------------------------
+	// API Extra Info
+	//------------------------------------------------------------------------------
+
+	/**
+	 * 	Get Timezones
+	 *
+	 * 	@return array
+	 */
+	public function getTimezones() {
+		return $this->_call('timezones/list');
+	}
+
+	/**
+	 * 	Get Jobs
+	 *
+	 * 	@return array
+	 */
+	public function getJobs() {
+		return $this->_call('job/list');
+	}
+
+	/**
+	 * 	Get Movie Genres
+	 *
+	 * 	@return Genre[]
+	 */
+	public function getMovieGenres() {
+
+		$genres = array();
+
+		$result = $this->_call('genre/movie/list');
+
+		foreach($result['genres'] as $data){
+			$genres[] = new Genre($data);
+		}
+
+		return $genres;
+	}
+
+	/**
+	 * 	Get TV Genres
+	 *
+	 * 	@return Genre[]
+	 */
+	public function getTVGenres() {
+
+		$genres = array();
+
+		$result = $this->_call('genre/tv/list');
+
+		foreach($result['genres'] as $data){
+			$genres[] = new Genre($data);
+		}
+
+		return $genres;
+	}
+
+	//------------------------------------------------------------------------------
+	// Genre
+	//------------------------------------------------------------------------------
+
+	/**
+	 *  Get Movies by Genre
+	 *
+	 *  @param integer $idGenre
+	 * 	@param integer $page
+	 * 	@return Movie[]
+	 */
+	public function getMoviesByGenre($idGenre, $page = 1) {
+
+		$movies = array();
+
+		$result = $this->_call('genre/'.$idGenre.'/movies', '&page='. $page);
+
+		foreach($result['results'] as $data){
+			$movies[] = new Movie($data);
+		}
+
+		return $movies;
 	}
 }
-
-/**
- * TMDb Exception class
- *
- * @author Jonas De Smet - Glamorous
- */
-class TMDbException extends Exception{}
-
 ?>

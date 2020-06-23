@@ -3,6 +3,10 @@ include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
 
 if (isset($_POST["submit_stream"])) {
+    set_time_limit(0);
+    ini_set('mysql.connect_timeout', 0);
+    ini_set('max_execution_time', 0);
+    ini_set('default_socket_timeout', 0);
     if (isset($_POST["edit"])) {
         $rArray = getStream($_POST["edit"]);
         unset($rArray["id"]);
@@ -24,9 +28,15 @@ if (isset($_POST["submit_stream"])) {
             $rOnDemandArray[] = $rID;
         }
     }
-    $rArray["custom_map"] = $_POST["custom_map"];
-    $rArray["custom_ffmpeg"] = $_POST["custom_ffmpeg"];
-    $rArray["custom_sid"] = $_POST["custom_sid"];
+	if (isset($_POST["custom_map"])) {
+		$rArray["custom_map"] = $_POST["custom_map"];
+	}
+	if (isset($_POST["custom_ffmpeg"])) {
+		$rArray["custom_ffmpeg"] = $_POST["custom_ffmpeg"];
+	}
+	if (isset($_POST["custom_sid"])) {
+		$rArray["custom_sid"] = $_POST["custom_sid"];
+	}
     if (isset($_POST["gen_timestamps"])) {
         $rArray["gen_timestamps"] = 1;
         unset($_POST["gen_timestamps"]);
@@ -96,6 +106,12 @@ if (isset($_POST["submit_stream"])) {
     if ($rArray["transcode_profile_id"] > 0) {
         $rArray["enable_transcode"] = 1;
     }
+	if (isset($_POST["restart_on_edit"])) {
+		$rRestart = true;
+		unset($_POST["restart_on_edit"]);
+	} else {
+		$rRestart = false;
+	}
     $rBouquets = $_POST["bouquets"];
     unset($_POST["bouquets"]);
     foreach($_POST as $rKey => $rValue) {
@@ -167,8 +183,14 @@ if (isset($_POST["submit_stream"])) {
     if (count($rImportStreams) > 0) {
         foreach ($rImportStreams as $rImportStream) {
             $rImportArray = $rArray;
+			if ($rAdminSettings["download_images"]) {
+				$rImportStream["stream_icon"] = downloadImage($rImportStream["stream_icon"]);
+			}
             foreach (array_keys($rImportStream) as $rKey) {
-                $rImportArray[$rKey] = $rImportStream[$rKey];
+				$rImportArray[$rKey] = $rImportStream[$rKey];
+            }
+            if ($rSettings["channel_number_type"] == "manual") {
+                $rImportArray["order"] = getNextOrder();
             }
             $rCols = $db->real_escape_string("`".implode('`,`', array_keys($rImportArray))."`");
             $rValues = null;
@@ -243,6 +265,22 @@ if (isset($_POST["submit_stream"])) {
                 if ((isset($_POST["http_proxy"])) && (strlen($_POST["http_proxy"]) > 0)) {
                     $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 2, '".$db->real_escape_string($_POST["http_proxy"])."');");
                 }
+				if ($rRestart) {
+					$rPost = Array("action" => "stream", "sub" => "start", "stream_ids" => Array($rInsertID));
+					$rContext = stream_context_create(array(
+						'http' => array(
+							'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+							'method'  => 'POST',
+							'content' => http_build_query($rPost)
+						)
+					));
+					if ($rAdminSettings["local_api"]) {
+						$rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+					} else {
+						$rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+					}
+					$rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
+				}
                 foreach ($rBouquets as $rBouquet) {
                     addToBouquet("stream", $rBouquet, $rInsertID);
                 }
@@ -384,8 +422,7 @@ if ($rSettings["sidebar"]) {
                                         <tr>
                                             <th></th>
                                             <th></th>
-                                            <th>Server</th>
-                                            <th>Current Source</th>
+                                            <th>Source</th>
                                             <th>Clients</th>
                                             <th>Uptime</th>
                                             <th>Actions</th>
@@ -797,11 +834,15 @@ if ($rSettings["sidebar"]) {
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="tv_archive_duration">Timeshift Days</label>
-                                                            <div class="col-md-8">
+                                                            <div class="col-md-2">
                                                                 <input type="text" class="form-control" id="tv_archive_duration" name="tv_archive_duration" value="<?php if (isset($rStream)) { echo $rStream["tv_archive_duration"]; } else { echo "0"; } ?>">
                                                                 </select>
                                                             </div>
-                                                        </div>
+															<label class="col-md-4 col-form-label" for="restart_on_edit"><?php if (isset($rStream["id"])) { ?>Restart on Edit<?php } else { ?>Start Stream Now<?php } ?></label>
+															<div class="col-md-2">
+																<input name="restart_on_edit" id="restart_on_edit" type="checkbox" data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+															</div>
+														</div>
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
@@ -1127,8 +1168,8 @@ if ($rSettings["sidebar"]) {
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [2,3,4,5,6]},
-                    {"visible": false, "targets": [0,1,7]}
+                    {"className": "dt-center", "targets": [2,3,4,5]},
+                    {"visible": false, "targets": [0,1,6]}
                 ],
             });
             setTimeout(reloadStream, 5000);

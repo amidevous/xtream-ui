@@ -12,7 +12,7 @@ if (isset($_POST["submit_group"])) {
     if (strlen($_POST["group_name"]) == 0) {
         $_STATUS = 1;
     }
-    foreach (Array("is_admin", "is_reseller", "is_banned", "delete_users", "create_sub_resellers", "allow_change_pass", "allow_download", "reseller_client_connection_logs", "reset_stb_data") as $rSelection) {
+    foreach (Array("is_admin", "is_reseller", "is_banned", "delete_users", "create_sub_resellers", "allow_change_pass", "allow_download", "reseller_client_connection_logs", "reset_stb_data", "allow_import") as $rSelection) {
         if (isset($_POST[$rSelection])) {
             $rArray[$rSelection] = 1;
             unset($_POST[$rSelection]);
@@ -133,6 +133,20 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="total_allowed_gen_trials">Allowed Trials</label>
+                                                            <div class="col-md-2">
+                                                                <input type="text" class="form-control" id="total_allowed_gen_trials" name="total_allowed_gen_trials" value="<?php if (isset($rGroup)) { echo $rGroup["total_allowed_gen_trials"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="total_allowed_gen_in">Allowed Trials In</label>
+                                                            <div class="col-md-2">
+                                                                <select name="total_allowed_gen_in" id="total_allowed_gen_in" class="form-control select2" data-toggle="select2">
+                                                                    <?php foreach (Array("Day", "Month") as $rOption) { ?>
+                                                                    <option <?php if (isset($rGroup)) { if ($rGroup["total_allowed_gen_in"] == strtolower($rOption)) { echo "selected "; } } ?>value="<?=strtolower($rOption)?>"><?=$rOption?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="is_admin">Is Admin</label>
                                                             <div class="col-md-2">
                                                                 <input name="is_admin" id="is_admin" type="checkbox" <?php if (isset($rGroup)) { if ($rGroup["is_admin"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
@@ -163,7 +177,7 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="allow_change_pass">Can Change Password</label>
+                                                            <label class="col-md-4 col-form-label" for="allow_change_pass">Can Change Logins</label>
                                                             <div class="col-md-2">
                                                                 <input name="allow_change_pass" id="allow_change_pass" type="checkbox" <?php if (isset($rGroup)) { if ($rGroup["allow_change_pass"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
@@ -183,17 +197,9 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="total_allowed_gen_trials">Allowed Trials</label>
+                                                            <label class="col-md-4 col-form-label" for="allow_import">Can Use Reseller API</label>
                                                             <div class="col-md-2">
-                                                                <input type="text" class="form-control" id="total_allowed_gen_trials" name="total_allowed_gen_trials" value="<?php if (isset($rGroup)) { echo $rGroup["total_allowed_gen_trials"]; } else { echo "0"; } ?>" required data-parsley-trigger="change">
-                                                            </div>
-                                                            <label class="col-md-4 col-form-label" for="total_allowed_gen_in">Allowed Trials In</label>
-                                                            <div class="col-md-2">
-                                                                <select name="total_allowed_gen_in" id="total_allowed_gen_in" class="form-control select2" data-toggle="select2">
-                                                                    <?php foreach (Array("Day", "Month") as $rOption) { ?>
-                                                                    <option <?php if (isset($rGroup)) { if ($rGroup["total_allowed_gen_in"] == strtolower($rOption)) { echo "selected "; } } ?>value="<?=strtolower($rOption)?>"><?=$rOption?></option>
-                                                                    <?php } ?>
-                                                                </select>
+                                                                <input name="allow_import" id="allow_import" type="checkbox" <?php if (isset($rGroup)) { if ($rGroup["allow_import"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->

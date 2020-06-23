@@ -2,13 +2,18 @@
 include "./functions.php";
 if (!isset($_SESSION['hash'])) { exit; }
 
+if ($rAdminSettings["local_api"]) {
+    $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+} else {
+    $rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+}
+
 if (isset($_GET["action"])) {
     if ($_GET["action"] == "stream") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         $rStreamID = intval($_GET["stream_id"]);
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
-        $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
         if (in_array($rSub, Array("start", "stop"))) {
             $rURL = $rAPI."?action=stream&sub=".$rSub."&stream_ids[]=".$rStreamID."&servers[]=".$rServerID;
             echo file_get_contents($rURL);exit;
@@ -33,7 +38,6 @@ if (isset($_GET["action"])) {
         $rStreamID = intval($_GET["stream_id"]);
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
-        $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
         if (in_array($rSub, Array("start", "stop"))) {
             $rURL = $rAPI."?action=vod&sub=".$rSub."&stream_ids[]=".$rStreamID."&servers[]=".$rServerID;
             echo file_get_contents($rURL);exit;
@@ -42,6 +46,27 @@ if (isset($_GET["action"])) {
             $result = $db->query("SELECT COUNT(`server_stream_id`) AS `count` FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID).";");
             if ($result->fetch_assoc()["count"] == 0) {
                 $db->query("DELETE FROM `streams` WHERE `id` = ".$db->real_escape_string($rStreamID).";");
+                deleteMovieFile($rServerID, $rStreamID);
+                scanBouquets();
+            }
+            echo json_encode(Array("result" => True));exit;
+        } else {
+            echo json_encode(Array("result" => False));exit;
+        }
+    } else if ($_GET["action"] == "episode") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $rStreamID = intval($_GET["stream_id"]);
+        $rServerID = intval($_GET["server_id"]);
+        $rSub = $_GET["sub"];
+        if (in_array($rSub, Array("start", "stop"))) {
+            $rURL = $rAPI."?action=vod&sub=".$rSub."&stream_ids[]=".$rStreamID."&servers[]=".$rServerID;
+            echo file_get_contents($rURL);exit;
+        } else if ($rSub == "delete") {
+            $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID)." AND `server_id` = ".$db->real_escape_string($rServerID).";");
+            $result = $db->query("SELECT COUNT(`server_stream_id`) AS `count` FROM `streams_sys` WHERE `stream_id` = ".$db->real_escape_string($rStreamID).";");
+            if ($result->fetch_assoc()["count"] == 0) {
+                $db->query("DELETE FROM `streams` WHERE `id` = ".$db->real_escape_string($rStreamID).";");
+                $db->query("DELETE FROM `series_episodes` WHERE `stream_id` = ".$db->real_escape_string($rStreamID).";");
                 deleteMovieFile($rServerID, $rStreamID);
                 scanBouquets();
             }
@@ -142,7 +167,10 @@ if (isset($_GET["action"])) {
             } else {
                 echo json_encode(Array("result" => False));exit;
             }
-        } else if ($rSub == "enable") {
+        } else if ($rSub == "reset") {
+            $db->query("UPDATE `reg_users` SET `google_2fa_sec` = '' WHERE `id` = ".$db->real_escape_string($rUserID).";");
+            echo json_encode(Array("result" => True));exit;
+		} else if ($rSub == "enable") {
             $db->query("UPDATE `reg_users` SET `status` = 1 WHERE `id` = ".$db->real_escape_string($rUserID).";");
             echo json_encode(Array("result" => True));exit;
         } else if ($rSub == "disable") {
@@ -225,6 +253,36 @@ if (isset($_GET["action"])) {
         } else {
             echo json_encode(Array("result" => False));exit;
         }
+    } else if ($_GET["action"] == "series") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $rSeriesID = intval($_GET["series_id"]);
+        $rSub = $_GET["sub"];
+        if ($rSub == "delete") {
+            $db->query("DELETE FROM `series` WHERE `id` = ".intval($rSeriesID).";");
+            $rResult = $db->query("SELECT `stream_id` FROM `series_episodes` WHERE `series_id` = ".intval($rSeriesID).";");
+            if (($rResult) && ($rResult->num_rows > 0)) {
+                while ($rRow = $rResult->fetch_assoc()) {
+                    $db->query("DELETE FROM `streams_sys` WHERE `stream_id` = ".intval($rRow["stream_id"]).";");
+                    $db->query("DELETE FROM `streams` WHERE `id` = ".intval($rRow["stream_id"]).";");
+                    deleteMovieFile($rServerID, $rStreamID);
+                }
+                $db->query("DELETE FROM `series_episodes` WHERE `series_id` = ".intval($rSeriesID).";");
+                scanBouquets();
+            }
+            echo json_encode(Array("result" => True));exit;
+        } else {
+            echo json_encode(Array("result" => False));exit;
+        }
+    } else if ($_GET["action"] == "folder") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $rFolderID = intval($_GET["folder_id"]);
+        $rSub = $_GET["sub"];
+        if ($rSub == "delete") {
+            $db->query("DELETE FROM `watch_folders` WHERE `id` = ".$db->real_escape_string($rFolderID).";");
+            echo json_encode(Array("result" => True));exit;
+        } else {
+            echo json_encode(Array("result" => False));exit;
+        }
     } else if ($_GET["action"] == "useragent") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         $rUAID = intval($_GET["ua_id"]);
@@ -242,9 +300,21 @@ if (isset($_GET["action"])) {
         if ($rSub == "delete") {
             $rResult = $db->query("SELECT `ip` FROM `blocked_ips` WHERE `id` = ".$db->real_escape_string($rIPID).";");
             if (($rResult) && ($rResult->num_rows > 0)) {
-                shell_exec("sudo /sbin/iptables -D INPUT -s ".$rResult->fetch_assoc()["ip"]." -j DROP");
+                foreach ($rServers as $rServer) {
+                    sexec($rServer["id"], "sudo /sbin/iptables -D INPUT -s ".$rResult->fetch_assoc()["ip"]." -j DROP");
+                }
             }
             $db->query("DELETE FROM `blocked_ips` WHERE `id` = ".$db->real_escape_string($rIPID).";");
+            echo json_encode(Array("result" => True));exit;
+        } else {
+            echo json_encode(Array("result" => False));exit;
+        }
+    } else if ($_GET["action"] == "rtmp_ip") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $rIPID = intval($_GET["ip"]);
+        $rSub = $_GET["sub"];
+        if ($rSub == "delete") {
+            $db->query("DELETE FROM `rtmp_ips` WHERE `id` = ".$db->real_escape_string($rIPID).";");
             echo json_encode(Array("result" => True));exit;
         } else {
             echo json_encode(Array("result" => False));exit;
@@ -314,7 +384,6 @@ if (isset($_GET["action"])) {
                         'content' => http_build_query($rPost)
                     )
                 ));
-                $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
                 $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
             }
             echo json_encode(Array("result" => True));exit;
@@ -335,7 +404,6 @@ if (isset($_GET["action"])) {
                         'content' => http_build_query($rPost)
                     )
                 ));
-                $rAPI = "http://127.0.0.1:".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
                 $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
             }
             echo json_encode(Array("result" => True));exit;
@@ -390,9 +458,13 @@ if (isset($_GET["action"])) {
         }
     } else if ($_GET["action"] == "get_package") {
         $rReturn = Array();
-        $rResult = $db->query("SELECT `bouquets`, `official_credits` AS `cost_credits`, `official_duration`, `official_duration_in`, `max_connections`, `can_gen_mag`, `can_gen_e2`, `only_mag`, `only_e2` FROM `packages` WHERE `id` = ".intval($_GET["package_id"]).";");
+        $rOverride = json_decode($rUserInfo["override_packages"], True);
+        $rResult = $db->query("SELECT `id`, `bouquets`, `official_credits` AS `cost_credits`, `official_duration`, `official_duration_in`, `max_connections`, `can_gen_mag`, `can_gen_e2`, `only_mag`, `only_e2` FROM `packages` WHERE `id` = ".intval($_GET["package_id"]).";");
         if (($rResult) && ($rResult->num_rows == 1)) {
             $rData = $rResult->fetch_assoc();
+            if ((isset($rOverride[$rData["id"]]["official_credits"])) && (strlen($rOverride[$rData["id"]]["official_credits"]) > 0)) {
+                $rData["cost_credits"] = $rOverride[$rData["id"]]["official_credits"];
+            }
             $rData["exp_date"] = date('Y-m-d', strtotime('+'.intval($rData["official_duration"]).' '.$rData["official_duration_in"]));
             if (isset($_GET["user_id"])) {
                 if ($rUser = getUser($_GET["user_id"])) {
@@ -442,7 +514,7 @@ if (isset($_GET["action"])) {
         exit;
     } else if ($_GET["action"] == "stats") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
-        $return = Array("cpu" => 0, "mem" => 0, "uptime" => "--", "total_running_streams" => 0, "bytes_sent" => 0, "bytes_received" => 0, "offline_streams" => 0);
+        $return = Array("cpu" => 0, "mem" => 0, "uptime" => "--", "total_running_streams" => 0, "bytes_sent" => 0, "bytes_received" => 0, "offline_streams" => 0, "servers" => Array());
         if (isset($_GET["server_id"])) {
             $rServerID = intval($_GET["server_id"]);
             $rWatchDog = json_decode($rServers[$rServerID]["watchdog_data"], True);
@@ -472,48 +544,40 @@ if (isset($_GET["action"])) {
         } else {
             $rUptime = 0;
             foreach (array_keys($rServers) as $rServerID) {
+                $rArray = Array();
+                $result = $db->query("SELECT COUNT(*) AS `count` FROM `user_activity_now` WHERE `server_id` = ".$rServerID.";");
+                $rArray["open_connections"] = $result->fetch_assoc()["count"];
+                $result = $db->query("SELECT COUNT(*) AS `count` FROM `user_activity_now`;");
+                $rArray["total_connections"] = $result->fetch_assoc()["count"];
+                $result = $db->query("SELECT `user_id` FROM `user_activity_now` WHERE `server_id` = ".$rServerID." GROUP BY `user_id`;");
+                $rArray["online_users"] = $result->num_rows;
+                $result = $db->query("SELECT `user_id` FROM `user_activity_now` GROUP BY `user_id`;");
+                $rArray["total_users"] = $result->num_rows;
+                $result = $db->query("SELECT COUNT(*) AS `count` FROM `streams_sys` LEFT JOIN `streams` ON `streams`.`id` = `streams_sys`.`stream_id` WHERE `server_id` = ".$rServerID." AND `stream_status` <> 2 AND `type` IN (1,3);");
+                $rArray["total_streams"] = $result->fetch_assoc()["count"];
+                $result = $db->query("SELECT COUNT(*) AS `count` FROM `streams_sys` LEFT JOIN `streams` ON `streams`.`id` = `streams_sys`.`stream_id` WHERE `server_id` = ".$rServerID." AND `pid` > 0 AND `type` IN (1,3);");
+                $rArray["total_running_streams"] = $result->fetch_assoc()["count"];
+                $result = $db->query("SELECT COUNT(*) AS `count` FROM `streams_sys` LEFT JOIN `streams` ON `streams`.`id` = `streams_sys`.`stream_id` WHERE `server_id` = ".$rServerID." AND ((`streams_sys`.`monitor_pid` IS NOT NULL AND `streams_sys`.`monitor_pid` > 0) AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` <> 0);");
+                $rArray["offline_streams"] = $result->fetch_assoc()["count"];
+                $rArray["network_guaranteed_speed"] = $rServers[$rServerID]["network_guaranteed_speed"];
                 $rWatchDog = json_decode($rServers[$rServerID]["watchdog_data"], True);
                 if (is_array($rWatchDog)) {
-                    foreach (explode(" ", $rWatchDog["uptime"]) as $rPart) {
-                        if (substr($rPart, -1) == "d") {
-                            $rUptime += intval(substr($rPart, 0, -1)) * 86400;
-                        } else if (substr($rPart, -1) == "h") {
-                            $rUptime += intval(substr($rPart, 0, -1)) * 3600;
-                        } else if (substr($rPart, -1) == "m") {
-                            $rUptime += intval(substr($rPart, 0, -1)) * 60;
-                        } else if (substr($rPart, -1) == "s") {
-                            $rUptime += intval(substr($rPart, 0, -1));
-                        }
-                    }
-                    $return["mem"] += intval($rWatchDog["total_mem_used_percent"]);
-                    $return["cpu"] += intval($rWatchDog["cpu_avg"]);
-                    $return["bytes_received"] += intval($rWatchDog["bytes_received"]);
-                    $return["bytes_sent"] += intval($rWatchDog["bytes_sent"]);
+                    $rArray["uptime"] = $rWatchDog["uptime"];
+                    $rArray["mem"] = intval($rWatchDog["total_mem_used_percent"]);
+                    $rArray["cpu"] = intval($rWatchDog["cpu_avg"]);
+                    $rArray["bytes_received"] = intval($rWatchDog["bytes_received"]);
+                    $rArray["bytes_sent"] = intval($rWatchDog["bytes_sent"]);
                 }
-                $result = $db->query("SELECT COUNT(*) AS `count` FROM `user_activity_now` WHERE `server_id` = ".$rServerID.";");
-                $return["open_connections"] += $result->fetch_assoc()["count"];
-                $result = $db->query("SELECT COUNT(*) AS `count` FROM `user_activity_now`;");
-                $return["total_connections"] = $result->fetch_assoc()["count"];
-                $result = $db->query("SELECT `user_id` FROM `user_activity_now` WHERE `server_id` = ".$rServerID." GROUP BY `user_id`;");
-                $return["online_users"] += $result->num_rows;
-                $result = $db->query("SELECT `user_id` FROM `user_activity_now` GROUP BY `user_id`;");
-                $return["total_users"] = $result->num_rows;
-                $result = $db->query("SELECT COUNT(*) AS `count` FROM `streams_sys` LEFT JOIN `streams` ON `streams`.`id` = `streams_sys`.`stream_id` WHERE `server_id` = ".$rServerID." AND `stream_status` <> 2 AND `type` IN (1,3);");
-                $return["total_streams"] += $result->fetch_assoc()["count"];
-                $result = $db->query("SELECT COUNT(*) AS `count` FROM `streams_sys` LEFT JOIN `streams` ON `streams`.`id` = `streams_sys`.`stream_id` WHERE `server_id` = ".$rServerID." AND `pid` > 0 AND `type` IN (1,3);");
-                $return["total_running_streams"] += $result->fetch_assoc()["count"];
-                $result = $db->query("SELECT COUNT(*) AS `count` FROM `streams_sys` LEFT JOIN `streams` ON `streams`.`id` = `streams_sys`.`stream_id` WHERE `server_id` = ".$rServerID." AND ((`streams_sys`.`monitor_pid` IS NOT NULL AND `streams_sys`.`monitor_pid` > 0) AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` <> 0);");
-                $return["offline_streams"] += $result->fetch_assoc()["count"];
-                $return["network_guaranteed_speed"] += $rServers[$rServerID]["network_guaranteed_speed"];
+                $rArray["server_id"] = $rServerID;
+                $return["servers"][] = $rArray;
             }
-            $return["mem"] = intval($return["mem"] / count($rServers));
-            $return["cpu"] = intval($return["cpu"] / count($rServers));
-            $return["uptime"] = "";
-            $rUptime = secondsToTime($rUptime);
-            if ($rUptime["d"] > 0) { $return["uptime"] .= $rUptime["d"]."d "; }
-            if (($rUptime["h"] > 0) OR (strlen($return["uptime"]) > 0)) { $return["uptime"] .= $rUptime["h"]."h "; }
-            if (($rUptime["m"] > 0) OR (strlen($return["uptime"]) > 0)) { $return["uptime"] .= $rUptime["m"]."m "; }
-            if (($rUptime["s"] > 0) OR (strlen($return["uptime"]) > 0)) { $return["uptime"] .= $rUptime["s"]."s "; }
+            foreach ($return["servers"] as $rServerArray) {
+                $return["open_connections"] += $rServerArray["open_connections"];
+                $return["online_users"] += $rServerArray["online_users"];
+                $return["total_streams"] += $rServerArray["total_streams"];
+                $return["total_running_streams"] += $rServerArray["total_running_streams"];
+                $return["offline_streams"] += $rServerArray["offline_streams"];
+            }
         }
         echo json_encode($return);exit;
     } else if ($_GET["action"] == "reseller_dashboard") {
@@ -572,6 +636,25 @@ if (isset($_GET["action"])) {
             }
         }
         echo json_encode($return);exit;
+    } else if ($_GET["action"] == "streamlist") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $return = Array("total_count" => 0, "items" => Array(), "result" => true);
+        if (isset($_GET["search"])) {
+            if (isset($_GET["page"])) {
+                $rPage = intval($_GET["page"]);
+            } else {
+                $rPage = 1;
+            }
+            $rResult = $db->query("SELECT COUNT(`id`) AS `id` FROM `streams` WHERE `stream_display_name` LIKE '%".$db->real_escape_string($_GET["search"])."%';");
+            $return["total_count"] = $rResult->fetch_assoc()["id"];
+            $rResult = $db->query("SELECT `id`, `stream_display_name` FROM `streams` WHERE `stream_display_name` LIKE '%".$db->real_escape_string($_GET["search"])."%' ORDER BY `stream_display_name` ASC LIMIT ".(($rPage-1) * 100).", 100;");
+            if (($rResult) && ($rResult->num_rows > 0)) {
+                while ($rRow = $rResult->fetch_assoc()) {
+                    $return["items"][] = Array("id" => $rRow["id"], "text" => $rRow["stream_display_name"]);
+                }
+            }
+        }
+        echo json_encode($return);exit;
     } else if ($_GET["action"] == "force_epg") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         sexec($_INFO["server_id"], "/home/xtreamcodes/iptv_xtream_codes/php/bin/php /home/xtreamcodes/iptv_xtream_codes/crons/epg.php");
@@ -622,35 +705,47 @@ if (isset($_GET["action"])) {
     } else if ($_GET["action"] == "tmdb_search") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         include "tmdb.php";
-        $rTMDB = new TMDb($rSettings["tmdb_api_key"]);
+        if (strlen($rAdminSettings["tmdb_language"]) > 0) {
+            $rTMDB = new TMDB($rSettings["tmdb_api_key"], $rAdminSettings["tmdb_language"]);
+        } else {
+            $rTMDB = new TMDB($rSettings["tmdb_api_key"]);
+        }
         $rTerm = $_GET["term"];
+        $rJSON = Array();
         if ($_GET["type"] == "movie") {
-            if (strlen($rAdminSettings["tmdb_language"]) > 0) {
-                
-                $rResults = $rTMDB->searchMovie($rTerm, 1, false, $rAdminSettings["tmdb_language"]);
-            } else {
-                $rResults = $rTMDB->searchMovie($rTerm);
+            $rResults = $rTMDB->searchMovie($rTerm);
+            foreach ($rResults as $rResult) {
+                $rJSON[] = json_decode($rResult->getJSON(), True);
+            }
+        } else if ($_GET["type"] == "series") {
+            $rResults = $rTMDB->searchTVShow($rTerm);
+            foreach ($rResults as $rResult) {
+                $rJSON[] = json_decode($rResult->getJSON(), True);
             }
         } else {
+            $rJSON = json_decode($rTMDB->getSeason($rTerm, intval($_GET["season"]))->getJSON(), True);
         }
-        if (count($rResults) > 0) {
-            echo json_encode(Array("result" => True, "data" => $rResults)); exit;
+        if (count($rJSON) > 0) {
+            echo json_encode(Array("result" => True, "data" => $rJSON)); exit;
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "tmdb") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         include "tmdb.php";
-        $rTMDB = new TMDb($rSettings["tmdb_api_key"]);
+        if (strlen($rAdminSettings["tmdb_language"]) > 0) {
+            $rTMDB = new TMDB($rSettings["tmdb_api_key"], $rAdminSettings["tmdb_language"]);
+        } else {
+            $rTMDB = new TMDB($rSettings["tmdb_api_key"]);
+        }
         $rID = $_GET["id"];
         if ($_GET["type"] == "movie") {
-            if (strlen($rAdminSettings["tmdb_language"]) > 0) {
-                $rResult = $rTMDB->getMovie($rID, $rAdminSettings["tmdb_language"]);
-                $rResult["videos"] = $rTMDB->getMovieTrailers($rID, $rAdminSettings["tmdb_language"]);
-            } else {
-                $rResult = $rTMDB->getMovie($rID);
-                $rResult["videos"] = $rTMDB->getMovieTrailers($rID);
-            }
-            $rResult["cast"] = $rTMDB->getMovieCast($rID);
+            $rMovie = $rTMDB->getMovie($rID);
+            $rResult = json_decode($rMovie->getJSON(), True);
+            $rResult["trailer"] = $rMovie->getTrailer();
+        } else if ($_GET["type"] == "series") {
+            $rSeries = $rTMDB->getTVShow($rID);
+            $rResult = json_decode($rSeries->getJSON(), True);
+            $rResult["trailer"] = getSeriesTrailer($rID);
         }
         if ($rResult) {
             echo json_encode(Array("result" => True, "data" => $rResult)); exit;
@@ -665,11 +760,11 @@ if (isset($_GET["action"])) {
         } else {
             $rFilter = null;
         }
-		if ((isset($_GET["server"])) && (isset($_GET["dir"]))) {
+        if ((isset($_GET["server"])) && (isset($_GET["dir"]))) {
             echo json_encode(Array("result" => True, "data" => listDir(intval($_GET["server"]), $_GET["dir"], $rFilter))); exit;
         }
         echo json_encode(Array("result" => False));exit;
-	} else if ($_GET["action"] == "fingerprint") {
+    } else if ($_GET["action"] == "fingerprint") {
         if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
         $rData = json_decode($_GET["data"], true);
         $rActiveServers = Array();
@@ -731,11 +826,11 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
         if (in_array($_GET["type"], Array("client_logs", "stream_logs", "user_activity", "credits_log", "reg_userlog"))) {
-			if ($_GET["type"] == "user_activity") {
-				$rColumn = "date_start";
-			} else {
-				$rColumn = "date";
-			}
+            if ($_GET["type"] == "user_activity") {
+                $rColumn = "date_start";
+            } else {
+                $rColumn = "date";
+            }
             if (($rStartTime) && ($rEndTime)) {
                 $db->query("DELETE FROM `".$db->real_escape_string($_GET["type"])."` WHERE `".$rColumn."` >= ".intval($rStartTime)." AND `".$rColumn."` <= ".intval($rEndTime).";");
             } else if ($rStartTime) {
@@ -772,6 +867,40 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => True));exit;
         }
         echo json_encode(Array("result" => False));exit;
+    } else if ($_GET["action"] == "send_event") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $rData = json_decode($_GET["data"], True);
+        $rMag = getMag($rData["id"]);
+        if ($rMag) {
+            if ($rData["type"] == "send_msg") {
+                $rData["need_confirm"] = 1;
+            } else if ($rData["type"] == "play_channel") {
+                $rData["need_confirm"] = 0;
+                $rData["reboot_portal"] = 0;
+                $rData["message"] = intval($rData["channel"]);
+            } else {
+                $rData["need_confirm"] = 0;
+                $rData["reboot_portal"] = 0;
+                $rData["message"] = "";
+            }
+            if ($db->query("INSERT INTO `mag_events`(`status`, `mag_device_id`, `event`, `need_confirm`, `msg`, `reboot_after_ok`, `send_time`) VALUES (0, ".intval($rData["id"]).", '".$db->real_escape_string($rData["type"])."', ".intval($rData["need_confirm"]).", '".$db->real_escape_string($rData["message"])."', ".intval($rData["reboot_portal"]).", ".intval(time()).");")) {
+                echo json_encode(Array("result" => True));exit;
+            }
+        }
+        echo json_encode(Array("result" => False));exit;
+    } else if ($_GET["action"] == "download") {
+        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        $rBackup = pathinfo($_GET["filename"])["filename"];
+        $rFilename = MAIN_DIR."adtools/backups/".$rBackup.".sql";
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="'.basename($rFilename).'"');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($rFilename));
+        readfile($rFilename);
+        exit;
     }
 }
 echo json_encode(Array("result" => False));

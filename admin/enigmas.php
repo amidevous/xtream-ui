@@ -239,6 +239,7 @@ if ($rSettings["sidebar"]) {
             $('#datatable-users').DataTable().search($("#e2_search").val());
             $('#datatable-users').DataTable().page.len($('#e2_show_entries').val());
             $("#datatable-users").DataTable().page(0).draw('page');
+            $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-users").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
@@ -295,11 +296,13 @@ if ($rSettings["sidebar"]) {
             });
             $('#e2_filter').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });
             $('#e2_reseller').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-users").DataTable().ajax.reload( null, false );
                 }
             });

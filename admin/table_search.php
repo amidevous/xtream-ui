@@ -1,7 +1,7 @@
 <?php
 include "functions.php";
 if (!isset($_SESSION['hash'])) { exit; }
-$rStatusArray = Array(0 => "Stopped", 1 => "Running", 2 => "Starting", 3 => "<strong style='color:#cc9999'>DOWN</strong>", 4 => "On Demand", 5 => "Direct");
+$rStatusArray = Array(0 => "<button type='button' class='btn btn-outline-warning btn-rounded btn-xs waves-effect waves-light'><i class='mdi mdi-checkbox-blank-circle-outline'></i> STOPPED</button>", 1 => "RUNNING", 2 => "<button type='button' class='btn btn-outline-primary btn-rounded btn-xs waves-effect waves-light'><i class='mdi mdi-checkbox-blank-circle-outline'></i> STARTING</button>", 3 => "<button type='button' class='btn btn-outline-danger btn-rounded btn-xs waves-effect waves-light'><i class='mdi mdi-checkbox-blank-circle'></i> DOWN</button>", 4 => "<button type='button' class='btn btn-outline-pink btn-rounded btn-xs waves-effect waves-light'>ON DEMAND</button>", 5 => "<button type='button' class='btn btn-outline-purple btn-rounded btn-xs waves-effect waves-light'>DIRECT</button>");
 $rVODStatusArray = Array(0 => "<i class='text-dark mdi mdi-checkbox-blank-circle-outline'></i>", 1 => "<i class='text-success mdi mdi-check-circle'></i>", 2 => "<i class='text-warning mdi mdi-checkbox-blank-circle'></i>", 3 => "<i class='text-primary mdi mdi-web'></i>", 4 => "<i class='text-danger mdi mdi-triangle'></i>");
 
 $rType = $_GET["id"];
@@ -131,36 +131,36 @@ if ($rType == "users") {
                     ';
                 }
                 if ($rPermissions["is_admin"]) {
-                    $rButtons .= '<a href="./user.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    $rButtons .= '<a href="./user.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                     ';
                 } else {
-                    $rButtons .= '<a href="./user_reseller.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    $rButtons .= '<a href="./user_reseller.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                     ';
                 }
                 if ((($rPermissions["is_reseller"]) && ($rPermissions["allow_download"])) OR ($rPermissions["is_admin"])) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-pink waves-effect waves-light btn-xs" onClick="download(\''.$rRow["username"].'\', \''.$rRow["password"].'\');"><i class="mdi mdi-download"></i></button>
+                    $rButtons .= '<button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download Playlist" class="btn btn-outline-pink waves-effect waves-light btn-xs" onClick="download(\''.$rRow["username"].'\', \''.$rRow["password"].'\');"><i class="mdi mdi-download"></i></button>
                     ';
                 }
-                $rButtons .= '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'kill\');"><i class="fas fa-hammer"></i></button>
+                $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="" type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'kill\');"><i class="fas fa-hammer"></i></button>
                 ';
                 if ($rPermissions["is_admin"]) {
                     if ($rRow["admin_enabled"] == 1) {
-                        $rButtons .= '<button type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'ban\');"><i class="mdi mdi-power"></i></button>
+                        $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Ban" type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'ban\');"><i class="mdi mdi-power"></i></button>
                         ';
                     } else {
-                        $rButtons .= '<button type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'unban\');"><i class="mdi mdi-power"></i></button>
+                        $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Unban" type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'unban\');"><i class="mdi mdi-power"></i></button>
                         ';
                     }
                 }
                 if ($rRow["enabled"] == 1) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Disable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 } else {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 }
                 if ((($rPermissions["is_reseller"]) && ($rPermissions["delete_users"])) OR ($rPermissions["is_admin"])) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
                 }
                 if ($rRow["last_active"]) {
                     $rLastActive = date("Y-m-d", $rRow["last_active"]);
@@ -186,7 +186,7 @@ if ($rType == "users") {
     }
     if (strlen($_GET["search"]["value"]) > 0) {
         $rSearch = $db->real_escape_string($_GET["search"]["value"]);
-        $rWhere[] = "(`users`.`username` LIKE '%{$rSearch}%' OR from_base64(`mag_devices`.`mac`) LIKE '%{$rSearch}%' OR `reg_users`.`username` LIKE '%{$rSearch}%' OR from_unixtime(`exp_date`) LIKE '%{$rSearch}%' OR `users`.`reseller_notes` LIKE '%{$rSearch}%' OR `users`.`admin_notes` LIKE '%{$rSearch}%')";
+        $rWhere[] = "(`users`.`username` LIKE '%{$rSearch}%' OR from_base64(`mag_devices`.`mac`) LIKE '%".strtoupper($rSearch)."%' OR `reg_users`.`username` LIKE '%{$rSearch}%' OR from_unixtime(`exp_date`) LIKE '%{$rSearch}%' OR `users`.`reseller_notes` LIKE '%{$rSearch}%' OR `users`.`admin_notes` LIKE '%{$rSearch}%')";
     }
     if (strlen($_GET["filter"]) > 0) {
         if ($_GET["filter"] == 1) {
@@ -223,7 +223,7 @@ if ($rType == "users") {
     }
     $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
     if ($rReturn["recordsTotal"] > 0) {
-        $rQuery = "SELECT `users`.`id`, `users`.`username`, `mag_devices`.`mac`, `users`.`exp_date`, `users`.`admin_enabled`, `users`.`enabled`, `users`.`admin_notes`, `users`.`reseller_notes`, `users`.`max_connections`,  `users`.`is_trial`, `reg_users`.`username` AS `owner_name`, (SELECT count(*) FROM `user_activity_now` WHERE `users`.`id` = `user_activity_now`.`user_id`) AS `active_connections` FROM `users` LEFT JOIN `reg_users` ON `reg_users`.`id` = `users`.`member_id` INNER JOIN `mag_devices` ON `mag_devices`.`user_id` = `users`.`id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rQuery = "SELECT `users`.`id`, `users`.`username`, `mag_devices`.`mac`, `mag_devices`.`mag_id`, `users`.`exp_date`, `users`.`admin_enabled`, `users`.`enabled`, `users`.`admin_notes`, `users`.`reseller_notes`, `users`.`max_connections`,  `users`.`is_trial`, `reg_users`.`username` AS `owner_name`, (SELECT count(*) FROM `user_activity_now` WHERE `users`.`id` = `user_activity_now`.`user_id`) AS `active_connections` FROM `users` LEFT JOIN `reg_users` ON `reg_users`.`id` = `users`.`member_id` INNER JOIN `mag_devices` ON `mag_devices`.`user_id` = `users`.`id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
         $rResult = $db->query($rQuery);
         if (($rResult) && ($rResult->num_rows > 0)) {
             while ($rRow = $rResult->fetch_assoc()) {
@@ -279,30 +279,32 @@ if ($rType == "users") {
                     ';
                 }
                 if ($rPermissions["is_admin"]) {
-                    $rButtons .= '<a href="./user.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+					$rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Send MAG Event" type="button" class="btn btn-outline-pink waves-effect waves-light btn-xs" onClick="message('.$rRow["mag_id"].', \''.base64_decode($rRow["mac"]).'\');"><i class="mdi mdi-message-alert"></i></button>
+                    ';
+                    $rButtons .= '<a href="./user.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                     ';
                 } else {
-                    $rButtons .= '<a href="./user_reseller.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    $rButtons .= '<a href="./user_reseller.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                     ';
                 }
                 if ($rPermissions["is_admin"]) {
                     if ($rRow["admin_enabled"] == 1) {
-                        $rButtons .= '<button type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'ban\');"><i class="mdi mdi-power"></i></button>
+                        $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Ban" type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'ban\');"><i class="mdi mdi-power"></i></button>
                         ';
                     } else {
-                        $rButtons .= '<button type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'unban\');"><i class="mdi mdi-power"></i></button>
+                        $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Unban" type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'unban\');"><i class="mdi mdi-power"></i></button>
                         ';
                     }
                 }
                 if ($rRow["enabled"] == 1) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Disable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 } else {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 }
                 if ((($rPermissions["is_reseller"]) && ($rPermissions["delete_users"])) OR ($rPermissions["is_admin"])) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
                 }
                 $rReturn["data"][] = Array($rRow["id"], $rRow["username"], base64_decode($rRow["mac"]), $rRow["owner_name"], $rStatus, $rActive, $rTrial, $rExpDate, $rButtons);
             }
@@ -416,30 +418,30 @@ if ($rType == "users") {
                     ';
                 }
                 if ($rPermissions["is_admin"]) {
-                    $rButtons .= '<a href="./user.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    $rButtons .= '<a href="./user.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                     ';
                 } else {
-                    $rButtons .= '<a href="./user_reseller.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    $rButtons .= '<a href="./user_reseller.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                     ';
                 }
                 if ($rPermissions["is_admin"]) {
                     if ($rRow["admin_enabled"] == 1) {
-                        $rButtons .= '<button type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'ban\');"><i class="mdi mdi-power"></i></button>
+                        $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Ban" type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'ban\');"><i class="mdi mdi-power"></i></button>
                         ';
                     } else {
-                        $rButtons .= '<button type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'unban\');"><i class="mdi mdi-power"></i></button>
+                        $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Unban" type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'unban\');"><i class="mdi mdi-power"></i></button>
                         ';
                     }
                 }
                 if ($rRow["enabled"] == 1) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Disable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 } else {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 }
                 if ((($rPermissions["is_reseller"]) && ($rPermissions["delete_users"])) OR ($rPermissions["is_admin"])) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
                 }
                 $rReturn["data"][] = Array($rRow["id"], $rRow["username"], $rRow["mac"], $rRow["owner_name"], $rStatus, $rActive, $rTrial, $rExpDate, $rButtons);
             }
@@ -449,7 +451,7 @@ if ($rType == "users") {
 } else if ($rType == "streams") {
     if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
     $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
-    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`streaming_servers`.`server_name`", "`streams_sys`.`current_source`", "`clients`", "`streams_sys`.`stream_started`", false, false, "`streams_sys`.`bitrate`");
+    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`streams_sys`.`current_source`", "`clients`", "`streams_sys`.`stream_started`", false, false, "`streams_sys`.`bitrate`");
     if (strlen($_GET["order"][0]["column"]) > 0) {
         $rOrderRow = intval($_GET["order"][0]["column"]);
     } else {
@@ -478,6 +480,8 @@ if ($rType == "users") {
                 $rWhere[] = "`streams_sys`.`on_demand` = 1";
             } else if ($_GET["filter"] == 6) {
                 $rWhere[] = "`streams`.`direct_source` = 1";
+			} else if ($_GET["filter"] == 7) {
+                $rWhere[] = "`streams`.`tv_archive_duration` > 0";
             }
         }
         if (strlen($_GET["category"]) > 0) {
@@ -504,14 +508,16 @@ if ($rType == "users") {
     }
     $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
     if ($rReturn["recordsTotal"] > 0) {
-        $rQuery = "SELECT `streams`.`id`, `streams`.`stream_display_name`, `streams_sys`.`server_id`, `streams`.`notes`, `streams`.`direct_source`, `streams_sys`.`pid`, `streams_sys`.`monitor_pid`, `streams_sys`.`stream_status`, `streams_sys`.`stream_started`, `streams_sys`.`stream_info`, `streams_sys`.`current_source`, `streams_sys`.`bitrate`, `streams_sys`.`progress_info`, `streams_sys`.`on_demand`, `stream_categories`.`category_name`, `streaming_servers`.`server_name`, (SELECT COUNT(*) FROM `user_activity_now` WHERE `user_activity_now`.`server_id` = `streams_sys`.`server_id` AND `user_activity_now`.`stream_id` = `streams`.`id`) AS `clients` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `streams_sys`.`server_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rQuery = "SELECT `streams`.`id`, `streams`.`stream_display_name`, `streams`.`tv_archive_duration`, `streams_sys`.`server_id`, `streams`.`notes`, `streams`.`direct_source`, `streams_sys`.`pid`, `streams_sys`.`monitor_pid`, `streams_sys`.`stream_status`, `streams_sys`.`stream_started`, `streams_sys`.`stream_info`, `streams_sys`.`current_source`, `streams_sys`.`bitrate`, `streams_sys`.`progress_info`, `streams_sys`.`on_demand`, `stream_categories`.`category_name`, `streaming_servers`.`server_name`, (SELECT COUNT(*) FROM `user_activity_now` WHERE `user_activity_now`.`server_id` = `streams_sys`.`server_id` AND `user_activity_now`.`stream_id` = `streams`.`id`) AS `clients` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `streams_sys`.`server_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
         $rResult = $db->query($rQuery);
         if (($rResult) && ($rResult->num_rows > 0)) {
             while ($rRow = $rResult->fetch_assoc()) {
                 // Format Rows
                 $rCategory = $rRow["category_name"] ?: "No Category";
+				if ($rRow["tv_archive_duration"] > 0) {
+					$rRow["stream_display_name"] .= " <i class='text-danger mdi mdi-record'></i>";
+				}
                 $rStreamName = "<b>".$rRow['stream_display_name']."</b><br><span style='font-size:11px;'>{$rCategory}</span>";
-                $rStreamSource = "<span style='font-size:11px;'>".parse_url($rRow["current_source"])['host']."</span>";
                 if ($rRow["server_name"]) {
                     if ($rPermissions["is_admin"]) {
                         $rServerName = $rRow["server_name"];
@@ -521,6 +527,10 @@ if ($rType == "users") {
                 } else {
                     $rServerName = "No Server Selected";
                 }
+				$rStreamSource = "<br/><span style='font-size:11px;'>".parse_url($rRow["current_source"])['host']."</span>";
+				if ($rPermissions["is_admin"]) {
+					$rServerName .= $rStreamSource;
+				}
                 $rUptime = 0;
                 $rActualStatus = 0;
                 if (intval($rRow["direct_source"]) == 1) {
@@ -550,25 +560,30 @@ if ($rType == "users") {
                 }
                 $rClients = "<a href=\"./live_connections.php?stream_id=".$rRow["id"]."&server_id=".$rRow["server_id"]."\">".$rRow["clients"]."</a>";
                 if ($rActualStatus == 1) {
-                    $rUptime = sprintf('%02dh %02dm %02ds', ($rUptime/3600),($rUptime/60%60), ($rUptime%60));
+					if ($rUptime >= 86400) {
+						$rUptime = sprintf('%02dd %02dh %02dm %02ds', ($rUptime/86400), ($rUptime/3600%24),($rUptime/60%60), ($rUptime%60));
+					} else {
+						$rUptime = sprintf('%02dh %02dm %02ds', ($rUptime/3600),($rUptime/60%60), ($rUptime%60));
+					}
+					$rUptime = "<button type='button' class='btn btn-outline-success btn-rounded btn-xs waves-effect waves-light'>{$rUptime}</button>";
                 } else {
                     $rUptime = $rStatusArray[$rActualStatus];
                 }
                 if (!$rRow["server_id"]) { $rRow["server_id"] = 0; }
                 if ((intval($rActualStatus) == 1) OR (intval($rActualStatus) == 2) OR (intval($rActualStatus) == 3) OR ($rRow["on_demand"] == 1) OR ($rActualStatus == 5)) {
-                    $rButtons = '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'stop\');"><i class="mdi mdi-stop"></i></button>
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Stop" type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'stop\');"><i class="mdi mdi-stop"></i></button>
                     ';
                     $rStatus = '';
                 } else {
-                    $rButtons = '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-play"></i></button>
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Start" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-play"></i></button>
                     ';
                     $rStatus = ' disabled';
                 }
-                $rButtons .= '<button type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs api-restart" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'restart\');"'.$rStatus.'><i class="mdi mdi-refresh"></i></button>
-                <a href="./stream.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Restart" type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs api-restart" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'restart\');"'.$rStatus.'><i class="mdi mdi-refresh"></i></button>
+                <a href="./stream.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                <button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
                 if (((intval($rActualStatus) == 1) OR ($rRow["on_demand"] == 1) OR ($rActualStatus == 5)) && ((strlen($rAdminSettings["admin_username"]) > 0) && (strlen($rAdminSettings["admin_password"]) > 0))) {
-                    $rPlayer = '<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rRow["id"].');"><i class="mdi mdi-play"></i></button>';
+                    $rPlayer = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Play" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rRow["id"].');"><i class="mdi mdi-play"></i></button>';
                 } else {
                     $rPlayer = '<button type="button" disabled class="btn btn-outline-secondary waves-effect waves-light btn-xs"><i class="mdi mdi-play"></i></button>';
                 }
@@ -615,7 +630,7 @@ if ($rType == "users") {
                     </table>";
                 }
                 if ($rPermissions["is_admin"]) {
-                    $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rStreamSource, $rClients, $rUptime, $rButtons, $rPlayer, $rStreamInfoText);
+                    $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rClients, $rUptime, $rButtons, $rPlayer, $rStreamInfoText);
                 } else {
                     $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rStreamInfoText);
                 }
@@ -715,22 +730,22 @@ if ($rType == "users") {
                 $rClients = "<a href=\"./live_connections.php?stream_id=".$rRow["id"]."&server_id=".$rRow["server_id"]."\">".$rRow["clients"]."</a>";
                 if (!$rRow["server_id"]) { $rRow["server_id"] = 0; }
                 if (intval($rActualStatus) == 1) {
-                    $rButtons = '<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-refresh"></i></button>
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Encode" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-refresh"></i></button>
                     ';
                 } else if (intval($rActualStatus) == 3) {
                     $rButtons = '<button disabled type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop"><i class="mdi mdi-stop"></i></button>
                     ';
                 } else if (intval($rActualStatus) == 2) {
-                    $rButtons = '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'stop\');"><i class="mdi mdi-stop"></i></button>
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Stop Encoding" type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'stop\');"><i class="mdi mdi-stop"></i></button>
                     ';
                 } else {
-                    $rButtons = '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-play"></i></button>
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Start Encoding" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-play"></i></button>
                     ';
                 }
-                $rButtons .= '<a href="./movie.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                $rButtons .= '<a href="./movie.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                <button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
                 if (((intval($rActualStatus) == 1) OR ($rActualStatus == 3)) && ((strlen($rAdminSettings["admin_username"]) > 0) && (strlen($rAdminSettings["admin_password"]) > 0))) {
-                    $rPlayer = '<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rRow["id"].', \''.json_decode($rRow["target_container"], True)[0].'\');"><i class="mdi mdi-play"></i></button>';
+                    $rPlayer = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Play" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rRow["id"].', \''.json_decode($rRow["target_container"], True)[0].'\');"><i class="mdi mdi-play"></i></button>';
                 } else {
                     $rPlayer = '<button type="button" disabled class="btn btn-outline-secondary waves-effect waves-light btn-xs"><i class="mdi mdi-play"></i></button>';
                 }
@@ -766,6 +781,78 @@ if ($rType == "users") {
                 } else {
                     $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rStreamInfoText);
                 }
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "episode_list") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`series`.`title`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    $rWhere[] = "`streams`.`type` = 5";
+    if (strlen($_GET["series"]) > 0) {
+        $rWhere[] = "`series_episodes`.`series_id` = ".intval($_GET["series"]);
+    }
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`streams`.`id` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `series`.`title` LIKE '%{$rSearch}%')";
+    }
+    if (strlen($_GET["filter"]) > 0) {
+        if ($_GET["filter"] == 1) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`pid` > 0 AND `streams_sys`.`to_analyze` = 0 AND `streams_sys`.`stream_status` <> 1)";
+        } else if ($_GET["filter"] == 2) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`pid` > 0 AND `streams_sys`.`to_analyze` = 1 AND `streams_sys`.`stream_status` <> 1)";
+        } else if ($_GET["filter"] == 3) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`stream_status` = 1)";
+        } else if ($_GET["filter"] == 4) {
+            $rWhere[] = "(`streams`.`direct_source` = 0 AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` <> 1)";
+        } else if ($_GET["filter"] == 5) {
+            $rWhere[] = "`streams`.`direct_source` = 1";
+        }
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `series_episodes` ON `series_episodes`.`stream_id` = `streams`.`id` LEFT JOIN `series` ON `series`.`id` = `series_episodes`.`series_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `streams`.`id`, `streams`.`stream_display_name`, `series`.`title`, `streams`.`direct_source`, `streams_sys`.`to_analyze`, `streams_sys`.`pid` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `series_episodes` ON `series_episodes`.`stream_id` = `streams`.`id` LEFT JOIN `series` ON `series`.`id` = `series_episodes`.`series_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rActualStatus = 0;
+                if (intval($rRow["direct_source"]) == 1) {
+                    // Direct
+                    $rActualStatus = 3;
+                } else if ($rRow["pid"]) {
+                    if ($rRow["to_analyze"] == 1) {
+                        $rActualStatus = 2; // Encoding
+                    } else if ($rRow["stream_status"] == 1) {
+                        $rActualStatus = 4; // Down
+                    } else {
+                        $rActualStatus = 1; // Encoded
+                    }
+                } else {
+                    // Not Encoded
+                    $rActualStatus = 0;
+                }
+                $rReturn["data"][] = Array($rRow["id"], $rRow["stream_display_name"], $rRow["title"], $rVODStatusArray[$rActualStatus]);
             }
         }
     }
@@ -962,9 +1049,9 @@ if ($rType == "users") {
                     $rTime = "";
                 }
                 if (isset($_GET["fingerprint"])) {
-                    $rButtons = '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["pid"].', \'kill\', '.$rRow["activity_id"].');"><i class="fas fa-hammer"></i></button>';
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Kill Connection" type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["pid"].', \'kill\', '.$rRow["activity_id"].');"><i class="fas fa-hammer"></i></button>';
                 } else {
-                    $rButtons = '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["pid"].', \'kill\');"><i class="fas fa-hammer"></i></button>';
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Kill Connection" type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["pid"].', \'kill\');"><i class="fas fa-hammer"></i></button>';
                 }
                 $rReturn["data"][] = Array($rRow["activity_id"], $rDivergence, $rUsername, $rChannel, $rServer, $rTime, $rIP, $rGeoCountry, $rButtons);
             }
@@ -1097,6 +1184,48 @@ if ($rType == "users") {
                     $rActualStatus = 0;
                 }
                 $rReturn["data"][] = Array($rRow["id"], $rRow["stream_display_name"], $rRow["category_name"], $rVODStatusArray[$rActualStatus]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "series_list") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`series`.`id`", "`series`.`title`", "`stream_categories`.`category_name`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    if (strlen($_GET["category"]) > 0) {
+        $rWhere[] = "`series`.`category_id` = ".intval($_GET["category"]);
+    }
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`series`.`id` LIKE '%{$rSearch}%' OR `series`.`title` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%')";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `series` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `series`.`category_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `series`.`id`, `series`.`title`, `stream_categories`.`category_name` FROM `series` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `series`.`category_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], $rRow["title"], $rRow["category_name"]);
             }
         }
     }
@@ -1429,26 +1558,235 @@ if ($rType == "users") {
                     ';
                 }
                 if ($rPermissions["is_admin"]) {
-                    $rButtons .= '<a href="./reg_user.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    $rButtons .= '<a href="./reg_user.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    ';
+					$rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Reset Two Factor Auth" type="button" class="btn btn-outline-pink waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'reset\');"><i class="mdi mdi-two-factor-authentication"></i></button>
                     ';
                 } else {
-                    $rButtons .= '<a href="./credits_add.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs"><i class="fe-dollar-sign"></i></button></a>
+                    $rButtons .= '<a href="./credits_add.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Add Credits" type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs"><i class="fe-dollar-sign"></i></button></a>
                     ';
-                    $rButtons .= '<a href="./subreseller.php?id='.$rRow["id"].'"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                    $rButtons .= '<a href="./subreseller.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                     ';
                 }
                 if ($rRow["status"] == 1) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Disable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'disable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 } else {
-                    $rButtons .= '<button type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Enable" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'enable\');"><i class="mdi mdi-lock"></i></button>
                     ';
                 }
                 if ((($rPermissions["is_reseller"]) && ($rPermissions["delete_users"])) OR ($rPermissions["is_admin"])) {
-                    $rButtons .= '<button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>
+                    $rButtons .= '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>
                     ';
                 }
                 $rReturn["data"][] = Array($rRow["id"], $rRow["username"], $rRow["email"], $rRow["owner_username"], $rRow["ip"], $rRow["group_name"], $rStatus, $rRow["credits"], $rRow["last_login"], $rButtons);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "series") {
+    if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`series`.`id`", "`series`.`title`", "`stream_categories`.`category_name`", "`latest_season`", "`episode_count`", "`series`.`releaseDate`", "`series`.`last_modified`", false);
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`series`.`id` LIKE '%{$rSearch}%' OR `series`.`title` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%' OR `series`.`releaseDate` LIKE '%{$rSearch}%')";
+    }
+    if (strlen($_GET["category"]) > 0) {
+        $rWhere[] = "`series`.`category_id` = ".intval($_GET["category"]);
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"].", `series`.`id` ASC";
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `series` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `series`.`category_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `series`.`id`, `series`.`title`, `stream_categories`.`category_name`, `series`.`releaseDate`, `series`.`last_modified`, (SELECT MAX(`season_num`) FROM `series_episodes` WHERE `series_id` = `series`.`id`) AS `latest_season`, (SELECT COUNT(*) FROM `series_episodes` WHERE `series_id` = `series`.`id`) AS `episode_count` FROM `series` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `series`.`category_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rButtons = '<a href="./episode.php?sid='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Add Episode(s)" type="button" class="btn btn-outline-primary waves-effect waves-light btn-xs"><i class="mdi mdi-plus-circle-outline"></i></button></a>
+                <a href="./episodes.php?series='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="View Episodes" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs"><i class="mdi mdi-eye"></i></button></a>
+                <a href="./series_order.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Reorder Episodes" type="button" class="btn btn-outline-purple waves-effect waves-light btn-xs"><i class="mdi mdi-format-line-spacing"></i></button></a>
+                <a href="./serie.php?id='.$rRow["id"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                if (!$rRow["latest_season"]) {
+                    $rRow["latest_season"] = 0;
+                }
+                if ($rRow["last_modified"] == 0) {
+                    $rRow["last_modified"] = "Never";
+                } else {
+                    $rRow["last_modified"] = date("Y-m-d H:i:s", $rRow["last_modified"]);
+                }
+                if ($rPermissions["is_admin"]) {
+                    $rReturn["data"][] = Array($rRow["id"], $rRow["title"], $rRow["category_name"], $rRow["latest_season"], $rRow["episode_count"], $rRow["releaseDate"], $rRow["last_modified"], $rButtons);
+                } else {
+                    $rReturn["data"][] = Array($rRow["id"], $rRow["title"], $rRow["category_name"], $rRow["latest_season"], $rRow["episode_count"], $rRow["releaseDate"]);
+                }
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "episodes") {
+    if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`series`.`title`", "`streaming_servers`.`server_name`", "`clients`", "`streams_sys`.`stream_started`", false, false, "`streams_sys`.`bitrate`");
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    $rWhere[] = "`streams`.`type` = 5";
+    if (isset($_GET["stream_id"])) {
+        $rWhere[] = "`streams`.`id` = ".intval($_GET["stream_id"]);
+        $rOrderBy = "ORDER BY `streams_sys`.`server_stream_id` ASC";
+    } else {
+        if (strlen($_GET["search"]["value"]) > 0) {
+            $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+            $rWhere[] = "(`streams`.`id` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `series`.`title` LIKE '%{$rSearch}%' OR `streams`.`notes` LIKE '%{$rSearch}%' OR `streams_sys`.`current_source` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%' OR `streaming_servers`.`server_name` LIKE '%{$rSearch}%')";
+        }
+        if (strlen($_GET["filter"]) > 0) {
+            if ($_GET["filter"] == 1) {
+                $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`pid` > 0 AND `streams_sys`.`to_analyze` = 0 AND `streams_sys`.`stream_status` <> 1)";
+            } else if ($_GET["filter"] == 2) {
+                $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`pid` > 0 AND `streams_sys`.`to_analyze` = 1 AND `streams_sys`.`stream_status` <> 1)";
+            } else if ($_GET["filter"] == 3) {
+                $rWhere[] = "(`streams`.`direct_source` = 0 AND `streams_sys`.`stream_status` = 1)";
+            } else if ($_GET["filter"] == 4) {
+                $rWhere[] = "(`streams`.`direct_source` = 0 AND (`streams_sys`.`pid` IS NULL OR `streams_sys`.`pid` <= 0) AND `streams_sys`.`stream_status` <> 1)";
+            } else if ($_GET["filter"] == 5) {
+                $rWhere[] = "`streams`.`direct_source` = 1";
+            }
+        }
+        if (strlen($_GET["series"]) > 0) {
+            $rWhere[] = "`series`.`id` = ".intval($_GET["series"]);
+        }
+        if (strlen($_GET["server"]) > 0) {
+            $rWhere[] = "`streams_sys`.`server_id` = ".intval($_GET["server"]);
+        }
+        if ($rOrder[$rOrderRow]) {
+            $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+        }
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `streams_sys`.`server_id` LEFT JOIN `series_episodes` ON `series_episodes`.`stream_id` = `streams`.`id` LEFT JOIN `series` ON `series`.`id` = `series_episodes`.`series_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `streams`.`id`, `streams_sys`.`to_analyze`, `streams`.`target_container`, `streams`.`stream_display_name`, `streams_sys`.`server_id`, `streams`.`notes`, `streams`.`direct_source`, `streams_sys`.`pid`, `streams_sys`.`monitor_pid`, `streams_sys`.`stream_status`, `streams_sys`.`stream_started`, `streams_sys`.`stream_info`, `streams_sys`.`current_source`, `streams_sys`.`bitrate`, `streams_sys`.`progress_info`, `streams_sys`.`on_demand`, `stream_categories`.`category_name`, `streaming_servers`.`server_name`, (SELECT COUNT(*) FROM `user_activity_now` WHERE `user_activity_now`.`server_id` = `streams_sys`.`server_id` AND `user_activity_now`.`stream_id` = `streams`.`id`) AS `clients`, `series`.`title`, `series`.`id` AS `sid`, `series_episodes`.`season_num` FROM `streams` LEFT JOIN `streams_sys` ON `streams_sys`.`stream_id` = `streams`.`id` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` LEFT JOIN `streaming_servers` ON `streaming_servers`.`id` = `streams_sys`.`server_id` LEFT JOIN `series_episodes` ON `series_episodes`.`stream_id` = `streams`.`id` LEFT JOIN `series` ON `series`.`id` = `series_episodes`.`series_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                // Format Rows
+                $rSeriesName = $rRow["title"]." - Season ".$rRow["season_num"];
+                $rStreamName = "<b>".$rRow['stream_display_name']."</b><br><span style='font-size:11px;'>{$rSeriesName}</span>";
+                if ($rRow["server_name"]) {
+                    if ($rPermissions["is_admin"]) {
+                        $rServerName = $rRow["server_name"];
+                    } else {
+                        $rServerName = "Server #".$rRow["server_id"];
+                    }
+                } else {
+                    $rServerName = "No Server Selected";
+                }
+                $rUptime = 0;
+                $rActualStatus = 0;
+                if (intval($rRow["direct_source"]) == 1) {
+                    // Direct
+                    $rActualStatus = 3;
+                } else if ($rRow["pid"]) {
+                    if ($rRow["to_analyze"] == 1) {
+                        $rActualStatus = 2; // Encoding
+                    } else if ($rRow["stream_status"] == 1) {
+                        $rActualStatus = 4; // Down
+                    } else {
+                        $rActualStatus = 1; // Encoded
+                    }
+                } else {
+                    // Not Encoded
+                    $rActualStatus = 0;
+                }
+                $rClients = "<a href=\"./live_connections.php?stream_id=".$rRow["id"]."&server_id=".$rRow["server_id"]."\">".$rRow["clients"]."</a>";
+                if (!$rRow["server_id"]) { $rRow["server_id"] = 0; }
+                if (intval($rActualStatus) == 1) {
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Encode" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-refresh"></i></button>
+                    ';
+                } else if (intval($rActualStatus) == 3) {
+                    $rButtons = '<button disabled type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop"><i class="mdi mdi-stop"></i></button>
+                    ';
+                } else if (intval($rActualStatus) == 2) {
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Stop Encoding" type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs api-stop" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'stop\');"><i class="mdi mdi-stop"></i></button>
+                    ';
+                } else {
+                    $rButtons = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Encode" type="button" class="btn btn-outline-success waves-effect waves-light btn-xs api-start" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'start\');"><i class="mdi mdi-play"></i></button>
+                    ';
+                }
+                $rButtons .= '<a href="./episode.php?id='.$rRow["id"].'&sid='.$rRow["sid"].'"><button data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+                <button data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete" type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api('.$rRow["id"].', '.$rRow["server_id"].', \'delete\');"><i class="mdi mdi-close"></i></button>';
+                if (((intval($rActualStatus) == 1) OR ($rActualStatus == 3)) && ((strlen($rAdminSettings["admin_username"]) > 0) && (strlen($rAdminSettings["admin_password"]) > 0))) {
+                    $rPlayer = '<button data-toggle="tooltip" data-placement="top" title="" data-original-title="Play" type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rRow["id"].', \''.json_decode($rRow["target_container"], True)[0].'\');"><i class="mdi mdi-play"></i></button>';
+                } else {
+                    $rPlayer = '<button type="button" disabled class="btn btn-outline-secondary waves-effect waves-light btn-xs"><i class="mdi mdi-play"></i></button>';
+                }
+                $rStreamInfoText = "<table style='font-size: 10px;' class='text-center' align='center'><tbody><tr><td colspan='3' class='col'>No information available</td></tr></tbody></table>";
+                $rStreamInfo = json_decode($rRow["stream_info"], True);
+                if ($rActualStatus == 1) {
+                    if (!isset($rStreamInfo["codecs"]["video"])) {
+                        $rStreamInfo["codecs"]["video"] = "N/A";
+                    }
+                    if (!isset($rStreamInfo["codecs"]["audio"])) {
+                        $rStreamInfo["codecs"]["audio"] = "N/A";
+                    }
+                    if ($rRow['bitrate'] == 0) { 
+                        $rRow['bitrate'] = "?";
+                    }
+                    $rStreamInfoText = "<table style='font-size: 12px;' class='text-center' align='center'>
+                        <tbody>
+                            <tr>
+                                <td class='col'>".$rRow['bitrate']." Kbps</td>
+                                <td class='col' style='color: #20a009;'><i class='mdi mdi-video' data-name='mdi-video'></i></td>
+                                <td class='col' style='color: #20a009;'><i class='mdi mdi-volume-high' data-name='mdi-volume-high'></i></td>
+                            </tr>
+                            <tr>
+                                <td class='col'>".$rStreamInfo["codecs"]["video"]["width"]." x ".$rStreamInfo["codecs"]["video"]["height"]."</td>
+                                <td class='col'>".$rStreamInfo["codecs"]["video"]["codec_name"]."</td>
+                                <td class='col'>".$rStreamInfo["codecs"]["audio"]["codec_name"]."</td>
+                            </tr>
+                        </tbody>
+                    </table>";
+                }
+                if ($rPermissions["is_admin"]) {
+                    $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rClients, $rVODStatusArray[$rActualStatus], $rButtons, $rPlayer, $rStreamInfoText);
+                } else {
+                    $rReturn["data"][] = Array($rRow["id"], $rStreamName, $rServerName, $rStreamInfoText);
+                }
             }
         }
     }
@@ -1458,6 +1796,7 @@ if ($rType == "users") {
 	$rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => count($rBackups), "recordsFiltered" => count($rBackups), "data" => Array());
 	foreach ($rBackups as $rBackup) {
 		$rButtons = '<button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Restore Backup" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api(\''.$rBackup["filename"].'\', \'restore\');"><i class="mdi mdi-folder-upload"></i></button>
+        <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Download Backup" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="api(\''.$rBackup["filename"].'\', \'download\');"><i class="mdi mdi-download"></i></button>
 		<button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete Backup" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(\''.$rBackup["filename"].'\', \'delete\');"><i class="mdi mdi-close"></i></button>';
 		$rReturn["data"][] = Array($rBackup["date"], $rBackup["filename"], ceil($rBackup["filesize"]/1024/1024)." MB", $rButtons);
 	}

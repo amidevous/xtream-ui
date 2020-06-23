@@ -131,6 +131,7 @@ if ($rSettings["sidebar"]) {
                                                 <option value="4"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 4)) { echo " selected"; } ?>>Starting</option>
                                                 <option value="5"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 5)) { echo " selected"; } ?>>On Demand</option>
                                                 <option value="6"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 6)) { echo " selected"; } ?>>Direct</option>
+												<option value="7"<?php if ((isset($_GET["filter"])) && ($_GET["filter"] == 7)) { echo " selected"; } ?>>Timeshift</option>
                                             </select>
                                         </div>
                                         <label class="col-md-1 col-form-label text-center" for="stream_show_entries">Show</label>
@@ -149,9 +150,8 @@ if ($rSettings["sidebar"]) {
                                         <tr>
                                             <th class="text-center">ID</th>
                                             <th>Name</th>
-                                            <th>Server</th>
+                                            <th>Source</th>
                                             <?php if ($rPermissions["is_admin"]) { ?>
-                                            <th class="text-center">Current Source</th>
                                             <th class="text-center">Clients</th>
                                             <th class="text-center">Uptime</th>
                                             <th class="text-center">Actions</th>
@@ -233,6 +233,7 @@ if ($rSettings["sidebar"]) {
                     $.each($('.tooltip'), function (index, element) {
                         $(this).remove();
                     });
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 } else {
                     $.toast("An error occured while processing your request.");
@@ -251,6 +252,7 @@ if ($rSettings["sidebar"]) {
         }
         function reloadStreams() {
             if (autoRefresh == true) {
+                $('[data-toggle="tooltip"]').tooltip("hide");
                 $("#datatable-streampage").DataTable().ajax.reload( null, false );
             }
             setTimeout(reloadStreams, 5000);
@@ -289,11 +291,14 @@ if ($rSettings["sidebar"]) {
             $('#datatable-streampage').DataTable().search($("#stream_search").val());
             $('#datatable-streampage').DataTable().page.len($('#stream_show_entries').val());
             $("#datatable-streampage").DataTable().page(0).draw('page');
+            $('[data-toggle="tooltip"]').tooltip("hide");
             $("#datatable-streampage").DataTable().ajax.reload( null, false );
         }
         $(document).ready(function() {
             formCache.init();
+			<?php if (!isset($_GET["filter"])) { ?>
             formCache.fetch();
+			<?php } ?>
             
             $('select').select2({width: '100%'});
             $("#datatable-streampage").DataTable({
@@ -328,8 +333,8 @@ if ($rSettings["sidebar"]) {
                 },
                 columnDefs: [
                     <?php if ($rPermissions["is_admin"]) { ?>
-                    {"className": "dt-center", "targets": [0,3,4,5,6,7,8]},
-                    {"orderable": false, "targets": [6,7]}
+                    {"className": "dt-center", "targets": [0,3,4,5,6,7]},
+                    {"orderable": false, "targets": [5,6]}
                     <?php } else { ?>
                     {"className": "dt-center", "targets": [0,3]}
                     <?php } ?>
@@ -352,16 +357,19 @@ if ($rSettings["sidebar"]) {
             })
             $('#stream_category_id').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })
             $('#stream_server_id').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })
             $('#stream_filter').change(function(){
                 if (!window.rClearing) {
+                    $('[data-toggle="tooltip"]').tooltip("hide");
                     $("#datatable-streampage").DataTable().ajax.reload( null, false );
                 }
             })

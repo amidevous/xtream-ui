@@ -680,19 +680,6 @@ body{
         overflow:hidden;
         line-height:70px
     }
-    .page-title-box .breadcrumb{
-        display:none
-    }
-}
-@media (max-width:640px){
-    .page-title-box .page-title-right{
-        display:none
-    }
-}
-@media (max-width:419px){
-    .page-title-box .breadcrumb{
-        display:none
-    }
 }
 .footer{
     bottom:0;
@@ -3837,14 +3824,14 @@ body.authentication-bg-pattern{
     margin-top: 10px;
     width: 100% !important;
 }
-#datatable-md1_length, #datatable-md1_filter, #datatable-md2_length, #datatable-md2_filter, #datatable-md3_length, #datatable-md3_filter {
+#datatable-md1_length, #datatable-md1_filter, #datatable-md2_length, #datatable-md2_filter, #datatable-md3_length, #datatable-md3_filter, #datatable-md4_length, #datatable-md4_filter, #datatable-md5_length, #datatable-md5_filter {
     display: none;
 }
-#datatable-md1_wrapper, #datatable-md2_wrapper, #datatable-md3_wrapper {
+#datatable-md1_wrapper, #datatable-md2_wrapper, #datatable-md3_wrapper, #datatable-md4_wrapper, #datatable-md5_wrapper {
     margin-top: 10px;
     width: 100% !important;
 }
-#datatable-md1, #datatable-md2, #datatable-md3 {
+#datatable-md1, #datatable-md2, #datatable-md3, #datatable-md4, #datatable-md5 {
     width: 100% !important;
 }
 table.dataTable tbody > tr.reordered, table.dataTable tbody > tr > .reordered {

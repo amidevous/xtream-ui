@@ -34,7 +34,12 @@ if (isset($_POST["submit_user"])) {
             if ($_POST["trial"]) {
                 $rCost = $rPackage["trial_credits"];
             } else {
-                $rCost = $rPackage["official_credits"];
+                $rOverride = json_decode($rUserInfo["override_packages"], True);
+                if ((isset($rOverride[$rPackage["id"]]["official_credits"])) && (strlen() > 0)) {
+                    $rCost = $rOverride[$rPackage["id"]]["official_credits"];
+                } else {
+                    $rCost = $rPackage["official_credits"];
+                }
             }
             if (($rUserInfo["credits"] >= $rCost) && ($canGenerateTrials)) {
                 if ($_POST["trial"]) {
@@ -91,6 +96,13 @@ if (isset($_POST["submit_user"])) {
             $_POST["password"] = $rUser["password"];
         } else {
             $_POST["password"] = "";
+        }
+    }
+    if ((!$rPermissions["allow_change_pass"]) && (!$rAdminSettings["change_usernames"])) {
+        if (isset($rUser)) {
+			$_POST["username"] = $rUser["username"];
+        } else {
+			$_POST["username"] = "";
         }
     }
     if ((strlen($_POST["username"]) == 0) OR (($rArray["is_mag"]) && (!isset($rUser))) OR (($rArray["is_e2"]) && (!isset($rUser)))) {
@@ -411,7 +423,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4" id="uname">
                                                             <label class="col-md-4 col-form-label" for="username">Username</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="username" name="username" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>">
+                                                                <input<?php if ((!$rPermissions["allow_change_pass"]) && (!$rAdminSettings["change_usernames"])) { echo " disabled"; } ?> type="text" class="form-control" id="username" name="username" placeholder="auto-generate if blank" value="<?php if (isset($rUser)) { echo $rUser["username"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4" id="pass">
@@ -510,7 +522,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="allowed_ips">&nbsp;</label>
                                                             <div class="col-md-8">
-                                                                <select class="form-control" id="allowed_ips" name="allowed_ips" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <select class="form-control" id="allowed_ips" name="allowed_ips[]" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
                                                                 <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ips"], True) as $rIP) { ?>
                                                                 <option value="<?=$rIP?>"><?=$rIP?></option>
                                                                 <?php } } ?>
@@ -530,7 +542,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="allowed_ua">&nbsp;</label>
                                                             <div class="col-md-8">
-                                                                <select class="form-control" id="allowed_ua" name="allowed_ua" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
+                                                                <select class="form-control" id="allowed_ua" name="allowed_ua[]" size=6 class="form-control select2" data-toggle="select2" multiple="multiple">
                                                                 <?php if (isset($rUser)) { foreach(json_decode($rUser["allowed_ua"], True) as $rUA) { ?>
                                                                 <option value="<?=$rUA?>"><?=$rUA?></option>
                                                                 <?php } } ?>

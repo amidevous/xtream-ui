@@ -75,12 +75,12 @@
                                 <a href="./groups.php" class="dropdown-item notify-item"><span>Groups</span></a>
                                 <a href="./packages.php" class="dropdown-item notify-item"><span>Packages</span></a>
                                 <a href="./profiles.php" class="dropdown-item notify-item"><span>Transcode Profiles</span></a>
-                                <a href="./stream_categories.php" class="dropdown-item notify-item"><span>Stream Categories</span></a>
-                                <a href="./movie_categories.php" class="dropdown-item notify-item"><span>Movie Categories</span></a>
-                                <a href="#" class="dropdown-item notify-item"><span><span>Series Categories <i class="la la-exclamation-triangle"></i></span></a>
+                                <a href="./stream_categories.php" class="dropdown-item notify-item"><span>Categories</span></a>
                                 <a href="./useragents.php" class="dropdown-item notify-item"><span>Blocked User Agents</span></a>
                                 <a href="./ips.php" class="dropdown-item notify-item"><span>Blocked IP's</span></a>
+								<a href="./rtmp_ips.php" class="dropdown-item notify-item"><span>RTMP IP's</span></a>
                                 <a href="./mass_delete.php" class="dropdown-item notify-item"><span>Mass Delete</span></a>
+                                <a href="./channel_order.php" class="dropdown-item notify-item"><span>Channel Order</span></a>
                             </div>
                         </li>
                         <?php } ?>
@@ -128,7 +128,7 @@
                             <li class="has-submenu">
                                 <a href="#"><i class="la la-server"></i>Servers <div class="arrow-down"></div></a>
                                 <ul class="submenu">
-                                    <li><a href="./server.php">Add Server</a></li>
+                                    <li><a href="./server.php">Add Existing LB</a></li>
                                     <li><a href="./install_server.php">Install Load Balancer</a></li>
                                     <li><a href="./servers.php">Manage Servers</a></li>
                                     <li class="separator"></li>
@@ -195,13 +195,14 @@
                                 <ul class="submenu">
                                     <li><a href="./movie.php">Add Movie</a></li>
                                     <li><a href="./movies.php">Manage Movies</a></li>
+                                    <li class="separator"></li>
+                                    <li><a href="./serie.php">Add Series</a></li>
+                                    <li><a href="./series.php">Manage Series</a></li>
+                                    <li><a href="./episodes.php">Manage Episodes</a></li>
+                                    <li class="separator"></li>
                                     <li><a href="./movie_mass.php">Mass Edit Movies</a></li>
-                                    <li class="separator"></li>
-                                    <li><a href="#">Add TV Series <i class="la la-exclamation-triangle"></i></a></li>
-                                    <li><a href="#">Manage TV Series <i class="la la-exclamation-triangle"></i></a></li>
-                                    <li class="separator"></li>
-                                    <li><a href="#">Add TV Episode <i class="la la-exclamation-triangle"></i></a></li>
-                                    <li><a href="#">Manage TV Episodes <i class="la la-exclamation-triangle"></i></a></li>
+                                    <li><a href="./series_mass.php">Mass Edit Series</a></li>
+                                    <li><a href="./episodes_mass.php">Mass Edit Episodes</a></li>
                                 </ul>
                             </li>
                             <li class="has-submenu">
@@ -213,6 +214,7 @@
                                     <li><a href="./stream_mass.php">Mass Edit Streams</a></li>
                                     <li class="separator"></li>
                                     <li><a href="./stream_logs.php">Stream Logs</a></li>
+									<li><a href="./stream_tools.php">Stream Tools</a></li>
                                     <li><a href="./fingerprint.php">Fingerprint</a></li>
                                 </ul>
                             </li>
@@ -230,7 +232,8 @@
                                 <ul class="submenu">
                                     <li><a href="./streams.php">Streams</a></li>
                                     <li><a href="./movies.php">Movies</a></li>
-                                    <li><a href="#">Series <i class="la la-exclamation-triangle"></i></a></li>
+                                    <li><a href="./series.php">Series</a></li>
+                                    <li><a href="./episodes.php">Episodes</a></li>
                                 </ul>
                             </li>
                             <?php }
@@ -240,6 +243,9 @@
                                 <ul class="submenu">
                                     <li><a href="./ticket.php">Create Ticket</a></li>
                                     <li><a href="./tickets.php">Manage Tickets</a></li>
+                                    <?php if ($rPermissions["allow_import"]) { ?>
+                                    <li><a href="./resellersmarters.php">Reseller API Key</a></li>
+                                    <?php } ?>
                                 </ul>
                             </li>
                             <?php }

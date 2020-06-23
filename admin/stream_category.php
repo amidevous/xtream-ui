@@ -41,8 +41,7 @@ if (isset($_POST["submit_category"])) {
 }
 
 if (isset($_GET["id"])) {
-    $rCategories = getCategories();
-    $rCategoryArr = $rCategories[$_GET["id"]];
+    $rCategoryArr = getCategory($_GET["id"]);
     if (!$rCategoryArr) {
         exit;
     }
@@ -108,7 +107,7 @@ if ($rSettings["sidebar"]) {
                                             <li class="nav-item">
                                                 <a href="#view-channels" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                     <i class="mdi mdi-play mr-1"></i>
-                                                    <span class="d-none d-sm-inline">View Channels</span>
+                                                    <span class="d-none d-sm-inline">View Streams</span>
                                                 </a>
                                             </li>
                                             <?php } ?>
@@ -117,6 +116,20 @@ if ($rSettings["sidebar"]) {
                                             <div class="tab-pane" id="category-details">
                                                 <div class="row">
                                                     <div class="col-12">
+                                                        <?php if (!isset($rCategoryArr)) { ?>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="category_type">Category Type</label>
+                                                            <div class="col-md-8">
+                                                                <select name="category_type" id="category_type" class="form-control select2" data-toggle="select2">
+                                                                    <?php foreach (Array("live" => "Live TV", "movie" => "Movie", "series" => "TV Series") as $rGroupID => $rGroup) { ?>
+                                                                    <option <?php if (isset($rCategoryArr)) { if ($rCategoryArr["category_type"] == $rGroupID) { echo "selected "; } } ?>value="<?=$rGroupID?>"><?=$rGroup?></option>
+                                                                    <?php } ?>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <?php } else { ?>
+                                                        <input type="hidden" name="category_type" value="<?=$rCategoryArr["category_type"]?>" />
+                                                        <?php } ?>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="category_name">Category Name</label>
                                                             <div class="col-md-8">
@@ -126,7 +139,7 @@ if ($rSettings["sidebar"]) {
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0">
-                                                    <li class="next list-inline-item float-right">
+                                                    <li class="list-inline-item float-right">
                                                         <input name="submit_category" type="submit" class="btn btn-primary" value="<?php if (isset($rCategoryArr)) { echo "Edit"; } else { echo "Add"; } ?>" />
                                                     </li>
                                                 </ul>
@@ -224,7 +237,13 @@ if ($rSettings["sidebar"]) {
                 ajax: {
                     url: "./table.php",
                     "data": function(d) {
+                        <?php if ($rCategoryArr["category_type"] == "live") { ?>
                         d.id = "streams_short";
+                        <?php } else if ($rCategoryArr["category_type"] == "live") { ?>
+                        d.id = "movies_short";
+                        <?php } else { ?>
+                        d.id = "series_short";
+                        <?php } ?>
                         d.category_id = <?=$rCategoryArr["id"]?>;
                     }
                 },
