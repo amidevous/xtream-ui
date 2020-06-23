@@ -449,7 +449,6 @@ if (isset($_GET["action"])) {
             if (($rUptime["h"] > 0) OR (strlen($return["uptime"]) > 0)) { $return["uptime"] .= $rUptime["h"]."h "; }
             if (($rUptime["m"] > 0) OR (strlen($return["uptime"]) > 0)) { $return["uptime"] .= $rUptime["m"]."m "; }
             if (($rUptime["s"] > 0) OR (strlen($return["uptime"]) > 0)) { $return["uptime"] .= $rUptime["s"]."s "; }
-            
         }
         echo json_encode($return);exit;
     } else if ($_GET["action"] == "reseller_dashboard") {
@@ -602,7 +601,40 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => True, "data" => listDir(intval($_GET["server"]), $_GET["dir"], $rFilter))); exit;
         }
         echo json_encode(Array("result" => False));exit;
-	}
+	} else if ($_GET["action"] == "fingerprint") {
+        $rData = json_decode($_GET["data"], true);
+        $rActiveServers = Array();
+        foreach ($rServers as $rServer) {
+            if (((((time() - $rServer["last_check_ago"]) > 360)) OR ($rServer["status"] == 2)) AND ($rServer["can_delete"] == 1) AND ($rServer["status"] <> 3)) { $rServerError = True; } else { $rServerError = False; }
+            if (($rServer["status"] == 1) && (!$rServerError)) {
+                $rActiveServers[] = $rServer["id"];
+            }
+        }
+        if (($rData["id"] > 0) && ($rData["font_size"] > 0) && (strlen($rData["font_color"]) > 0) && (strlen($rData["xy_offset"]) > 0) && ((strlen($rData["message"]) > 0) OR ($rData["type"] < 3))) {
+            $result = $db->query("SELECT `user_activity_now`.`activity_id`, `user_activity_now`.`user_id`, `user_activity_now`.`server_id`, `users`.`username` FROM `user_activity_now` LEFT JOIN `users` ON `users`.`id` = `user_activity_now`.`user_id` WHERE `user_activity_now`.`container` = 'ts' AND `stream_id` = ".intval($rData["id"]).";");
+            if (($result) && ($result->num_rows > 0)) {
+                set_time_limit(360);
+                ini_set('max_execution_time', 360);
+                ini_set('default_socket_timeout', 15);
+                while ($row = $result->fetch_assoc()) {
+                    if (in_array($row["server_id"], $rActiveServers)) {
+                        $rArray = Array("font_size" => $rData["font_size"], "font_color" => $rData["font_color"], "xy_offset" => $rData["xy_offset"], "message" => "", "activity_id" => $row["activity_id"]);
+                        if ($rData["type"] == 1) {
+                            $rArray["message"] = "#".$row["activity_id"];
+                        } else if ($rData["type"] == 1) {
+                            $rArray["message"] = $row["username"];
+                        } else if ($rData["type"] == 3) {
+                            $rArray["message"] = $rData["message"];
+                        }
+                        $rAPI = "http://".$rServers[intval($row["server_id"])]["server_ip"].":".$rServers[intval($row["server_id"])]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=signal_send&".http_build_query($rArray);
+                        $rSuccess = file_get_contents($rAPI);
+                    }
+                }
+                echo json_encode(Array("result" => True));exit;
+            }
+        }
+        echo json_encode(Array("result" => False));exit;
+    }
 }
 echo json_encode(Array("result" => False));
 ?>

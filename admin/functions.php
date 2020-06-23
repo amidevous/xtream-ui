@@ -1,5 +1,5 @@
 <?php
-$rRelease = 15;
+$rRelease = 16;
 
 session_start();
 ini_set('display_errors', 0);

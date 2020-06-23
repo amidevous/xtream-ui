@@ -24,6 +24,7 @@
         <link href="assets/libs/daterangepicker/daterangepicker.css" rel="stylesheet" type="text/css" />
         <link href="assets/libs/nestable2/jquery.nestable.min.css" rel="stylesheet" />
         <link href="assets/libs/magnific-popup/magnific-popup.css" rel="stylesheet" type="text/css" />
+        <link href="assets/libs/bootstrap-colorpicker/bootstrap-colorpicker.min.css" rel="stylesheet" type="text/css" />
         <!-- third party css end -->
 
         <!-- App css -->
@@ -216,6 +217,7 @@
                                     <li><a href="./stream_mass.php">Mass Edit Streams</a></li>
                                     <li class="separator"></li>
                                     <li><a href="./stream_logs.php">Stream Logs</a></li>
+                                    <li><a href="./fingerprint.php">Fingerprint</a></li>
                                 </ul>
                             </li>
                             <li class="has-submenu">

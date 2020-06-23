@@ -897,7 +897,11 @@ if ($rType == "users") {
                 } else {
                     $rTime = "";
                 }
-                $rButtons = '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["pid"].', \'kill\');"><i class="fas fa-hammer"></i></button>';
+                if (isset($_GET["fingerprint"])) {
+                    $rButtons = '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["pid"].', \'kill\', '.$rRow["activity_id"].');"><i class="fas fa-hammer"></i></button>';
+                } else {
+                    $rButtons = '<button type="button" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api('.$rRow["pid"].', \'kill\');"><i class="fas fa-hammer"></i></button>';
+                }
                 $rReturn["data"][] = Array($rRow["activity_id"], $rDivergence, $rUsername, $rChannel, $rServer, $rTime, $rIP, $rGeoCountry, $rButtons);
             }
         }
@@ -1234,6 +1238,50 @@ if ($rType == "users") {
         if (($rResult) && ($rResult->num_rows > 0)) {
             while ($rRow = $rResult->fetch_assoc()) {
                 $rReturn["data"][] = Array($rRow["id"], "<a href='".$rRow["stream_id"]."'>".$rRow["stream_display_name"]."</a>", "<a href='./server.php?id=".$rRow["server_id"]."'>".$rRow["server_name"]."</a>", $rRow["error"], $rRow["date"]);
+            }
+        }
+    }
+    echo json_encode($rReturn);exit;
+} else if ($rType == "stream_unique") {
+    $rReturn = Array("draw" => $_GET["draw"], "recordsTotal" => 0, "recordsFiltered" => 0, "data" => Array());
+    $rOrder = Array("`streams`.`id`", "`streams`.`stream_display_name`", "`stream_categories`.`category_name`", "`active_count`", null);
+    if (strlen($_GET["order"][0]["column"]) > 0) {
+        $rOrderRow = intval($_GET["order"][0]["column"]);
+    } else {
+        $rOrderRow = 0;
+    }
+    $rWhere = Array();
+    $rWhere[] = "`streams`.`type` = 1";
+    $rWhere[] = "(SELECT COUNT(*) FROM `user_activity_now` WHERE `container` = 'ts' AND `user_activity_now`.`stream_id` = `streams`.`id`) > 0";
+    if (strlen($_GET["category"]) > 0) {
+        $rWhere[] = "`streams`.`category_id` = ".intval($_GET["category"]);
+    }
+    if (strlen($_GET["search"]["value"]) > 0) {
+        $rSearch = $db->real_escape_string($_GET["search"]["value"]);
+        $rWhere[] = "(`streams`.`id` LIKE '%{$rSearch}%' OR `streams`.`stream_display_name` LIKE '%{$rSearch}%' OR `stream_categories`.`category_name` LIKE '%{$rSearch}%')";
+    }
+    if ($rOrder[$rOrderRow]) {
+        $rOrderBy = "ORDER BY ".$rOrder[$rOrderRow]." ".$_GET["order"][0]["dir"];
+    }
+    if (count($rWhere) > 0) {
+        $rWhereString = "WHERE ".join(" AND ", $rWhere);
+    } else {
+        $rWhereString = "";
+    }
+    $rCountQuery = "SELECT COUNT(*) AS `count` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` {$rWhereString};";
+    $rResult = $db->query($rCountQuery);
+    if (($rResult) && ($rResult->num_rows == 1)) {
+        $rReturn["recordsTotal"] = $rResult->fetch_assoc()["count"];
+    } else {
+        $rReturn["recordsTotal"] = 0;
+    }
+    $rReturn["recordsFiltered"] = $rReturn["recordsTotal"];
+    if ($rReturn["recordsTotal"] > 0) {
+        $rQuery = "SELECT `streams`.`id`, `streams`.`stream_display_name`, `stream_categories`.`category_name`, (SELECT COUNT(*) FROM `user_activity_now` WHERE `container` = 'ts' AND `user_activity_now`.`stream_id` = `streams`.`id`) AS `active_count` FROM `streams` LEFT JOIN `stream_categories` ON `stream_categories`.`id` = `streams`.`category_id` {$rWhereString} {$rOrderBy} LIMIT {$rStart}, {$rLimit};";
+        $rResult = $db->query($rQuery);
+        if (($rResult) && ($rResult->num_rows > 0)) {
+            while ($rRow = $rResult->fetch_assoc()) {
+                $rReturn["data"][] = Array($rRow["id"], $rRow["stream_display_name"], $rRow["category_name"], $rRow["active_count"], "<button type='button' class='btn btn-outline-danger waves-effect waves-light btn-xs' href='javascript:void(0);' onClick='selectFingerprint(".$rRow["id"].")'><i class='mdi mdi-fingerprint'></i></button>");
             }
         }
     }
