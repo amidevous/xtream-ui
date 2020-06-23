@@ -2,7 +2,8 @@
 include "session.php"; include "functions.php";
 
 if ($rPermissions["is_admin"]) {
-    $rRegisteredUsers = getRegisteredUsers();
+	if (!hasPermissions("adv", "manage_e2")) { exit; }
+	$rRegisteredUsers = getRegisteredUsers();
 } else {
     $rRegisteredUsers = getRegisteredUsers($rUserInfo["id"]);
 }
@@ -47,18 +48,20 @@ if ($rSettings["sidebar"]) {
                                             </button>
                                         </a>
                                         <?php }
-                                        if ($rPermissions["is_admin"]) { ?>
+                                        if (($rPermissions["is_admin"]) && (hasPermissions("adv", "add_mag"))) { ?>
                                         <a href="enigma.php">
                                             <button type="button" class="btn btn-primary waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-link"></i> Link Enigma Device
                                             </button>
                                         </a>
-                                        <?php } ?>
+                                        <?php }
+										if ((hasPermissions("adv", "add_mag")) OR ($rPermissions["is_reseller"])) { ?>
                                         <a href="user<?php if ($rPermissions["is_reseller"]) { echo "_reseller"; } ?>.php?e2">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add Enigma Device
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>

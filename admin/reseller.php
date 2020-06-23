@@ -27,14 +27,20 @@ if ($rSettings["sidebar"]) {
                         <div class="card-box active-connections">
                             <div class="row">
                                 <div class="col-6">
+									<?php if ($rAdminSettings["dark_mode"]) { ?>
+									<div class="avatar-sm bg-secondary rounded">
+										<i class="fe-zap avatar-title font-22 text-white"></i>
+									</div>
+									<?php } else { ?>
                                     <div class="avatar-sm bg-soft-purple rounded">
                                         <i class="fe-zap avatar-title font-22 text-purple"></i>
                                     </div>
+									<?php } ?>
                                 </div>
                                 <div class="col-6">
                                     <div class="text-right">
                                         <h3 class="text-dark my-1"><span data-plugin="counterup" class="entry">0</span></h3>
-                                        <p class="text-muted mb-1 text-truncate">Open Connections</p>
+                                        <p class="text-muted mb-1 text-truncate">Connections</p>
                                     </div>
                                 </div>
                             </div>
@@ -45,9 +51,15 @@ if ($rSettings["sidebar"]) {
                         <div class="card-box online-users">
                             <div class="row">
                                 <div class="col-6">
+									<?php if ($rAdminSettings["dark_mode"]) { ?>
+									<div class="avatar-sm bg-secondary rounded">
+										<i class="fe-zap avatar-title font-22 text-white"></i>
+									</div>
+									<?php } else { ?>
                                     <div class="avatar-sm bg-soft-success rounded">
                                         <i class="fe-users avatar-title font-22 text-success"></i>
                                     </div>
+									<?php } ?>
                                 </div>
                                 <div class="col-6">
                                     <div class="text-right">
@@ -63,9 +75,15 @@ if ($rSettings["sidebar"]) {
                         <div class="card-box active-accounts">
                             <div class="row">
                                 <div class="col-6">
+									<?php if ($rAdminSettings["dark_mode"]) { ?>
+									<div class="avatar-sm bg-secondary rounded">
+										<i class="fe-zap avatar-title font-22 text-white"></i>
+									</div>
+									<?php } else { ?>
                                     <div class="avatar-sm bg-soft-primary rounded">
                                         <i class="fe-check-circle avatar-title font-22 text-primary"></i>
                                     </div>
+									<?php } ?>
                                 </div>
                                 <div class="col-6">
                                     <div class="text-right">
@@ -81,14 +99,20 @@ if ($rSettings["sidebar"]) {
                         <div class="card-box credits">
                             <div class="row">
                                 <div class="col-6">
+									<?php if ($rAdminSettings["dark_mode"]) { ?>
+									<div class="avatar-sm bg-secondary rounded">
+										<i class="fe-zap avatar-title font-22 text-white"></i>
+									</div>
+									<?php } else { ?>
                                     <div class="avatar-sm bg-soft-info rounded">
                                         <i class="fe-dollar-sign avatar-title font-22 text-info"></i>
                                     </div>
+									<?php } ?>
                                 </div>
                                 <div class="col-6">
                                     <div class="text-right">
                                         <h3 class="text-dark my-1"><span data-plugin="counterup" class="entry">0</span></h3>
-                                        <p class="text-muted mb-1 text-truncate">Credits Remaining</p>
+                                        <p class="text-muted mb-1 text-truncate">Credits</p>
                                     </div>
                                 </div>
                             </div>

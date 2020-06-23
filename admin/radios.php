@@ -1,6 +1,7 @@
 <?php
 include "session.php"; include "functions.php";
 if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "radio"))) { exit; }
 
 $rCategories = getCategories("radio");
 
@@ -44,7 +45,7 @@ if ($rSettings["sidebar"]) {
                                             </button>
                                         </a>
                                         <?php }
-                                        if ($rPermissions["is_admin"]) { ?>
+                                        if (($rPermissions["is_admin"]) && (hasPermissions("adv", "add_radio"))) { ?>
                                         <a href="radio.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 Add Station

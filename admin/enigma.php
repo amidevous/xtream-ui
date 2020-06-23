@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_e2")) && (!hasPermissions("adv", "edit_e2")))) { exit; }
 
 if (isset($_GET["id"])) {
     $rEditID = $_GET["id"];
@@ -10,10 +10,11 @@ if (isset($_POST["submit_e2"])) {
     if (filter_var($_POST["mac"], FILTER_VALIDATE_MAC)) {
         if ($rArray = getUser($_POST["paired_user"])) {
             if (isset($_POST["edit"])) {
+				if (!hasPermissions("adv", "edit_e2")) { exit; }
                 $rCurE2 = getEnigma($_POST["edit"]);
                 $db->query("DELETE FROM `users` WHERE `id` = ".intval($rCurE2["user_id"]).";"); // Delete existing user.
                 $db->query("DELETE FROM `user_output` WHERE `user_id` = ".intval($rCurE2["user_id"]).";");
-            }
+            } else if (!hasPermissions("adv", "add_e2")) { exit; }
             $rArray["username"] .= rand(0,999999);
             $rArray["is_e2"] = 1;
             $rArray["pair_id"] = $rArray["id"];
@@ -64,10 +65,10 @@ if ((isset($rE2Arr["paired_user"])) && (!isset($rE2Arr["username"]))) {
 
 if ((isset($rEditID)) && (!isset($rE2Arr))) {
     $rE2Arr = getEnigma($rEditID);
-    if (!$rE2Arr) {
+    if ((!$rE2Arr) OR (!hasPermissions("adv", "edit_e2"))) {
         exit;
     }
-}
+} else if (!hasPermissions("adv", "add_e2")) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";

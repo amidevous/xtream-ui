@@ -1,7 +1,6 @@
 <?php
-include "functions.php";
-if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
-if (!$rPermissions["is_admin"]) { exit; }
+include "session.php"; include "functions.php";
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "block_ips"))) { exit; }
 
 if (isset($_GET["flush"])) {
     flushIPs();

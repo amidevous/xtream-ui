@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "player"))) { exit; }
 if (!isset($_GET["id"])) { exit; } ?>
 <html>
     <script src="assets/js/vendor.min.js"></script>

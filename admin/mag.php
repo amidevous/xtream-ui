@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_mag")) && (!hasPermissions("adv", "edit_mag")))) { exit; }
 
 if (isset($_GET["id"])) {
     $rEditID = $_GET["id"];
@@ -10,10 +10,11 @@ if (isset($_POST["submit_mag"])) {
     if (filter_var($_POST["mac"], FILTER_VALIDATE_MAC)) {
         if ($rArray = getUser($_POST["paired_user"])) {
             if ((isset($_POST["edit"])) && (strlen($_POST["edit"]))) {
+				if (!hasPermissions("adv", "edit_mag")) { exit; }
                 $rCurMag = getMag($_POST["edit"]);
                 $db->query("DELETE FROM `users` WHERE `id` = ".intval($rCurMag["user_id"]).";"); // Delete existing user.
                 $db->query("DELETE FROM `user_output` WHERE `user_id` = ".intval($rCurMag["user_id"]).";");
-            }
+            } else if (!hasPermissions("adv", "add_mag")) { exit; }
             $rArray["username"] .= rand(0,999999);
             $rArray["is_mag"] = 1;
             $rArray["pair_id"] = $rArray["id"];
@@ -63,11 +64,12 @@ if ((isset($rMagArr["paired_user"])) && (!isset($rMagArr["username"]))) {
 }
 
 if ((isset($rEditID)) && (!isset($rMagArr))) {
+	if (!hasPermissions("adv", "edit_mag")) { exit; }
     $rMagArr = getMag($rEditID);
     if (!$rMagArr) {
         exit;
     }
-}
+} else if (!hasPermissions("adv", "add_mag")) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";

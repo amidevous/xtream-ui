@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_series"))) { exit; }
 
 if (isset($_POST["reorder"])) {
     $rOrder = json_decode($_POST["episode_order_array"], True);

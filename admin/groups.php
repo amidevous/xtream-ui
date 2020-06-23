@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "mng_groups"))) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -16,6 +16,7 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
+							<?php if (hasPermissions("adv", "add_group")) { ?>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
@@ -27,6 +28,7 @@ if ($rSettings["sidebar"]) {
                                     </li>
                                 </ol>
                             </div>
+							<?php } ?>
                             <h4 class="page-title">Groups</h4>
                         </div>
                     </div>
@@ -55,27 +57,29 @@ if ($rSettings["sidebar"]) {
                                             <td><?=$rGroup["group_name"]?></td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rGroup["group_id"]?>" data-name="is_admin" type="checkbox" class="custom-control-input" id="is_admin_<?=$rGroup["group_id"]?>" name="is_admin"<?php if ($rGroup["is_admin"]) { echo " checked"; } ?>>
-                                                    <label class="custom-control-label" for="is_admin_<?=$rGroup["group_id"]?>"></label>
+                                                    <input disabled data-id="<?=$rGroup["group_id"]?>" data-name="is_admin" type="checkbox" class="custom-control-input" id="is_admin_<?=$rGroup["group_id"]?>" name="is_admin"<?php if ($rGroup["is_admin"]) { echo " checked"; } ?>>
+                                                    <label class="custom-control-label" for="(is_admin_<?=$rGroup["group_id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rGroup["group_id"]?>" data-name="is_reseller" type="checkbox" class="custom-control-input" id="is_reseller_<?=$rGroup["group_id"]?>" name="is_reseller"<?php if ($rGroup["is_reseller"]) { echo " checked"; } ?>>
+                                                    <input disabled data-id="<?=$rGroup["group_id"]?>" data-name="is_reseller" type="checkbox" class="custom-control-input" id="is_reseller_<?=$rGroup["group_id"]?>" name="is_reseller"<?php if ($rGroup["is_reseller"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="is_reseller_<?=$rGroup["group_id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rGroup["group_id"]?>" data-name="is_banned" type="checkbox" class="custom-control-input" id="is_banned_<?=$rGroup["group_id"]?>" name="is_banned"<?php if ($rGroup["is_banned"]) { echo " checked"; } ?>>
+                                                    <input disabled data-id="<?=$rGroup["group_id"]?>" data-name="is_banned" type="checkbox" class="custom-control-input" id="is_banned_<?=$rGroup["group_id"]?>" name="is_banned"<?php if ($rGroup["is_banned"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="is_banned_<?=$rGroup["group_id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
+												<?php if (hasPermissions("adv", "edit_group")) { ?>
                                                 <a href="./group.php?id=<?=$rGroup["group_id"]?>"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Group" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
-                                                <?php if ($rGroup["can_delete"]) { ?>
+												<?php if ($rGroup["can_delete"]) { ?>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete Group" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rGroup["group_id"]?>, 'delete');""><i class="mdi mdi-close"></i></button>
-                                                <?php } ?>
+                                                <?php }
+												} else { echo "--"; } ?>
                                             </td>
                                         </tr>
                                         <?php } ?>
@@ -138,11 +142,6 @@ if ($rSettings["sidebar"]) {
                 }
             });
         }
-        $('input:checkbox').change(function() {
-            $.getJSON("./api.php?action=group&sub=" + $(this).data("name") + "&group_id=" + $(this).data("id") + "&value=" + ($(this).is(":checked") ? 1 : 0), function(data) {
-                $.toast("Group has been modified.");
-            });
-        });
         $(document).ready(function() {
             $("#datatable").DataTable({
                 language: {

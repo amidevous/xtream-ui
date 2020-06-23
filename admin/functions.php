@@ -1,5 +1,6 @@
 <?php
-$rRelease = 20;             // Official Beta Release Number
+$rRelease = 21;             // Official Beta Release Number
+$rEarlyAccess = "";	    	// Early Access Release
 $rTimeout = 60;             // Seconds Timeout for Queries, Functions & Requests
 $rDebug = False;
 
@@ -91,7 +92,7 @@ function getPIDs($rServerID) {
     $rFilename = tempnam(MAIN_DIR.'tmp/', 'proc_');
     $rCommand = "ps aux >> ".$rFilename;
     sexec($rServerID, $rCommand);
-    $rData = ""; $rI = 5;
+    $rData = ""; $rI = 3;
     while (strlen($rData) == 0) {
         $rData = SystemAPIRequest($rServerID, Array('action' => 'getFile', 'filename' => $rFilename));
         $rI --;
@@ -124,6 +125,21 @@ function getFreeSpace($rServerID) {
         }
     }
     return $rReturn;
+}
+
+function remoteCMD($rServerID, $rCommand) {
+    $rReturn = Array();
+    $rFilename = tempnam(MAIN_DIR.'tmp/', 'cmd_');
+    sexec($rServerID, $rCommand." >> ".$rFilename);
+	$rData = ""; $rI = 3;
+    while (strlen($rData) == 0) {
+        $rData = SystemAPIRequest($rServerID, Array('action' => 'getFile', 'filename' => $rFilename));
+        $rI --;
+        if (($rI == 0) OR (strlen($rData) > 0)) { break; }
+        sleep(1);
+    }
+	unset($rFilename);
+    return $rData;
 }
 
 function freeTemp($rServerID) {
@@ -781,7 +797,7 @@ function getRegisteredUsers($rOwner=null, $rIncludeSelf=true) {
 }
 
 function hasPermissions($rType, $rID) {
-    global $rUserInfo, $db;
+    global $rUserInfo, $db, $rPermissions;
     if ($rType == "user") {
         if (in_array(intval(getUser($rID)["member_id"]), array_keys(getRegisteredUsers($rUserInfo["id"])))) {
             return true;
@@ -815,7 +831,13 @@ function hasPermissions($rType, $rID) {
                 return true;
             }
         }
-    }
+    } else if (($rType == "adv") && ($rPermissions["is_admin"])) {
+		if ((count($rPermissions["advanced"]) > 0) && ($rUserInfo["member_group_id"] <> 1)) {
+			return in_array($rID, $rPermissions["advanced"]);
+		} else {
+			return true;
+		}
+	}
     return false;
 }
 
@@ -929,13 +951,15 @@ function removeFromBouquet($rType, $rBouquetID, $rID) {
     }
 }
 
-function getPackages() {
+function getPackages($rGroup=null) {
     global $db;
     $return = Array();
     $result = $db->query("SELECT * FROM `packages` ORDER BY `id` ASC;");
     if (($result) && ($result->num_rows > 0)) {
         while ($row = $result->fetch_assoc()) {
-            $return[intval($row["id"])] = $row;
+            if ((!isset($rGroup)) OR (in_array(intval($rGroup), json_decode($row["groups"], True)))) {
+                $return[intval($row["id"])] = $row;
+            }
         }
     }
     return $return;
@@ -1186,14 +1210,23 @@ function cryptPassword($password, $salt="xtreamcodes", $rounds=20000) {
 }
 
 function getIP(){
-    if(!empty($_SERVER['HTTP_CLIENT_IP'])){
+    if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+    } else if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
         $ip = $_SERVER['HTTP_CLIENT_IP'];
-    }elseif(!empty($_SERVER['HTTP_X_FORWARDED_FOR'])){
+    } else if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
         $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-    }else{
+    } else {
         $ip = $_SERVER['REMOTE_ADDR'];
     }
     return $ip;
+}
+
+function getID() {
+	if (file_exists(MAIN_DIR."adtools/settings.json")) {
+		return json_decode(file_get_contents(MAIN_DIR."adtools/settings.json"), True)["rid"];
+	}
+	return 0;
 }
 
 function getPermissions($rID) {
@@ -1378,9 +1411,13 @@ function updateSeries($rID) {
 
 function getFooter() {
     // Don't be a dick. Leave it.
-    global $rAdminSettings, $rPermissions, $rSettings, $rRelease;
+    global $rAdminSettings, $rPermissions, $rSettings, $rRelease, $rEarlyAccess;
     if ($rPermissions["is_admin"]) {
-        return "Copyright &copy; ".date("Y")." - <a href=\"https://xtream-ui.com\">Xtream UI</a> R".$rRelease." - Free & Open Source Forever";
+		if ($rEarlyAccess) {
+			return "Copyright &copy; ".date("Y")." - <a href=\"https://xtream-ui.com\">Xtream UI</a> R".$rRelease.$rEarlyAccess." - Early Access";
+		} else {
+			return "Copyright &copy; ".date("Y")." - <a href=\"https://xtream-ui.com\">Xtream UI</a> R".$rRelease." - Free & Open Source Forever";
+		}
     } else {
         return $rSettings["copyrights_text"];
     }
@@ -1526,13 +1563,12 @@ function updateTables() {
     checkTable("watch_categories");
     checkTable("watch_output");
 	checkTable("login_flood");
-    // R19A
+    // R19 Early Access
     $rResult = $db->query("SHOW COLUMNS FROM `watch_folders` LIKE 'bouquets';");
     if (($rResult) && ($rResult->num_rows == 0)) {
         $db->query("ALTER TABLE `watch_folders` ADD COLUMN `category_id` int(8) NOT NULL DEFAULT '0';");
         $db->query("ALTER TABLE `watch_folders` ADD COLUMN `bouquets` varchar(4096) NOT NULL DEFAULT '[]';");
     }
-    // R19D
     $rResult = $db->query("SHOW COLUMNS FROM `watch_settings` LIKE 'percentage_match';");
     if (($rResult) && ($rResult->num_rows == 0)) {
         $db->query("ALTER TABLE `watch_settings` ADD COLUMN `percentage_match` int(3) NOT NULL DEFAULT '80';");
@@ -1544,7 +1580,6 @@ function updateTables() {
         $db->query("ALTER TABLE `watch_folders` ADD COLUMN `ignore_no_match` int(1) NOT NULL DEFAULT '0';");
         $db->query("ALTER TABLE `watch_folders` ADD COLUMN `auto_subtitles` int(1) NOT NULL DEFAULT '0';");
     }
-    // R19E
     $rResult = $db->query("SHOW COLUMNS FROM `watch_folders` LIKE 'fb_bouquets';");
     if (($rResult) && ($rResult->num_rows == 0)) {
         $db->query("ALTER TABLE `watch_folders` ADD COLUMN `fb_bouquets` VARCHAR(4096) NOT NULL DEFAULT '[]';");
@@ -1557,7 +1592,19 @@ function updateTables() {
     }
 	// R20 Official
 	$db->query("UPDATE `streams_arguments` SET `argument_cmd` = '-cookies \'%s\'' WHERE `id` = 17;");
-    updateTMDbCategories();
+	// R21 Early Access
+	$db->query("INSERT IGNORE INTO `streams_arguments` VALUES (19, 'fetch', 'Headers', 'Set Custom Headers', 'http', 'headers', '-headers \"%s\"', 'text', NULL);");
+	$rResult = $db->query("SHOW COLUMNS FROM `reg_users` LIKE 'dark_mode';");
+    if (($rResult) && ($rResult->num_rows == 0)) {
+        $db->query("ALTER TABLE `reg_users` ADD COLUMN `dark_mode` int(1) NOT NULL DEFAULT '0';");
+		$db->query("ALTER TABLE `reg_users` ADD COLUMN `sidebar` int(1) NOT NULL DEFAULT '0';");
+    }
+	$rResult = $db->query("SHOW COLUMNS FROM `member_groups` LIKE 'minimum_trial_credits';");
+    if (($rResult) && ($rResult->num_rows == 0)) {
+        $db->query("ALTER TABLE `member_groups` ADD COLUMN `minimum_trial_credits` int(16) NOT NULL DEFAULT '0';");
+    }
+	// Update Categories
+	updateTMDbCategories();
 }
 
 function updateTMDbCategories() {
@@ -1601,6 +1648,7 @@ if (isset($_SESSION['hash'])) {
     if ($rPermissions["is_admin"]) {
         $rPermissions["is_reseller"] = 0; // Don't allow Admin & Reseller!
     }
+	$rPermissions["advanced"] = json_decode($rPermissions["allowed_pages"], True);
     if ((!$rUserInfo) or (!$rPermissions) or ((!$rPermissions["is_admin"]) && (!$rPermissions["is_reseller"])) or ($_SESSION['ip'] <> getIP())) {
         unset($rUserInfo);
         unset($rPermissions);
@@ -1609,8 +1657,9 @@ if (isset($_SESSION['hash'])) {
         header("Location: ./index.php");
     }
     $rAdminSettings = getAdminSettings();
-    $rSettings = getSettings();
-    $rSettings["sidebar"] = $rAdminSettings["sidebar"];
+	$rSettings = getSettings();
+	$rAdminSettings["dark_mode"] = $rUserInfo["dark_mode"];
+	$rSettings["sidebar"] = $rUserInfo["sidebar"];
     $rCategories = getCategories();
     $rServers = getStreamingServers();
     $rServerError = False;

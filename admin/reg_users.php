@@ -1,6 +1,7 @@
 <?php
 include "session.php"; include "functions.php";
-if (((!$rPermissions["is_reseller"]) OR (!$rPermissions["create_sub_resellers"])) && (!$rPermissions["is_admin"])) { exit; }
+if (($rPermissions["is_reseller"]) && (!$rPermissions["create_sub_resellers"])) { exit; }
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "mng_regusers"))) { exit; }
 
 if ($rPermissions["is_admin"]) {
     $rRegisteredUsers = getRegisteredUsers();
@@ -47,12 +48,14 @@ if ($rSettings["sidebar"]) {
                                                 <i class="mdi mdi-refresh"></i> Refresh
                                             </button>
                                         </a>
-                                        <?php } ?>
+                                        <?php }
+										if ((hasPermissions("adv", "add_reguser")) OR ($rPermissions["is_reseller"])) { ?>
                                         <a href="<?php if ($rPermissions["is_admin"]) { echo "reg_user"; } else { echo "subreseller"; } ?>.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add <?php if ($rPermissions["is_admin"]) { ?>Registered User<?php } else { ?>Subreseller<?php } ?>
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>

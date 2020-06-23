@@ -1,14 +1,22 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_user")) && (!hasPermissions("adv", "edit_user")))) { exit; }
 
 if (isset($_POST["submit_user"])) {
     $_POST["mac_address_mag"] = strtoupper($_POST["mac_address_mag"]);
     $_POST["mac_address_e2"] = strtoupper($_POST["mac_address_e2"]);
     if (isset($_POST["edit"])) {
-        $rArray = getUser($_POST["edit"]);
+		if (!hasPermissions("adv", "edit_user")) { exit; }
+		$rArray = getUser($_POST["edit"]);
+		if (($rArray["is_mag"]) && (!hasPermissions("adv", "edit_mag"))) {
+			exit;
+		}
+		if (($rArray["is_e2"]) && (!hasPermissions("adv", "edit_e2"))) {
+			exit;
+		}
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "add_user")) { exit; }
         $rArray = Array("member_id" => 0, "username" => "", "password" => "", "exp_date" => null, "admin_enabled" => 1, "enabled" => 1, "admin_notes" => "", "reseller_notes" => "", "bouquet" => Array(), "max_connections" => 1, "is_restreamer" => 0, "allowed_ips" => Array(), "allowed_ua" => Array(), "created_at" => time(), "created_by" => -1, "is_mag" => 0, "is_e2" => 0, "force_server_id" => 0, "is_isplock" => 0, "isp_desc" => "", "forced_country" => "", "is_stalker" => 0, "bypass_ua" => 0, "play_token" => "");
     }
     if (strlen($_POST["username"]) == 0) {
@@ -135,25 +143,29 @@ if (isset($_POST["submit_user"])) {
                     $db->query("INSERT INTO `user_output`(`user_id`, `access_output_id`) VALUES(".intval($rInsertID).", ".intval($rOutputID).");");
                 }
                 if ($rArray["is_mag"] == 1) {
-                    $result = $db->query("SELECT `mag_id` FROM `mag_devices` WHERE `user_id` = ".intval($rInsertID)." LIMIT 1;");
-                    if ((isset($result)) && ($result->num_rows == 1)) {
-                        $db->query("UPDATE `mag_devices` SET `mac` = '".base64_encode($db->real_escape_string($_POST["mac_address_mag"]))."' WHERE `user_id` = ".intval($rInsertID).";");
-                    } else {
-                        $db->query("INSERT INTO `mag_devices`(`user_id`, `mac`) VALUES(".intval($rInsertID).", '".$db->real_escape_string(base64_encode($_POST["mac_address_mag"]))."');");
-                    }
-                    if (isset($_POST["edit"])) {
-                        $db->query("DELETE FROM `enigma2_devices` WHERE `user_id` = ".intval($rInsertID).";");
-                    }
+					if (hasPermissions("adv", "add_mag")) {
+						$result = $db->query("SELECT `mag_id` FROM `mag_devices` WHERE `user_id` = ".intval($rInsertID)." LIMIT 1;");
+						if ((isset($result)) && ($result->num_rows == 1)) {
+							$db->query("UPDATE `mag_devices` SET `mac` = '".base64_encode($db->real_escape_string($_POST["mac_address_mag"]))."' WHERE `user_id` = ".intval($rInsertID).";");
+						} else {
+							$db->query("INSERT INTO `mag_devices`(`user_id`, `mac`) VALUES(".intval($rInsertID).", '".$db->real_escape_string(base64_encode($_POST["mac_address_mag"]))."');");
+						}
+						if (isset($_POST["edit"])) {
+							$db->query("DELETE FROM `enigma2_devices` WHERE `user_id` = ".intval($rInsertID).";");
+						}
+					}
                 } else if ($rArray["is_e2"] == 1) {
-                    $result = $db->query("SELECT `device_id` FROM `enigma2_devices` WHERE `user_id` = ".intval($rInsertID)." LIMIT 1;");
-                    if ((isset($result)) && ($result->num_rows == 1)) {
-                        $db->query("UPDATE `enigma2_devices` SET `mac` = '".$db->real_escape_string($_POST["mac_address_e2"])."' WHERE `user_id` = ".intval($rInsertID).";");
-                    } else {
-                        $db->query("INSERT INTO `enigma2_devices`(`user_id`, `mac`) VALUES(".intval($rInsertID).", '".$db->real_escape_string($_POST["mac_address_e2"])."');");
-                    }
-                    if (isset($_POST["edit"])) {
-                        $db->query("DELETE FROM `mag_devices` WHERE `user_id` = ".intval($rInsertID).";");
-                    }
+					if (hasPermissions("adv", "add_e2")) {
+						$result = $db->query("SELECT `device_id` FROM `enigma2_devices` WHERE `user_id` = ".intval($rInsertID)." LIMIT 1;");
+						if ((isset($result)) && ($result->num_rows == 1)) {
+							$db->query("UPDATE `enigma2_devices` SET `mac` = '".$db->real_escape_string($_POST["mac_address_e2"])."' WHERE `user_id` = ".intval($rInsertID).";");
+						} else {
+							$db->query("INSERT INTO `enigma2_devices`(`user_id`, `mac`) VALUES(".intval($rInsertID).", '".$db->real_escape_string($_POST["mac_address_e2"])."');");
+						}
+						if (isset($_POST["edit"])) {
+							$db->query("DELETE FROM `mag_devices` WHERE `user_id` = ".intval($rInsertID).";");
+						}
+					}
                 } else if (isset($_POST["edit"])) {
                     $db->query("DELETE FROM `mag_devices` WHERE `user_id` = ".intval($rInsertID).";");
                     $db->query("DELETE FROM `enigma2_devices` WHERE `user_id` = ".intval($rInsertID).";");
@@ -168,13 +180,20 @@ if (isset($_POST["submit_user"])) {
 
 if (isset($_GET["id"])) {
     $rUser = getUser($_GET["id"]);
-    if (!$rUser) {
+    if ((!$rUser) OR (!hasPermissions("adv", "edit_user"))) {
         exit;
     }
+	if (($rUser["is_mag"]) && (!hasPermissions("adv", "edit_mag"))) {
+		exit;
+	}
+	if (($rUser["is_e2"]) && (!hasPermissions("adv", "edit_e2"))) {
+		exit;
+	}
     $rUser["mac_address_mag"] = getMAGUser($_GET["id"]);
     $rUser["mac_address_e2"] = getE2User($_GET["id"]);
     $rUser["outputs"] = getOutputs($rUser["id"]);
-}
+} else if (!hasPermissions("adv", "add_user")) { exit; }
+
 $rRegisteredUsers = getRegisteredUsers();
 $rCountries = Array(Array("id" => "", "name" => "Off"), Array("id" => "A1", "name" => "Anonymous Proxy"), Array("id" => "A2", "name" => "Satellite Provider"), Array("id" => "O1", "name" => "Other Country"), Array("id" => "AF", "name" => "Afghanistan"), Array("id" => "AX", "name" => "Aland Islands"), Array("id" => "AL", "name" => "Albania"), Array("id" => "DZ", "name" => "Algeria"), Array("id" => "AS", "name" => "American Samoa"), Array("id" => "AD", "name" => "Andorra"), Array("id" => "AO", "name" => "Angola"), Array("id" => "AI", "name" => "Anguilla"), Array("id" => "AQ", "name" => "Antarctica"), Array("id" => "AG", "name" => "Antigua And Barbuda"), Array("id" => "AR", "name" => "Argentina"), Array("id" => "AM", "name" => "Armenia"), Array("id" => "AW", "name" => "Aruba"), Array("id" => "AU", "name" => "Australia"), Array("id" => "AT", "name" => "Austria"), Array("id" => "AZ", "name" => "Azerbaijan"), Array("id" => "BS", "name" => "Bahamas"), Array("id" => "BH", "name" => "Bahrain"), Array("id" => "BD", "name" => "Bangladesh"), Array("id" => "BB", "name" => "Barbados"), Array("id" => "BY", "name" => "Belarus"), Array("id" => "BE", "name" => "Belgium"), Array("id" => "BZ", "name" => "Belize"), Array("id" => "BJ", "name" => "Benin"), Array("id" => "BM", "name" => "Bermuda"), Array("id" => "BT", "name" => "Bhutan"), Array("id" => "BO", "name" => "Bolivia"), Array("id" => "BA", "name" => "Bosnia And Herzegovina"), Array("id" => "BW", "name" => "Botswana"), Array("id" => "BV", "name" => "Bouvet Island"), Array("id" => "BR", "name" => "Brazil"), Array("id" => "IO", "name" => "British Indian Ocean Territory"), Array("id" => "BN", "name" => "Brunei Darussalam"), Array("id" => "BG", "name" => "Bulgaria"), Array("id" => "BF", "name" => "Burkina Faso"), Array("id" => "BI", "name" => "Burundi"), Array("id" => "KH", "name" => "Cambodia"), Array("id" => "CM", "name" => "Cameroon"), Array("id" => "CA", "name" => "Canada"), Array("id" => "CV", "name" => "Cape Verde"), Array("id" => "KY", "name" => "Cayman Islands"), Array("id" => "CF", "name" => "Central African Republic"), Array("id" => "TD", "name" => "Chad"), Array("id" => "CL", "name" => "Chile"), Array("id" => "CN", "name" => "China"), Array("id" => "CX", "name" => "Christmas Island"), Array("id" => "CC", "name" => "Cocos (Keeling) Islands"), Array("id" => "CO", "name" => "Colombia"), Array("id" => "KM", "name" => "Comoros"), Array("id" => "CG", "name" => "Congo"), Array("id" => "CD", "name" => "Congo, Democratic Republic"), Array("id" => "CK", "name" => "Cook Islands"), Array("id" => "CR", "name" => "Costa Rica"), Array("id" => "CI", "name" => "Cote D'Ivoire"), Array("id" => "HR", "name" => "Croatia"), Array("id" => "CU", "name" => "Cuba"), Array("id" => "CY", "name" => "Cyprus"), Array("id" => "CZ", "name" => "Czech Republic"), Array("id" => "DK", "name" => "Denmark"), Array("id" => "DJ", "name" => "Djibouti"), Array("id" => "DM", "name" => "Dominica"), Array("id" => "DO", "name" => "Dominican Republic"), Array("id" => "EC", "name" => "Ecuador"), Array("id" => "EG", "name" => "Egypt"), Array("id" => "SV", "name" => "El Salvador"), Array("id" => "GQ", "name" => "Equatorial Guinea"), Array("id" => "ER", "name" => "Eritrea"), Array("id" => "EE", "name" => "Estonia"), Array("id" => "ET", "name" => "Ethiopia"), Array("id" => "FK", "name" => "Falkland Islands (Malvinas)"), Array("id" => "FO", "name" => "Faroe Islands"), Array("id" => "FJ", "name" => "Fiji"), Array("id" => "FI", "name" => "Finland"), Array("id" => "FR", "name" => "France"), Array("id" => "GF", "name" => "French Guiana"), Array("id" => "PF", "name" => "French Polynesia"), Array("id" => "TF", "name" => "French Southern Territories"), Array("id" => "MK", "name" => "Fyrom"), Array("id" => "GA", "name" => "Gabon"), Array("id" => "GM", "name" => "Gambia"), Array("id" => "GE", "name" => "Georgia"), Array("id" => "DE", "name" => "Germany"), Array("id" => "GH", "name" => "Ghana"), Array("id" => "GI", "name" => "Gibraltar"), Array("id" => "GR", "name" => "Greece"), Array("id" => "GL", "name" => "Greenland"), Array("id" => "GD", "name" => "Grenada"), Array("id" => "GP", "name" => "Guadeloupe"), Array("id" => "GU", "name" => "Guam"), Array("id" => "GT", "name" => "Guatemala"), Array("id" => "GG", "name" => "Guernsey"), Array("id" => "GN", "name" => "Guinea"), Array("id" => "GW", "name" => "Guinea-Bissau"), Array("id" => "GY", "name" => "Guyana"), Array("id" => "HT", "name" => "Haiti"), Array("id" => "HM", "name" => "Heard Island & Mcdonald Islands"), Array("id" => "VA", "name" => "Holy See (Vatican City State)"), Array("id" => "HN", "name" => "Honduras"), Array("id" => "HK", "name" => "Hong Kong"), Array("id" => "HU", "name" => "Hungary"), Array("id" => "IS", "name" => "Iceland"), Array("id" => "IN", "name" => "India"), Array("id" => "ID", "name" => "Indonesia"), Array("id" => "IR", "name" => "Iran, Islamic Republic Of"), Array("id" => "IQ", "name" => "Iraq"), Array("id" => "IE", "name" => "Ireland"), Array("id" => "IM", "name" => "Isle Of Man"), Array("id" => "IL", "name" => "Israel"), Array("id" => "IT", "name" => "Italy"), Array("id" => "JM", "name" => "Jamaica"), Array("id" => "JP", "name" => "Japan"), Array("id" => "JE", "name" => "Jersey"), Array("id" => "JO", "name" => "Jordan"), Array("id" => "KZ", "name" => "Kazakhstan"), Array("id" => "KE", "name" => "Kenya"), Array("id" => "KI", "name" => "Kiribati"), Array("id" => "KR", "name" => "Korea"), Array("id" => "KW", "name" => "Kuwait"), Array("id" => "KG", "name" => "Kyrgyzstan"), Array("id" => "LA", "name" => "Lao People's Democratic Republic"), Array("id" => "LV", "name" => "Latvia"), Array("id" => "LB", "name" => "Lebanon"), Array("id" => "LS", "name" => "Lesotho"), Array("id" => "LR", "name" => "Liberia"), Array("id" => "LY", "name" => "Libyan Arab Jamahiriya"), Array("id" => "LI", "name" => "Liechtenstein"), Array("id" => "LT", "name" => "Lithuania"), Array("id" => "LU", "name" => "Luxembourg"), Array("id" => "MO", "name" => "Macao"), Array("id" => "MG", "name" => "Madagascar"), Array("id" => "MW", "name" => "Malawi"), Array("id" => "MY", "name" => "Malaysia"), Array("id" => "MV", "name" => "Maldives"), Array("id" => "ML", "name" => "Mali"), Array("id" => "MT", "name" => "Malta"), Array("id" => "MH", "name" => "Marshall Islands"), Array("id" => "MQ", "name" => "Martinique"), Array("id" => "MR", "name" => "Mauritania"), Array("id" => "MU", "name" => "Mauritius"), Array("id" => "YT", "name" => "Mayotte"), Array("id" => "MX", "name" => "Mexico"), Array("id" => "FM", "name" => "Micronesia, Federated States Of"), Array("id" => "MD", "name" => "Moldova"), Array("id" => "MC", "name" => "Monaco"), Array("id" => "MN", "name" => "Mongolia"), Array("id" => "ME", "name" => "Montenegro"), Array("id" => "MS", "name" => "Montserrat"), Array("id" => "MA", "name" => "Morocco"), Array("id" => "MZ", "name" => "Mozambique"), Array("id" => "MM", "name" => "Myanmar"), Array("id" => "NA", "name" => "Namibia"), Array("id" => "NR", "name" => "Nauru"), Array("id" => "NP", "name" => "Nepal"), Array("id" => "NL", "name" => "Netherlands"), Array("id" => "AN", "name" => "Netherlands Antilles"), Array("id" => "NC", "name" => "New Caledonia"), Array("id" => "NZ", "name" => "New Zealand"), Array("id" => "NI", "name" => "Nicaragua"), Array("id" => "NE", "name" => "Niger"), Array("id" => "NG", "name" => "Nigeria"), Array("id" => "NU", "name" => "Niue"), Array("id" => "NF", "name" => "Norfolk Island"), Array("id" => "MP", "name" => "Northern Mariana Islands"), Array("id" => "NO", "name" => "Norway"), Array("id" => "OM", "name" => "Oman"), Array("id" => "PK", "name" => "Pakistan"), Array("id" => "PW", "name" => "Palau"), Array("id" => "PS", "name" => "Palestinian Territory, Occupied"), Array("id" => "PA", "name" => "Panama"), Array("id" => "PG", "name" => "Papua New Guinea"), Array("id" => "PY", "name" => "Paraguay"), Array("id" => "PE", "name" => "Peru"), Array("id" => "PH", "name" => "Philippines"), Array("id" => "PN", "name" => "Pitcairn"), Array("id" => "PL", "name" => "Poland"), Array("id" => "PT", "name" => "Portugal"), Array("id" => "PR", "name" => "Puerto Rico"), Array("id" => "QA", "name" => "Qatar"), Array("id" => "RE", "name" => "Reunion"), Array("id" => "RO", "name" => "Romania"), Array("id" => "RU", "name" => "Russian Federation"), Array("id" => "RW", "name" => "Rwanda"), Array("id" => "BL", "name" => "Saint Barthelemy"), Array("id" => "SH", "name" => "Saint Helena"), Array("id" => "KN", "name" => "Saint Kitts And Nevis"), Array("id" => "LC", "name" => "Saint Lucia"), Array("id" => "MF", "name" => "Saint Martin"), Array("id" => "PM", "name" => "Saint Pierre And Miquelon"), Array("id" => "VC", "name" => "Saint Vincent And Grenadines"), Array("id" => "WS", "name" => "Samoa"), Array("id" => "SM", "name" => "San Marino"), Array("id" => "ST", "name" => "Sao Tome And Principe"), Array("id" => "SA", "name" => "Saudi Arabia"), Array("id" => "SN", "name" => "Senegal"), Array("id" => "RS", "name" => "Serbia"), Array("id" => "SC", "name" => "Seychelles"), Array("id" => "SL", "name" => "Sierra Leone"), Array("id" => "SG", "name" => "Singapore"), Array("id" => "SK", "name" => "Slovakia"), Array("id" => "SI", "name" => "Slovenia"), Array("id" => "SB", "name" => "Solomon Islands"), Array("id" => "SO", "name" => "Somalia"), Array("id" => "ZA", "name" => "South Africa"), Array("id" => "GS", "name" => "South Georgia And Sandwich Isl."), Array("id" => "ES", "name" => "Spain"), Array("id" => "LK", "name" => "Sri Lanka"), Array("id" => "SD", "name" => "Sudan"), Array("id" => "SR", "name" => "Suriname"), Array("id" => "SJ", "name" => "Svalbard And Jan Mayen"), Array("id" => "SZ", "name" => "Swaziland"), Array("id" => "SE", "name" => "Sweden"), Array("id" => "CH", "name" => "Switzerland"), Array("id" => "SY", "name" => "Syrian Arab Republic"), Array("id" => "TW", "name" => "Taiwan"), Array("id" => "TJ", "name" => "Tajikistan"), Array("id" => "TZ", "name" => "Tanzania"), Array("id" => "TH", "name" => "Thailand"), Array("id" => "TL", "name" => "Timor-Leste"), Array("id" => "TG", "name" => "Togo"), Array("id" => "TK", "name" => "Tokelau"), Array("id" => "TO", "name" => "Tonga"), Array("id" => "TT", "name" => "Trinidad And Tobago"), Array("id" => "TN", "name" => "Tunisia"), Array("id" => "TR", "name" => "Turkey"), Array("id" => "TM", "name" => "Turkmenistan"), Array("id" => "TC", "name" => "Turks And Caicos Islands"), Array("id" => "TV", "name" => "Tuvalu"), Array("id" => "UG", "name" => "Uganda"), Array("id" => "UA", "name" => "Ukraine"), Array("id" => "AE", "name" => "United Arab Emirates"), Array("id" => "GB", "name" => "United Kingdom"), Array("id" => "US", "name" => "United States"), Array("id" => "UM", "name" => "United States Outlying Islands"), Array("id" => "UY", "name" => "Uruguay"), Array("id" => "UZ", "name" => "Uzbekistan"), Array("id" => "VU", "name" => "Vanuatu"), Array("id" => "VE", "name" => "Venezuela"), Array("id" => "VN", "name" => "Viet Nam"), Array("id" => "VG", "name" => "Virgin Islands, British"), Array("id" => "VI", "name" => "Virgin Islands, U.S."), Array("id" => "WF", "name" => "Wallis And Futuna"), Array("id" => "EH", "name" => "Western Sahara"), Array("id" => "YE", "name" => "Yemen"), Array("id" => "ZM", "name" => "Zambia"), Array("id" => "ZW", "name" => "Zimbabwe"));
 
@@ -367,19 +386,19 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-2">
                                                                 <input name="is_stalker" id="is_stalker" type="checkbox" <?php if (isset($rUser)) { if ($rUser["is_stalker"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
-                                                            <label class="col-md-4 col-form-label" for="is_mag">MAG Device <i data-toggle="tooltip" data-placement="top" title="" data-original-title="This option will be selected if this device is a MAG set top box. This will be a sub account and should not be modified directly." class="mdi mdi-information"></i></label>
+															<label class="col-md-4 col-form-label" for="is_restreamer">Restreamer <i data-toggle="tooltip" data-placement="top" title="" data-original-title="If selected, this user will not be blocked for restreaming channels." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input name="is_mag" id="is_mag" type="checkbox" <?php if (isset($rUser)) { if ($rUser["is_mag"] == 1) { echo "checked "; } } else if (isset($_GET["mag"])) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input name="is_restreamer" id="is_restreamer" type="checkbox" <?php if (isset($rUser)) { if ($rUser["is_restreamer"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="is_e2">Enigma Device <i data-toggle="tooltip" data-placement="top" title="" data-original-title="This option will be selected if this device is a Enigma set top box. This will be a sub account and should not be modified directly." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input name="is_e2" id="is_e2" type="checkbox" <?php if (isset($rUser)) { if ($rUser["is_e2"] == 1) { echo "checked "; } } else if (isset($_GET["e2"])) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input <?php if (!hasPermissions("adv", "add_e2")) { echo "disabled "; } ?>name="is_e2" id="is_e2" type="checkbox" <?php if (isset($rUser)) { if ($rUser["is_e2"] == 1) { echo "checked "; } } else if ((isset($_GET["e2"])) && (hasPermissions("adv", "add_e2"))) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
-                                                            <label class="col-md-4 col-form-label" for="is_restreamer">Restreamer <i data-toggle="tooltip" data-placement="top" title="" data-original-title="If selected, this user will not be blocked for restreaming channels." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="is_mag">MAG Device <i data-toggle="tooltip" data-placement="top" title="" data-original-title="This option will be selected if this device is a MAG set top box. This will be a sub account and should not be modified directly." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input name="is_restreamer" id="is_restreamer" type="checkbox" <?php if (isset($rUser)) { if ($rUser["is_restreamer"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input <?php if (!hasPermissions("adv", "add_mag")) { echo "disabled "; } ?>name="is_mag" id="is_mag" type="checkbox" <?php if (isset($rUser)) { if ($rUser["is_mag"] == 1) { echo "checked "; } } else if ((isset($_GET["mag"])) && (hasPermissions("adv", "add_mag"))) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -628,17 +647,29 @@ if ($rSettings["sidebar"]) {
         function evaluateForm() {
             if (($("#is_mag").is(":checked")) || ($("#is_e2").is(":checked"))) {
                 if ($("#is_mag").is(":checked")) {
+					<?php if (hasPermissions("adv", "add_mag")) { ?>
                     $("#mac_entry_mag").show();
+					<?php }
+					if (hasPermissions("adv", "add_e2")) { ?>
                     window.swObjs["is_e2"].disable();
+					<?php } ?>
                 } else {
+					<?php if (hasPermissions("adv", "add_mag")) { ?>
                     $("#mac_entry_e2").show();
+					<?php }
+					if (hasPermissions("adv", "add_e2")) { ?>
                     window.swObjs["is_mag"].disable();
+					<?php } ?>
                 }
             } else {
-                $("#mac_entry_mag").hide();
+				<?php if (hasPermissions("adv", "add_e2")) { ?>
                 $("#mac_entry_e2").hide();
                 window.swObjs["is_e2"].enable();
+				<?php }
+				if (hasPermissions("adv", "add_mag")) { ?>
+				$("#mac_entry_mag").hide();
                 window.swObjs["is_mag"].enable();
+				<?php } ?>
             }
         }
         

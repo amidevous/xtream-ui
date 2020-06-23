@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "folder_watch_output"))) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";

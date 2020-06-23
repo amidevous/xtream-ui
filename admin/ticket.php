@@ -1,5 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "ticket"))) { exit; }
 
 if (isset($_POST["submit_ticket"])) {
     if (((strlen($_POST["title"]) == 0) && (!isset($_POST["respond"]))) OR ((strlen($_POST["message"]) == 0))) {

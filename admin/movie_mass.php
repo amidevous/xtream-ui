@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "mass_sedits_vod"))) { exit; }
 
 $rCategories = getCategories("movie");
 
@@ -111,7 +111,6 @@ if (isset($_POST["submit_stream"])) {
                         removeFromBouquet("stream", $rBouquet["id"], $rStreamID);
                     }
                 }
-                scanBouquets();
             }
         }
         if (isset($_POST["reencode_on_edit"])) {
@@ -124,6 +123,9 @@ if (isset($_POST["submit_stream"])) {
                 }
             }
         }
+		if (isset($_POST["c_bouquets"])) {
+			scanBouquets();
+		}
     }
     $_STATUS = 0;
 }

@@ -1,18 +1,9 @@
 <?php
 include "session.php"; include "functions.php";
 if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "series"))) { exit; }
 
 $rCategories = getCategories("series");
-
-if (isset($_GET["category"])) {
-    if (!isset($rCategories[$_GET["category"]])) {
-        exit;
-    } else {
-        $rCategory = $rCategories[$_GET["category"]];
-    }
-} else {
-    $rCategory = null;
-}
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -54,8 +45,8 @@ if ($rSettings["sidebar"]) {
                                             </button>
                                         </a>
                                         <?php }
-                                        if ($rPermissions["is_admin"]) { ?>
-                                        <a href="serie.php<?php if($rCategory) { echo "?category=".$rCategory["id"]; }?>">
+                                        if (($rPermissions["is_admin"]) && (hasPermissions("adv", "add_series"))) { ?>
+                                        <a href="serie.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add Series
                                             </button>

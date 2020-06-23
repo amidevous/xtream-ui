@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "mng_packages"))) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -16,6 +16,7 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
+							<?php if (hasPermissions("adv", "add_packages")) { ?>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
@@ -27,6 +28,7 @@ if ($rSettings["sidebar"]) {
                                     </li>
                                 </ol>
                             </div>
+							<?php } ?>
                             <h4 class="page-title">Packages</h4>
                         </div>
                     </div>
@@ -59,43 +61,45 @@ if ($rSettings["sidebar"]) {
                                             <td><?=$rPackage["package_name"]?></td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rPackage["id"]?>" data-name="is_trial" type="checkbox" class="custom-control-input" id="is_trial_<?=$rPackage["id"]?>" name="is_trial"<?php if ($rPackage["is_trial"]) { echo " checked"; } ?>>
+                                                    <input <?php if (!hasPermissions("adv", "edit_package")) { echo "disabled "; } ?>data-id="<?=$rPackage["id"]?>" data-name="is_trial" type="checkbox" class="custom-control-input" id="is_trial_<?=$rPackage["id"]?>" name="is_trial"<?php if ($rPackage["is_trial"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="is_trial_<?=$rPackage["id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rPackage["id"]?>" data-name="is_official" type="checkbox" class="custom-control-input" id="is_official_<?=$rPackage["id"]?>" name="is_official"<?php if ($rPackage["is_official"]) { echo " checked"; } ?>>
+                                                    <input <?php if (!hasPermissions("adv", "edit_package")) { echo "disabled "; } ?>data-id="<?=$rPackage["id"]?>" data-name="is_official" type="checkbox" class="custom-control-input" id="is_official_<?=$rPackage["id"]?>" name="is_official"<?php if ($rPackage["is_official"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="is_official_<?=$rPackage["id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rPackage["id"]?>" data-name="can_gen_mag" type="checkbox" class="custom-control-input" id="can_gen_mag_<?=$rPackage["id"]?>" name="can_gen_mag"<?php if ($rPackage["can_gen_mag"]) { echo " checked"; } ?>>
+                                                    <input <?php if (!hasPermissions("adv", "edit_package")) { echo "disabled "; } ?>data-id="<?=$rPackage["id"]?>" data-name="can_gen_mag" type="checkbox" class="custom-control-input" id="can_gen_mag_<?=$rPackage["id"]?>" name="can_gen_mag"<?php if ($rPackage["can_gen_mag"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="can_gen_mag_<?=$rPackage["id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rPackage["id"]?>" data-name="only_mag" type="checkbox" class="custom-control-input" id="only_mag_<?=$rPackage["id"]?>" name="only_mag"<?php if ($rPackage["only_mag"]) { echo " checked"; } ?>>
+                                                    <input <?php if (!hasPermissions("adv", "edit_package")) { echo "disabled "; } ?>data-id="<?=$rPackage["id"]?>" data-name="only_mag" type="checkbox" class="custom-control-input" id="only_mag_<?=$rPackage["id"]?>" name="only_mag"<?php if ($rPackage["only_mag"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="only_mag_<?=$rPackage["id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rPackage["id"]?>" data-name="can_gen_e2" type="checkbox" class="custom-control-input" id="can_gen_e2_<?=$rPackage["id"]?>" name="can_gen_e2"<?php if ($rPackage["can_gen_e2"]) { echo " checked"; } ?>>
+                                                    <input <?php if (!hasPermissions("adv", "edit_package")) { echo "disabled "; } ?>data-id="<?=$rPackage["id"]?>" data-name="can_gen_e2" type="checkbox" class="custom-control-input" id="can_gen_e2_<?=$rPackage["id"]?>" name="can_gen_e2"<?php if ($rPackage["can_gen_e2"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="can_gen_e2_<?=$rPackage["id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
                                                 <div class="custom-control custom-checkbox mt-1">
-                                                    <input data-id="<?=$rPackage["id"]?>" data-name="only_e2" type="checkbox" class="custom-control-input" id="only_e2_<?=$rPackage["id"]?>" name="only_e2"<?php if ($rPackage["only_e2"]) { echo " checked"; } ?>>
+                                                    <input <?php if (!hasPermissions("adv", "edit_package")) { echo "disabled "; } ?>data-id="<?=$rPackage["id"]?>" data-name="only_e2" type="checkbox" class="custom-control-input" id="only_e2_<?=$rPackage["id"]?>" name="only_e2"<?php if ($rPackage["only_e2"]) { echo " checked"; } ?>>
                                                     <label class="custom-control-label" for="only_e2_<?=$rPackage["id"]?>"></label>
                                                 </div>
                                             </td>
                                             <td class="text-center">
+												<?php if (hasPermissions("adv", "edit_package")) { ?>
                                                 <a href="./package.php?id=<?=$rPackage["id"]?>"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Package" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete Package" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rPackage["id"]?>, 'delete');""><i class="mdi mdi-close"></i></button>
+												<?php } else { echo "--"; } ?>
                                             </td>
                                         </tr>
                                         <?php } ?>
@@ -157,13 +161,13 @@ if ($rSettings["sidebar"]) {
                 }
             });
         }
-        
+        <?php if (hasPermissions("adv", "edit_package")) { ?>
         $('input:checkbox').change(function() {
             $.getJSON("./api.php?action=package&sub=" + $(this).data("name") + "&package_id=" + $(this).data("id") + "&value=" + ($(this).is(":checked") ? 1 : 0), function(data) {
                 $.toast("Package has been modified.");
             });
         });
-        
+        <?php } ?>
         $(document).ready(function() {
             $("#datatable").DataTable({
                 language: {

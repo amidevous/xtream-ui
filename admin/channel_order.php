@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "channel_order"))) { exit; }
 
 if (isset($_POST["stream_order_array"])) {
     set_time_limit(0);

@@ -15,9 +15,9 @@ if (intval($rAdminSettings["login_flood"]) > 0) {
 if (!isset($_STATUS)) {
 	$rGA = new PHPGangsta_GoogleAuthenticator();
 	if ((isset($_POST["username"])) && (isset($_POST["password"]))) {
-		if (strlen($rAdminSettings["recaptcha_v2_secret_key"]) > 0) {
+		if ($rAdminSettings["recaptcha_enable"]) {
 			$rResponse = json_decode(file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$rAdminSettings["recaptcha_v2_secret_key"].'&response='.$_POST['g-recaptcha-response']), True);
-			if (!$rResponse["success"]) {
+			if ((!$rResponse["success"]) && (!in_array("invalid-input-secret", $rResponse["error-codes"]))) {
 				$_STATUS = 5;
 			}
 		}
@@ -63,7 +63,7 @@ if (!isset($_STATUS)) {
 						$_STATUS = 4;
 					}
 				}
-			} else {
+			} else if (intval($rAdminSettings["login_flood"]) > 0) {
 				$db->query("INSERT INTO `login_flood`(`username`, `ip`) VALUES('".$db->real_escape_string($_POST["username"])."', '".$db->real_escape_string(getIP())."');");
 				$_STATUS = 0;
 			}
@@ -94,7 +94,7 @@ if (!isset($_STATUS)) {
 				$rQR = $rGA->getQRCodeGoogleUrl('Xtream UI', $rUserInfo["google_2fa_sec"]);
 				$_STATUS = 1;
 			}
-		} else {
+		} else if (intval($rAdminSettings["login_flood"]) > 0) {
 			$db->query("INSERT INTO `login_flood`(`username`, `ip`) VALUES('".$db->real_escape_string($_POST["username"])."', '".$db->real_escape_string(getIP())."');");
 			$_STATUS = 0;
 		}
@@ -124,7 +124,7 @@ if (!isset($_STATUS)) {
 			} else {
 				$_STATUS = 6;
 			}
-		} else {
+		} else if (intval($rAdminSettings["login_flood"]) > 0) {
 			$db->query("INSERT INTO `login_flood`(`username`, `ip`) VALUES('".$db->real_escape_string($_POST["username"])."', '".$db->real_escape_string(getIP())."');");
 			$_STATUS = 0;
 		}
@@ -141,9 +141,14 @@ if (!isset($_STATUS)) {
         <!-- App favicon -->
         <link rel="shortcut icon" href="assets/images/favicon.ico">
         <!-- App css -->
+		<link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
+        <?php if ($rAdminSettings["dark_mode_login"]) { ?>
+		<link href="assets/css/bootstrap.dark.css" rel="stylesheet" type="text/css" />
+        <link href="assets/css/app.dark.css" rel="stylesheet" type="text/css" />
+        <?php } else { ?>
         <link href="assets/css/bootstrap.css" rel="stylesheet" type="text/css" />
-        <link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
         <link href="assets/css/app.css" rel="stylesheet" type="text/css" />
+        <?php } ?>
 		<style>
 			.g-recaptcha {
 				display: inline-block;
@@ -200,15 +205,19 @@ if (!isset($_STATUS)) {
                         <div class="card">
                             <div class="card-body p-4">
                                 <div class="text-center w-75 m-auto">
+                                    <?php if ($rAdminSettings["dark_mode_login"]) { ?>
+									<span><img src="assets/images/logo.png" width="200px" alt=""></span>
+                                    <?php } else { ?>
                                     <span><img src="assets/images/logo-back.png" width="200px" alt=""></span>
+                                    <?php } ?>
                                     <p class="text-muted mb-4 mt-3"></p>
                                 </div>
                                 <h5 class="auth-title">Admin & Reseller Interface</h5>
 								<?php if ((!isset($_STATUS)) OR ($_STATUS <> 7)) { ?>
-                                <form action="./login.php" method="POST" data-parsley-validate="">
+                                <form action="./login.php" method="POST" data-parsley-validate="" id="login_form">
                                     <input type="hidden" name="referrer" value="<?=$_GET["referrer"]?>" />
                                     <?php if ((!isset($rQR)) && (!isset($rChangePass))) { ?>
-                                    <div class="form-group mb-3">
+                                    <div class="form-group mb-3" id="username_group">
                                         <label for="username">Username</label>
                                         <input class="form-control" autocomplete="off" type="text" id="username" name="username" required data-parsley-trigger="change" placeholder="Enter your username">
                                     </div>
@@ -216,7 +225,7 @@ if (!isset($_STATUS)) {
                                         <label for="password">Password</label>
                                         <input class="form-control" autocomplete="off" type="password" required data-parsley-trigger="change" id="password" name="password" placeholder="Enter your password">
                                     </div>
-									<?php if (strlen($rAdminSettings["recaptcha_v2_secret_key"]) > 0) { ?>
+									<?php if ($rAdminSettings["recaptcha_enable"]) { ?>
 									<h5 class="auth-title text-center">
                                         <div class="g-recaptcha" id="verification" data-sitekey="<?=$rAdminSettings["recaptcha_v2_site_key"]?>"></div>
                                     </h5>
@@ -248,7 +257,7 @@ if (!isset($_STATUS)) {
                                     </div>
                                     <?php } ?>
                                     <div class="form-group mb-0 text-center">
-                                        <button class="btn btn-danger btn-block" type="submit"> LOGIN </button>
+                                        <button class="btn btn-danger btn-block" type="submit" id="login_button">LOGIN</button>
                                     </div>
                                 </form>
 								<?php } else { ?>
@@ -264,9 +273,19 @@ if (!isset($_STATUS)) {
         </div>
         <script src="assets/js/vendor.min.js"></script>
         <script src="assets/libs/parsleyjs/parsley.min.js"></script>
-        <script src="assets/js/app.min.js"></script>
-		<?php if (strlen($rAdminSettings["recaptcha_v2_secret_key"]) > 0) { ?>
+        <script src="assets/js/app.min.js?rid=<?=getID()?>"></script>
+		<?php if ($rAdminSettings["recaptcha_enable"]) { ?>
 		<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 		<?php } ?>
+        <script>
+        $(document).ready(function() {
+            if (window.location.hash.substring(0,1) == "#") {
+                $("#username_group").hide();
+                $("#username").val(window.location.hash.substring(1));
+                $("#login_form").attr('action', './login.php#' + window.location.hash.substring(1));
+                $("#login_button").html("LOGIN AS " + window.location.hash.substring(1).toUpperCase());
+            }
+        });
+        </script>
     </body>
 </html>

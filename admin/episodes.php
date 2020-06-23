@@ -1,6 +1,7 @@
 <?php
 include "session.php"; include "functions.php";
 if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "episodes"))) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -41,12 +42,14 @@ if ($rSettings["sidebar"]) {
                                                 <i class="mdi mdi-refresh"></i> Refresh
                                             </button>
                                         </a>
-                                        <?php } ?>
+                                        <?php }
+										if (hasPermissions("adv", "add_episode")) { ?>
                                         <a href="#" onClick="showModal()">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add Episode
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>
@@ -154,7 +157,7 @@ if ($rSettings["sidebar"]) {
                 <!-- end row-->
             </div> <!-- end container -->
         </div>
-        <div class="modal fade addModal" tabindex="-1" role="dialog" aria-labelledby="addLabel" aria-hidden="true" style="display: none;" data-username="" data-password="">
+        <div class="modal fade addModal" role="dialog" aria-labelledby="addLabel" aria-hidden="true" style="display: none;" data-username="" data-password="">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">

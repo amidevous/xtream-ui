@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "mass_edit_streams"))) { exit; }
 
 if (isset($_POST["submit_stream"])) {
     $rArray = Array();
@@ -181,6 +181,12 @@ if (isset($_POST["submit_stream"])) {
                     $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rStreamID).", 17, '".$db->real_escape_string($_POST["cookie"])."');");
                 }
             }
+			if (isset($_POST["c_headers"])) {
+                $db->query("DELETE FROM `streams_options` WHERE `stream_id` = ".intval($rStreamID)." AND `argument_id` = 19;");
+                if ((isset($_POST["headers"])) && (strlen($_POST["headers"]) > 0)) {
+                    $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rStreamID).", 19, '".$db->real_escape_string($_POST["headers"])."');");
+                }
+            }
             if (isset($_POST["c_bouquets"])) {
                 $rBouquets = $_POST["bouquets"];
                 foreach ($rBouquets as $rBouquet) {
@@ -191,12 +197,14 @@ if (isset($_POST["submit_stream"])) {
                         removeFromBouquet("stream", $rBouquet["id"], $rStreamID);
                     }
                 }
-                scanBouquets();
             }
         }
         if (isset($_POST["restart_on_edit"])) {
             APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs)));
         }
+		if (isset($_POST["c_bouquets"])) {
+			scanBouquets();
+		}
     }
     $_STATUS = 0;
 }
@@ -474,6 +482,16 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-3 col-form-label" for="cookie">Cookie</label>
                                                             <div class="col-md-8">
                                                                 <input type="text" disabled class="form-control" id="cookie" name="cookie" value="<?php echo htmlspecialchars($rStreamArguments["cookie"]["argument_default_value"]); ?>">
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <div class="checkbox checkbox-single col-md-1 checkbox-offset checkbox-primary">
+                                                                <input type="checkbox" class="activate" data-name="headers" name="c_headers">
+                                                                <label></label>
+                                                            </div>
+                                                            <label class="col-md-3 col-form-label" for="headers">Headers</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" disabled class="form-control" id="headers" name="headers" value="<?php echo htmlspecialchars($rStreamArguments["headers"]["argument_default_value"]); ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

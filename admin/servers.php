@@ -1,6 +1,7 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "servers"))) { exit; }
+
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -23,6 +24,7 @@ if ($rSettings["sidebar"]) {
                                                 <i class="mdi mdi-refresh"></i> Refresh
                                             </button>
                                         </a>
+										<?php if (hasPermissions("adv", "add_server")) { ?>
                                         <a href="server.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add Server
@@ -33,6 +35,7 @@ if ($rSettings["sidebar"]) {
                                                 <i class="mdi mdi-creation"></i> Install LB
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>
@@ -93,20 +96,26 @@ if ($rSettings["sidebar"]) {
                                             <td class="text-center"><?=$rLatency?></td>
                                             <td><?=$rServer["domain_name"]?></td>
                                             <td><?=$rServer["server_ip"]?></td>
+											<?php if (hasPermissions("adv", "live_connections")) { ?>
                                             <td class="text-center"><a href="./live_connections.php?server_id=<?=$rServer["id"]?>"><?=count(getConnections($rServer["id"]))?> / <?=$rServer["total_clients"]?></a></td>
+											<?php } else { ?>
+											<td class="text-center"><?=count(getConnections($rServer["id"]))?> / <?=$rServer["total_clients"]?></td>
+											<?php } ?>
                                             <td class="text-center"><?=intval($rWatchDog["cpu_avg"])?>%</td>
                                             <td class="text-center"><?=intval($rWatchDog["total_mem_used_percent"])?>%</td>
                                             <td class="text-center">
+												<?php if (hasPermissions("adv", "edit_server")) { ?>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Restart Services" class="btn btn-outline-primary waves-effect waves-light btn-xs btn-reboot-server" data-id="<?=$rServer["id"]?>"><i class="mdi mdi-restart"></i></button>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Start All Streams" class="btn btn-outline-purple waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'start');"><i class="mdi mdi-play"></i></button>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Stop All Streams" class="btn btn-outline-pink waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'stop');"><i class="mdi mdi-stop"></i></button>
-                                                <a href="./server.php?id=<?=$rServer["id"]?>"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Server" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Kill All Connections" class="btn btn-outline-warning waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'kill');"><i class="fas fa-hammer"></i></button>
-                                                <?php if ($rServer["can_delete"] == 1) { ?>
+                                                <a href="./server.php?id=<?=$rServer["id"]?>"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Server" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+												<?php if ($rServer["can_delete"] == 1) { ?>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete Server" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rServer["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
                                                 <?php } else { ?>
                                                 <button disabled type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs"><i class="mdi mdi-close"></i></button>
-                                                <?php } ?>
+                                                <?php }
+												} else { echo "--"; } ?>
                                             </td>
                                         </tr>
                                         <?php } ?>

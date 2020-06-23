@@ -1,18 +1,9 @@
 <?php
 include "session.php"; include "functions.php";
 if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "movies"))) { exit; }
 
 $rCategories = getCategories("movie");
-
-if (isset($_GET["category"])) {
-    if (!isset($rCategories[$_GET["category"]])) {
-        exit;
-    } else {
-        $rCategory = $rCategories[$_GET["category"]];
-    }
-} else {
-    $rCategory = null;
-}
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -54,8 +45,8 @@ if ($rSettings["sidebar"]) {
                                             </button>
                                         </a>
                                         <?php }
-                                        if ($rPermissions["is_admin"]) { ?>
-                                        <a href="movie.php<?php if($rCategory) { echo "?category=".$rCategory["id"]; }?>">
+                                        if (($rPermissions["is_admin"]) && (hasPermissions("adv", "add_movie"))) { ?>
+                                        <a href="movie.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add Movie
                                             </button>
@@ -64,7 +55,7 @@ if ($rSettings["sidebar"]) {
                                     </li>
                                 </ol>
                             </div>
-                            <h4 class="page-title">Movies<?php if ($rCategory) { echo " - ".$rCategory["category_name"]; } ?></h4>
+                            <h4 class="page-title">Movies</h4>
                         </div>
                     </div>
                 </div>     

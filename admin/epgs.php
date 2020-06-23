@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "epg"))) { exit; }
 
 $rEPGs = getEPGs();
 if ($rSettings["sidebar"]) {
@@ -23,11 +23,13 @@ if ($rSettings["sidebar"]) {
                                         <button type="button" class="btn btn-dark waves-effect waves-light btn-sm" onClick="forceUpdate();" id="force_update">
                                             <i class="mdi mdi-refresh"></i> Force EPG Reload
                                         </button>
+										<?php if (hasPermissions("adv", "add_epg")) { ?>
                                         <a href="epg.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add EPG
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>
@@ -62,8 +64,10 @@ if ($rSettings["sidebar"]) {
                                             <td class="text-center"><?=$rEPG["days_keep"]?></td>
                                             <td class="text-center"><?php if ($rEPG["last_updated"]) { echo date("Y-m-d H:i:s", $rEPG["last_updated"]); } else { echo "Never"; } ?></td>
                                             <td class="text-center">
+												<?php if (hasPermissions("adv", "epg_edit")) { ?>
                                                 <a href="./epg.php?id=<?=$rEPG["id"]?>"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit EPG" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                                                 <button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete EPG" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rEPG["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
+												<?php } else { echo "--"; } ?>
                                             </td>
                                         </tr>
                                         <?php } ?>

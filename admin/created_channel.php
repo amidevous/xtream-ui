@@ -1,15 +1,17 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "create_channel")) && (!hasPermissions("adv", "edit_cchannel")))) { exit; }
 
 $rCategories = getCategories("live");
 $rTranscodeProfiles = getTranscodeProfiles();
 
 if (isset($_POST["submit_stream"])) {
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_cchannel")) { exit; }
         $rArray = getStream($_POST["edit"]);
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "create_channel")) { exit; }
         $rArray = Array("type" => 3, "added" => time(), "read_native" => 1, "stream_all" => 1, "redirect_stream" => 0, "direct_source" => 0, "gen_timestamps" => 1, "transcode_attributes" => Array(), "stream_display_name" => "", "stream_source" => Array(), "category_id" => 0, "stream_icon" => "", "notes" => "", "custom_sid" => "", "custom_ffmpeg" => "", "custom_map" => "", "transcode_profile_id" => 0, "enable_transcode" => 0, "auto_restart" => "[]", "allow_record" => 0, "rtmp_output" => 0, "epg_id" => null, "channel_id" => null, "epg_lang" => null, "tv_archive_server_id" => 0, "tv_archive_duration" => 0, "delay_minutes" => 0, "external_push" => "", "probesize_ondemand" => 128000, "pids_create_channel" => Array(), "created_channel_location" => 0, "cchannel_rsources" => Array(), "series_no" => 0);
     }
     $rArary["transcode_profile_id"] = $_POST["transcode_profile_id"];
@@ -145,6 +147,7 @@ $rServerTree = Array();
 $rServerTree[] = Array("id" => "source", "parent" => "#", "text" => "<strong>Stream Source</strong>", "icon" => "mdi mdi-youtube-tv", "state" => Array("opened" => true));
 
 if (isset($_GET["id"])) {
+	if (!hasPermissions("adv", "edit_cchannel")) { exit; }
     $rChannel = getStream($_GET["id"]);
     if ((!$rChannel) or ($rChannel["type"] <> 3)) {
         exit;
@@ -171,6 +174,7 @@ if (isset($_GET["id"])) {
         $rServerTree[] = Array("id" => $rServer["id"], "parent" => $rParent, "text" => $rServer["server_name"], "icon" => "mdi mdi-server-network", "state" => Array("opened" => true));
     }
 } else {
+	if (!hasPermissions("adv", "create_channel")) { exit; }
     foreach ($rServers as $rServer) {
         $rServerTree[] = Array("id" => $rServer["id"], "parent" => "#", "text" => $rServer["server_name"], "icon" => "mdi mdi-server-network", "state" => Array("opened" => true));
     }

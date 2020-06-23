@@ -1,12 +1,14 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_radio")) && (!hasPermissions("adv", "edit_radio")))) { exit; }
 
 if (isset($_POST["submit_radio"])) {
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_radio")) { exit; }
         $rArray = getStream($_POST["edit"]);
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "add_radio")) { exit; }
         $rArray = Array("type" => 4, "added" => time(), "read_native" => 0, "stream_all" => 0, "redirect_stream" => 1, "direct_source" => 0, "gen_timestamps" => 0, "transcode_attributes" => Array(), "stream_display_name" => "", "stream_source" => Array(), "category_id" => 0, "stream_icon" => "", "notes" => "", "custom_sid" => "", "custom_ffmpeg" => "", "custom_map" => "", "transcode_profile_id" => 0, "enable_transcode" => 0, "auto_restart" => "[]", "allow_record" => 0, "rtmp_output" => 0, "epg_id" => null, "channel_id" => null, "epg_lang" => null, "tv_archive_server_id" => 0, "tv_archive_duration" => 0, "delay_minutes" => 0, "external_push" => Array(), "probesize_ondemand" => 128000);
     }
     if ((isset($_POST["days_to_restart"])) && (preg_match("/^(?:2[0-3]|[01][0-9]):[0-5][0-9]$/", $_POST["time_to_restart"]))) {
@@ -157,6 +159,9 @@ if (isset($_POST["submit_radio"])) {
 				if ((isset($_POST["cookie"])) && (strlen($_POST["cookie"]) > 0)) {
                     $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 17, '".$db->real_escape_string($_POST["cookie"])."');");
                 }
+				if ((isset($_POST["headers"])) && (strlen($_POST["headers"]) > 0)) {
+                    $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 19, '".$db->real_escape_string($_POST["headers"])."');");
+                }
 				if ($rRestart) {
 					APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => Array($rInsertID)));
 				}
@@ -201,6 +206,7 @@ $rServerTree = Array();
 $rOnDemand = Array();
 $rServerTree[] = Array("id" => "source", "parent" => "#", "text" => "<strong>Stream Source</strong>", "icon" => "mdi mdi-youtube-tv", "state" => Array("opened" => true));
 if (isset($_GET["id"])) {
+	if (!hasPermissions("adv", "edit_radio")) { exit; }
     $rStation = getStream($_GET["id"]);
     if ((!$rStation) or ($rStation["type"] <> 4)) {
         exit;
@@ -225,6 +231,7 @@ if (isset($_GET["id"])) {
         }
     }
 } else {
+	if (!hasPermissions("adv", "add_radio")) { exit; }
     foreach ($rServers as $rServer) {
         $rServerTree[] = Array("id" => $rServer["id"], "parent" => "#", "text" => $rServer["server_name"], "icon" => "mdi mdi-server-network", "state" => Array("opened" => true));
     }
@@ -436,6 +443,12 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="cookie">Cookie <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Format: key=value;" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
                                                                 <input type="text" class="form-control" id="cookie" name="cookie" value="<?php if (isset($rStationOptions[17])) { echo htmlspecialchars($rStationOptions[17]["value"]); } else { echo htmlspecialchars($rStationArguments["cookie"]["argument_default_value"]); } ?>">
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="headers">Headers <i data-toggle="tooltip" data-placement="top" title="" data-original-title="FFmpeg -headers command." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="headers" name="headers" value="<?php if (isset($rStreamOptions[19])) { echo htmlspecialchars($rStreamOptions[19]["value"]); } else { echo htmlspecialchars($rStreamArguments["headers"]["argument_default_value"]); } ?>">
                                                             </div>
                                                         </div>
                                                     </div> <!-- end col -->
@@ -676,7 +689,7 @@ if ($rSettings["sidebar"]) {
                 evaluateDirectSource();
             });
             function evaluateDirectSource() {
-                $(["custom_ffmpeg", "probesize_ondemand", "user_agent", "http_proxy", "cookie", "days_to_restart", "time_to_restart", "on_demand", "restart_on_edit"]).each(function(rID, rElement) {
+                $(["custom_ffmpeg", "probesize_ondemand", "user_agent", "http_proxy", "cookie", "headers", "days_to_restart", "time_to_restart", "on_demand", "restart_on_edit"]).each(function(rID, rElement) {
                     if ($(rElement)) {
                         if ($("#direct_source").is(":checked")) {
                             if (window.rSwitches[rElement]) {

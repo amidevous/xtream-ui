@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "subreseller"))) { exit; }
 
 if (isset($_POST["submit_subreseller"])) {
     if (!((intval($_POST["reseller"]) > 0) && (intval($_POST["subreseller"]) > 0) && (intval($_POST["reseller"]) <> intval($_POST["subreseller"])))) {

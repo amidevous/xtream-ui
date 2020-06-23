@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "folder_watch_settings"))) { exit; }
 
 if (isset($_GET["update"])) {
     updateTMDbCategories();

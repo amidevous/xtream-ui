@@ -4,7 +4,7 @@ if (!isset($_SESSION['hash'])) { exit; }
 
 if (isset($_GET["action"])) {
     if ($_GET["action"] == "stream") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_stream"))) { echo json_encode(Array("result" => False)); exit; }
         $rStreamID = intval($_GET["stream_id"]);
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
@@ -24,7 +24,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "movie") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_movie"))) { echo json_encode(Array("result" => False)); exit; }
         $rStreamID = intval($_GET["stream_id"]);
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
@@ -43,7 +43,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "episode") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_episode"))) { echo json_encode(Array("result" => False)); exit; }
         $rStreamID = intval($_GET["stream_id"]);
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
@@ -67,7 +67,9 @@ if (isset($_GET["action"])) {
         // Check if this user falls under the reseller or subresellers.
         if (($rPermissions["is_reseller"]) && (!hasPermissions("user", $rUserID))) {
             echo json_encode(Array("result" => False));exit;
-        }
+        } else if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "edit_user"))) {
+			echo json_encode(Array("result" => False));exit;
+		}
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
             if ((($rPermissions["is_reseller"]) && ($rPermissions["delete_users"])) OR ($rPermissions["is_admin"])) {
@@ -121,7 +123,9 @@ if (isset($_GET["action"])) {
         // Check if the user running this PID falls under the reseller or subresellers.
         if (($rPermissions["is_reseller"]) && (!hasPermissions("pid", $rPID))) {
             echo json_encode(Array("result" => False));exit;
-        }
+        } else if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "connection_logs"))) {
+			echo json_encode(Array("result" => False));exit;
+		}
         $rSub = $_GET["sub"];
         if ($rSub == "kill") {
             $rResult = $db->query("SELECT `server_id` FROM `user_activity_now` WHERE `pid` = ".intval($rPID)." LIMIT 1;");
@@ -132,7 +136,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "process") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "process_monitor"))) { echo json_encode(Array("result" => False)); exit; }
         sexec(intval($_GET["server"]), "kill -9 ".intval($_GET["pid"]));
         echo json_encode(Array("result" => True));exit;
     } else if ($_GET["action"] == "reg_user") {
@@ -140,7 +144,9 @@ if (isset($_GET["action"])) {
         // Check if this registered user falls under the reseller or subresellers.
         if (($rPermissions["is_reseller"]) && (!hasPermissions("reg_user", $rUserID))) {
             echo json_encode(Array("result" => False));exit;
-        }
+        } else if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "edit_reguser"))) {
+			echo json_encode(Array("result" => False));exit;
+		}
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
             if ((($rPermissions["is_reseller"]) && ($rPermissions["delete_users"])) OR ($rPermissions["is_admin"])) {
@@ -176,7 +182,9 @@ if (isset($_GET["action"])) {
         // Check if this ticket falls under the reseller or subresellers.
         if (($rPermissions["is_reseller"]) && (!hasPermissions("ticket", $rTicketID))) {
             echo json_encode(Array("result" => False));exit;
-        }
+        } else if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "ticket"))) {
+			echo json_encode(Array("result" => False));exit;
+		}
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
             $db->query("DELETE FROM `tickets` WHERE `id` = ".intval($rTicketID).";");
@@ -202,7 +210,9 @@ if (isset($_GET["action"])) {
         // Check if this device falls under the reseller or subresellers.
         if (($rPermissions["is_reseller"]) && (!hasPermissions("mag", $rMagID))) {
             echo json_encode(Array("result" => False));exit;
-        }
+        } else if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "edit_mag"))) {
+			echo json_encode(Array("result" => False));exit;
+		}
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
             $rMagDetails = getMag($rMagID);
@@ -216,7 +226,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "mag_event") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "manage_events"))) { echo json_encode(Array("result" => False)); exit; }
         $rMagID = intval($_GET["mag_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -226,7 +236,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "epg") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_epg"))) { echo json_encode(Array("result" => False)); exit; }
         $rEPGID = intval($_GET["epg_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -236,7 +246,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "profile") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "tprofiles"))) { echo json_encode(Array("result" => False)); exit; }
         $rProfileID = intval($_GET["profile_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -246,7 +256,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "series") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_series"))) { echo json_encode(Array("result" => False)); exit; }
         $rSeriesID = intval($_GET["series_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -266,7 +276,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "folder") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "folder_watch"))) { echo json_encode(Array("result" => False)); exit; }
         $rFolderID = intval($_GET["folder_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -276,7 +286,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "useragent") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "block_uas"))) { echo json_encode(Array("result" => False)); exit; }
         $rUAID = intval($_GET["ua_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -286,7 +296,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "ip") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "block_ips"))) { echo json_encode(Array("result" => False)); exit; }
         $rIPID = intval($_GET["ip"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -302,7 +312,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "rtmp_ip") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "add_rtmp"))) { echo json_encode(Array("result" => False)); exit; }
         $rIPID = intval($_GET["ip"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -312,7 +322,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "subreseller_setup") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "subreseller"))) { echo json_encode(Array("result" => False)); exit; }
         $rID = intval($_GET["id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -322,7 +332,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "watch_output") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "folder_watch_output"))) { echo json_encode(Array("result" => False)); exit; }
         $rID = intval($_GET["result_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -336,7 +346,9 @@ if (isset($_GET["action"])) {
         // Check if this device falls under the reseller or subresellers.
         if (($rPermissions["is_reseller"]) && (!hasPermissions("e2", $rEnigmaID))) {
             echo json_encode(Array("result" => False));exit;
-        }
+        } else if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "edit_e2"))) {
+			echo json_encode(Array("result" => False));exit;
+		}
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
             $rEnigmaDetails = getEnigma($rEnigmaID);
@@ -350,7 +362,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "server") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_server"))) { echo json_encode(Array("result" => False)); exit; }
         $rServerID = intval($_GET["server_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -397,7 +409,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "package") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_package"))) { echo json_encode(Array("result" => False)); exit; }
         $rPackageID = intval($_GET["package_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -410,7 +422,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "group") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_group"))) { echo json_encode(Array("result" => False)); exit; }
         $rGroupID = intval($_GET["group_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -423,7 +435,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "bouquet") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_bouquet"))) { echo json_encode(Array("result" => False)); exit; }
         $rBouquetID = intval($_GET["bouquet_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -433,7 +445,7 @@ if (isset($_GET["action"])) {
             echo json_encode(Array("result" => False));exit;
         }
     } else if ($_GET["action"] == "category") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_cat"))) { echo json_encode(Array("result" => False)); exit; }
         $rCategoryID = intval($_GET["category_id"]);
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
@@ -492,14 +504,14 @@ if (isset($_GET["action"])) {
         }
         exit;
     } else if ($_GET["action"] == "streams") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "streams"))) { echo json_encode(Array("result" => False)); exit; }
         $rData = Array();
         $rStreamIDs = json_decode($_GET["stream_ids"], True);
         $rStreams = getStreams(null, false, $rStreamIDs);
         echo json_encode(Array("result" => True, "data" => $rStreams));
         exit;
     } else if ($_GET["action"] == "stats") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "index"))) { echo json_encode(Array("result" => False)); exit; }
         $return = Array("cpu" => 0, "mem" => 0, "uptime" => "--", "total_running_streams" => 0, "bytes_sent" => 0, "bytes_received" => 0, "offline_streams" => 0, "servers" => Array());
         if (isset($_GET["server_id"])) {
             $rServerID = intval($_GET["server_id"]);
@@ -578,7 +590,7 @@ if (isset($_GET["action"])) {
         $return["credits"] = $rUserInfo["credits"];
         echo json_encode($return);exit;
     } else if ($_GET["action"] == "review_selection") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "edit_cchannel") && (!hasPermissions("adv", "create_channel"))))) { echo json_encode(Array("result" => False)); exit; }
         $return = Array("streams" => Array(), "result" => true);
         if (isset($_POST["data"])) {
             foreach ($_POST["data"] as $rStreamID) {
@@ -591,7 +603,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode($return);exit;
     } else if ($_GET["action"] == "review_bouquet") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "edit_bouquet") && (!hasPermissions("adv", "add_bouquet"))))) { echo json_encode(Array("result" => False)); exit; }
         $return = Array("streams" => Array(), "vod" => Array(), "series" => Array(), "radios" => Array(), "result" => true);
         if (isset($_POST["data"]["stream"])) {
             foreach ($_POST["data"]["stream"] as $rStreamID) {
@@ -619,7 +631,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode($return);exit;
     } else if ($_GET["action"] == "userlist") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "edit_e2") && (!hasPermissions("adv", "add_e2")) && (!hasPermissions("adv", "add_mag")) && (!hasPermissions("adv", "edit_mag"))))) { echo json_encode(Array("result" => False)); exit; }
         $return = Array("total_count" => 0, "items" => Array(), "result" => true);
         if (isset($_GET["search"])) {
             if (isset($_GET["page"])) {
@@ -638,7 +650,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode($return);exit;
     } else if ($_GET["action"] == "streamlist") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "manage_mag"))) { echo json_encode(Array("result" => False)); exit; }
         $return = Array("total_count" => 0, "items" => Array(), "result" => true);
         if (isset($_GET["search"])) {
             if (isset($_GET["page"])) {
@@ -657,54 +669,14 @@ if (isset($_GET["action"])) {
         }
         echo json_encode($return);exit;
     } else if ($_GET["action"] == "force_epg") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "epg"))) { echo json_encode(Array("result" => False)); exit; }
         sexec($_INFO["server_id"], "/home/xtreamcodes/iptv_xtream_codes/php/bin/php /home/xtreamcodes/iptv_xtream_codes/crons/epg.php");
         echo json_encode(Array("result" => True));exit;
-    } else if ($_GET["action"] == "sort_bouquet") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
-        $rBouquet = getBouquet($_GET["bouquet_id"]);
-        $rOrdered = Array();
-        if (($_GET["type"] == "stream") OR ($_GET["type"] == "movie")) {
-            $rChannels = json_decode($rBouquet["bouquet_channels"], True);
-            if (is_array($rChannels)) {
-                if ($_GET["type"] == "stream") {
-                    $result = $db->query("SELECT `streams`.`id`, `streams`.`type`, `streams`.`category_id`, `streams`.`stream_display_name`, `stream_categories`.`category_name` FROM `streams`, `stream_categories` WHERE `streams`.`type` IN (1,3) AND `streams`.`category_id` = `stream_categories`.`id` AND `streams`.`id` IN (".$db->real_escape_string(join(",", $rChannels)).") ORDER BY `streams`.`stream_display_name` ASC;");
-                } else {
-                    $result = $db->query("SELECT `streams`.`id`, `streams`.`type`, `streams`.`category_id`, `streams`.`stream_display_name`, `stream_categories`.`category_name` FROM `streams`, `stream_categories` WHERE `streams`.`type` = 2 AND `streams`.`category_id` = `stream_categories`.`id` AND `streams`.`id` IN (".$db->real_escape_string(join(",", $rChannels)).") ORDER BY `streams`.`stream_display_name` ASC;");
-                }
-                if (($result) && ($result->num_rows > 0)) {
-                    while ($row = $result->fetch_assoc()) {
-                        $rOrdered[] = intval($row["id"]);
-                    }
-                }
-            }
-            foreach ($rChannels as $rChannel) {
-                if (!in_array(intval($rChannel), $rOrdered)) {
-                    $rOrdered[] = intval($rChannel);
-                }
-            }
-            if (count($rOrdered) > 0) {
-                $db->query("UPDATE `bouquets` SET `bouquet_channels` = '".$db->real_escape_string(json_encode($rOrdered))."' WHERE `id` = ".intval($rBouquet["id"]).";");
-            }
-            echo json_encode(Array("result" => True));exit;
-        } else {
-            $rSeries = json_decode($rBouquet["bouquet_series"], True);
-            if (is_array($rSeries)) {
-                $result = $db->query("SELECT `series`.`id`, `series`.`category_id`, `series`.`title`, `stream_categories`.`category_name` FROM `series`, `stream_categories` WHERE `series`.`category_id` = `stream_categories`.`id` AND `series`.`id` IN (".$db->real_escape_string(join(",", $rSeries)).") ORDER BY `series`.`title` ASC;");
-                if (($result) && ($result->num_rows > 0)) {
-                    while ($row = $result->fetch_assoc()) {
-                        $rOrdered[] = intval($row["id"]);
-                    }
-                }
-            }
-            if (count($rOrdered) > 0) {
-                $db->query("UPDATE `bouquets` SET `bouquet_series` = '".$db->real_escape_string(join(",", $rOrdered))."' WHERE `id` = ".intval($rBouquet["id"]).";");
-            }
-            echo json_encode(Array("result" => True));exit;
-        }
-        echo json_encode(Array("result" => False));exit;
+	} else if ($_GET["action"] == "remote_cmd") {
+		if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "database"))) { echo json_encode(Array("result" => False)); exit; }
+		echo json_encode(Array("result" => True, "data" => remoteCMD($_GET["server"], $_GET["cmd"])));exit;
     } else if ($_GET["action"] == "tmdb_search") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_series")) && (!hasPermissions("adv", "edit_series")) && (!hasPermissions("adv", "add_movie")) && (!hasPermissions("adv", "edit_movie")) && (!hasPermissions("adv", "add_episode")) && (!hasPermissions("adv", "edit_episode")))) { echo json_encode(Array("result" => False)); exit; }
         include "tmdb.php";
         if (strlen($rAdminSettings["tmdb_language"]) > 0) {
             $rTMDB = new TMDB($rSettings["tmdb_api_key"], $rAdminSettings["tmdb_language"]);
@@ -739,7 +711,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "tmdb") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_series")) && (!hasPermissions("adv", "edit_series")) && (!hasPermissions("adv", "add_movie")) && (!hasPermissions("adv", "edit_movie")) && (!hasPermissions("adv", "add_episode")) && (!hasPermissions("adv", "edit_episode")))) { echo json_encode(Array("result" => False)); exit; }
         include "tmdb.php";
         if (strlen($rAdminSettings["tmdb_language"]) > 0) {
             $rTMDB = new TMDB($rSettings["tmdb_api_key"], $rAdminSettings["tmdb_language"]);
@@ -761,7 +733,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "listdir") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_episode")) && (!hasPermissions("adv", "edit_episode")) && (!hasPermissions("adv", "add_movie")) && (!hasPermissions("adv", "edit_movie")) && (!hasPermissions("adv", "create_channel")) && (!hasPermissions("adv", "edit_cchannel")) && (!hasPermissions("adv", "folder_watch_add")))) { echo json_encode(Array("result" => False)); exit; }
         if ($_GET["filter"] == "video") {
             $rFilter = Array("mp4", "mkv", "avi", "mpg", "flv");
         } else if ($_GET["filter"] == "subs") {
@@ -774,7 +746,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "fingerprint") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "fingerprint"))) { echo json_encode(Array("result" => False)); exit; }
         $rData = json_decode($_GET["data"], true);
         $rActiveServers = Array();
         foreach ($rServers as $rServer) {
@@ -808,7 +780,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "restart_services") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "edit_server"))) { echo json_encode(Array("result" => False)); exit; }
         $rServerID = intval($_GET["server_id"]);
         if (isset($rServers[$rServerID])) {
             $rJSON = Array("status" => 0, "port" => intval($_GET["ssh_port"]), "host" => $rServer["server_ip"], "password" => $_GET["password"], "time" => intval(time()), "id" => $rServerID, "type" => "reboot");
@@ -817,13 +789,13 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "map_stream") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_stream")) && (!hasPermissions("adv", "edit_stream")))) { echo json_encode(Array("result" => False)); exit; }
         set_time_limit(300);
         ini_set('max_execution_time', 300);
         ini_set('default_socket_timeout', 300);
         echo shell_exec("/home/xtreamcodes/iptv_xtream_codes/bin/ffprobe -v quiet -probesize 2000000 -print_format json -show_format -show_streams \"".$_GET["stream"]."\"");exit;
     } else if ($_GET["action"] == "clear_logs") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "reg_userlog")) && (!hasPermissions("adv", "client_request_log")) && (!hasPermissions("adv", "connection_logs")) && (!hasPermissions("adv", "stream_errors")) && (!hasPermissions("adv", "credits_log")) && (!hasPermissions("adv", "folder_watch_settings")))) { echo json_encode(Array("result" => False)); exit; }
         if (strlen($_GET["from"]) == 0) {
             $rStartTime = null;
         } else if (!$rStartTime = strtotime($_GET["from"]. " 00:00:00")) {
@@ -862,7 +834,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => True));exit;
     } else if ($_GET["action"] == "backup") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "database"))) { echo json_encode(Array("result" => False)); exit; }
         $rSub = $_GET["sub"];
         if ($rSub == "delete") {
             $rBackup = pathinfo($_GET["filename"])["filename"];
@@ -887,7 +859,7 @@ if (isset($_GET["action"])) {
         }
         echo json_encode(Array("result" => False));exit;
     } else if ($_GET["action"] == "send_event") {
-        if (!$rPermissions["is_admin"]) { echo json_encode(Array("result" => False)); exit; }
+        if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "manage_events"))) { echo json_encode(Array("result" => False)); exit; }
         $rData = json_decode($_GET["data"], True);
         $rMag = getMag($rData["id"]);
         if ($rMag) {

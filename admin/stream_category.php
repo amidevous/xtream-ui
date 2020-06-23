@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "add_cat"))) { exit; }
 
 if (isset($_POST["submit_category"])) {
     $rArray = Array("category_type" => "live", "category_name" => "", "parent_id" => 0, "cat_order" => 99);
@@ -21,7 +21,7 @@ if (isset($_POST["submit_category"])) {
             $rValues .= '\''.$db->real_escape_string($rValue).'\'';
         }
     }
-    if (isset($_POST["edit"])) {
+    if ((isset($_POST["edit"])) && (hasPermissions("adv", "edit_cat"))) {
         $rCols = "id,".$rCols;
         $rValues = $_POST["edit"].",".$rValues;
     }
@@ -42,7 +42,7 @@ if (isset($_POST["submit_category"])) {
 
 if (isset($_GET["id"])) {
     $rCategoryArr = getCategory($_GET["id"]);
-    if (!$rCategoryArr) {
+    if ((!$rCategoryArr) or (!hasPermissions("adv", "edit_cat"))) {
         exit;
     }
 }

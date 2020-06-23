@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "stream_tools"))) { exit; }
 
 if (isset($_POST["replace_dns"])) {
 	$rOldDNS = $db->real_escape_string(str_replace("/", "\/", $_POST["old_dns"]));

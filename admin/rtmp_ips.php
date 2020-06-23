@@ -1,7 +1,7 @@
 <?php
 include "functions.php";
 if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "rtmp"))) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -17,6 +17,7 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
+							<?php if (hasPermissions("adv", "add_rtmp")) { ?>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
@@ -28,6 +29,7 @@ if ($rSettings["sidebar"]) {
                                     </li>
                                 </ol>
                             </div>
+							<?php } ?>
                             <h4 class="page-title">RTMP IP Addresses</h4>
                         </div>
                     </div>
@@ -54,7 +56,9 @@ if ($rSettings["sidebar"]) {
                                             <td class="text-center"><?=$rIP["ip"]?></td>
                                             <td><?=$rIP["notes"]?></td>
                                             <td class="text-center">
+												<?php if (hasPermissions("adv", "add_rtmp")) { ?>
                                                 <a href="./rtmp_ip.php?id=<?=$rIP["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
+												<?php } ?>
                                                 <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rIP["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
                                             </td>
                                         </tr>

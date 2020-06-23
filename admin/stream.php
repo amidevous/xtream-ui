@@ -1,6 +1,7 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_stream")) && (!hasPermissions("adv", "edit_stream")))) { exit; }
+if ((isset($_GET["import"])) && (!hasPermissions("adv", "import_streams"))) { exit; }
 
 if (isset($_POST["submit_stream"])) {
     set_time_limit(0);
@@ -8,9 +9,11 @@ if (isset($_POST["submit_stream"])) {
     ini_set('max_execution_time', 0);
     ini_set('default_socket_timeout', 0);
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_stream")) { exit; }
         $rArray = getStream($_POST["edit"]);
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "add_stream")) { exit; }
         $rArray = Array("type" => 1, "added" => time(), "read_native" => 0, "stream_all" => 0, "redirect_stream" => 1, "direct_source" => 0, "gen_timestamps" => 1, "transcode_attributes" => Array(), "stream_display_name" => "", "stream_source" => Array(), "category_id" => 0, "stream_icon" => "", "notes" => "", "custom_sid" => "", "custom_ffmpeg" => "", "custom_map" => "", "transcode_profile_id" => 0, "enable_transcode" => 0, "auto_restart" => "[]", "allow_record" => 1, "rtmp_output" => 0, "epg_id" => null, "channel_id" => null, "epg_lang" => null, "tv_archive_server_id" => 0, "tv_archive_duration" => 0, "delay_minutes" => 0, "external_push" => Array(), "probesize_ondemand" => 128000);
     }
     if ((isset($_POST["days_to_restart"])) && (preg_match("/^(?:2[0-3]|[01][0-9]):[0-5][0-9]$/", $_POST["time_to_restart"]))) {
@@ -124,6 +127,7 @@ if (isset($_POST["submit_stream"])) {
     }
     $rImportStreams = Array();
     if (isset($_FILES["m3u_file"])) {
+		if (!hasPermissions("adv", "import_streams")) { exit; }
         $rStreamDatabase = Array();
         $result = $db->query("SELECT `stream_source` FROM `streams` WHERE `type` IN (1,3);");
         if (($result) && ($result->num_rows > 0)) {
@@ -277,6 +281,9 @@ if (isset($_POST["submit_stream"])) {
 				if ((isset($_POST["cookie"])) && (strlen($_POST["cookie"]) > 0)) {
                     $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 17, '".$db->real_escape_string($_POST["cookie"])."');");
                 }
+				if ((isset($_POST["headers"])) && (strlen($_POST["headers"]) > 0)) {
+                    $db->query("INSERT INTO `streams_options`(`stream_id`, `argument_id`, `value`) VALUES(".intval($rInsertID).", 19, '".$db->real_escape_string($_POST["headers"])."');");
+                }
 				if ($rRestart) {
 					APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => Array($rInsertID)));
 				}
@@ -331,7 +338,7 @@ $rServerTree = Array();
 $rOnDemand = Array();
 $rServerTree[] = Array("id" => "source", "parent" => "#", "text" => "<strong>Stream Source</strong>", "icon" => "mdi mdi-youtube-tv", "state" => Array("opened" => true));
 if (isset($_GET["id"])) {
-    if (isset($_GET["import"])) { exit; }
+    if ((isset($_GET["import"])) OR (!hasPermissions("adv", "edit_stream"))) { exit; }
     $rStream = getStream($_GET["id"]);
     if ((!$rStream) or ($rStream["type"] <> 1)) {
         exit;
@@ -356,10 +363,12 @@ if (isset($_GET["id"])) {
         }
     }
 } else {
+	if (!hasPermissions("adv", "add_stream")) { exit; }
     foreach ($rServers as $rServer) {
         $rServerTree[] = Array("id" => $rServer["id"], "parent" => "#", "text" => $rServer["server_name"], "icon" => "mdi mdi-server-network", "state" => Array("opened" => true));
     }
 }
+
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -665,6 +674,12 @@ if ($rSettings["sidebar"]) {
                                                             <label class="col-md-4 col-form-label" for="cookie">Cookie <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Format: key=value;" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
                                                                 <input type="text" class="form-control" id="cookie" name="cookie" value="<?php if (isset($rStreamOptions[17])) { echo htmlspecialchars($rStreamOptions[17]["value"]); } else { echo htmlspecialchars($rStreamArguments["cookie"]["argument_default_value"]); } ?>">
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="headers">Headers <i data-toggle="tooltip" data-placement="top" title="" data-original-title="FFmpeg -headers command." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="headers" name="headers" value="<?php if (isset($rStreamOptions[19])) { echo htmlspecialchars($rStreamOptions[19]["value"]); } else { echo htmlspecialchars($rStreamArguments["headers"]["argument_default_value"]); } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -1080,7 +1095,7 @@ if ($rSettings["sidebar"]) {
                 evaluateDirectSource();
             });
             function evaluateDirectSource() {
-                $(["read_native", "gen_timestamps", "stream_all", "allow_record", "rtmp_output", "delay_minutes", "custom_ffmpeg", "probesize_ondemand", "user_agent", "http_proxy", "cookie", "transcode_profile_id", "custom_map", "days_to_restart", "time_to_restart", "epg_id", "epg_lang", "channel_id", "on_demand", "tv_archive_duration", "tv_archive_server_id", "restart_on_edit"]).each(function(rID, rElement) {
+                $(["read_native", "gen_timestamps", "stream_all", "allow_record", "rtmp_output", "delay_minutes", "custom_ffmpeg", "probesize_ondemand", "user_agent", "http_proxy", "cookie", "headers", "transcode_profile_id", "custom_map", "days_to_restart", "time_to_restart", "epg_id", "epg_lang", "channel_id", "on_demand", "tv_archive_duration", "tv_archive_server_id", "restart_on_edit"]).each(function(rID, rElement) {
                     if ($(rElement)) {
                         if ($("#direct_source").is(":checked")) {
                             if (window.rSwitches[rElement]) {

@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_epg")) && (!hasPermissions("adv", "epg_edit")))) { exit; }
 
 if (isset($_POST["submit_epg"])) {
     $rArray = Array("epg_name" => "", "epg_file" => "", "days_keep" => 7, "data" => "");
@@ -22,9 +22,10 @@ if (isset($_POST["submit_epg"])) {
         }
     }
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "epg_edit")) { exit; }
         $rCols = "id,".$rCols;
         $rValues = $_POST["edit"].",".$rValues;
-    }
+    } else if (!hasPermissions("adv", "add_epg")) { exit; }
     $rQuery = "REPLACE INTO `epg`(".$rCols.") VALUES(".$rValues.");";
     if ($db->query($rQuery)) {
         if (isset($_POST["edit"])) {
@@ -42,10 +43,10 @@ if (isset($_POST["submit_epg"])) {
 
 if (isset($_GET["id"])) {
     $rEPGArr = getEPG($_GET["id"]);
-    if (!$rEPGArr) {
+    if ((!$rEPGArr) OR (!hasPermissions("adv", "epg_edit"))) {
         exit;
     }
-}
+} else if (!hasPermissions("adv", "add_epg")) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";

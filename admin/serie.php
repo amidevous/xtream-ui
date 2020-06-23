@@ -1,14 +1,16 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_series")) && (!hasPermissions("adv", "edit_series")))) { exit; }
 
 $rCategories = getCategories("series");
 
 if (isset($_POST["submit_series"])) {
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_series")) { exit; }
         $rArray = getSerie($_POST["edit"]);
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "add_series")) { exit; }
         $rArray = Array("title" => "", "category_id" => "", "episode_run_time" => 0, "tmdb_id" => 0, "cover" => "","genre" => "", "plot" => "", "cast" => "", "rating" => 0, "director" => "", "releaseDate" => "", "last_modified" => time(), "seasons" => Array(), "backdrop_path" => Array(), "youtube_trailer" => "");
     }
     if ($rAdminSettings["download_images"]) {
@@ -73,10 +75,10 @@ if (isset($_POST["submit_series"])) {
 
 if (isset($_GET["id"])) {
     $rSeries = getSerie($_GET["id"]);
-    if (!$rSeries) {
+    if ((!$rSeries) OR (!hasPermissions("adv", "edit_series"))) {
         exit;
     }
-}
+} else if (!hasPermissions("adv", "add_series")) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";

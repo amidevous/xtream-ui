@@ -1,12 +1,14 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_packages")) && (!hasPermissions("adv", "edit_package")))) { exit; }
 
 if (isset($_POST["submit_package"])) {
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_package")) { exit; }
         $rArray = getPackage($_POST["edit"]);
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "add_packages")) { exit; }
         $rArray = Array("package_name" => "", "is_trial" => 0, "is_official" => 0, "trial_credits" => 0, "official_credits" => 0, "trial_duration_in" => "hours", "trial_duration" => 0, "official_duration" => 1, "official_duration_in" => "years", "groups" => Array(), "bouquets" => Array(), "can_gen_mag" => 1, "only_mag" => 0, "output_formats" => Array(1,2,3), "is_isplock" => 0, "max_connections" => 1, "is_restreamer" => 0, "force_server_id" => 0, "only_e2" => 0, "can_gen_e2" => 1, "forced_country" => "", "lock_device" => 0);
     }
     if (strlen($_POST["package_name"]) == 0) {
@@ -76,10 +78,10 @@ if (isset($_POST["submit_package"])) {
 
 if (isset($_GET["id"])) {
     $rPackage = getPackage($_GET["id"]);
-    if (!$rPackage) {
+    if ((!$rPackage) OR (!hasPermissions("adv", "edit_package"))) {
         exit;
     }
-}
+} else if (!hasPermissions("adv", "add_packages")) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";

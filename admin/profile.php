@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "tprofile"))) { exit; }
 
 if (isset($_POST["submit_profile"])) {
     $rArray = Array("profile_name" => $_POST["profile_name"], "profile_options" => null);
@@ -73,6 +73,7 @@ if (isset($_POST["submit_profile"])) {
         }
     }
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_tprofile")) { exit; }
         $rCols = "profile_id,".$rCols;
         $rValues = $_POST["edit"].",".$rValues;
     }
@@ -93,7 +94,7 @@ if (isset($_POST["submit_profile"])) {
 
 if (isset($_GET["id"])) {
     $rProfileArr = getTranscodeProfile($_GET["id"]);
-    if (!$rProfileArr) {
+    if ((!$rProfileArr) OR (!hasPermissions("adv", "edit_tprofile"))) {
         exit;
     }
     $rProfileOptions = json_decode($rProfileArr["profile_options"], True);

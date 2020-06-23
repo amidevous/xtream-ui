@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "mass_edit_radio"))) { exit; }
 
 $rCategories = getCategories("radio");
 
@@ -90,12 +90,14 @@ if (isset($_POST["submit_radio"])) {
                         removeFromBouquet("stream", $rBouquet["id"], $rStreamID);
                     }
                 }
-                scanBouquets();
             }
         }
         if (isset($_POST["restart_on_edit"])) {
             APIRequest(Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs)));
         }
+		if (isset($_POST["c_bouquets"])) {
+			scanBouquets();
+		}
     }
     $_STATUS = 0;
 }

@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "add_rtmp"))) { exit; }
 
 if (isset($_POST["submit_ip"])) {
     $rArray = Array("ip" => $_POST["ip"], "notes" => $_POST["notes"]);

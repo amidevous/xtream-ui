@@ -1,12 +1,14 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_reguser")) && (!hasPermissions("adv", "edit_reguser")))) { exit; }
 
 if (isset($_POST["submit_user"])) {
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_reguser")) { exit; }
         $rArray = getRegisteredUser($_POST["edit"]);
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "add_reguser")) { exit; }
         $rArray = Array("username" => "", "password" => "", "email" => "", "member_group_id" => 1, "verified" => 0, "credits" => 0, "notes" => "", "status" => 1, "owner_id" => 0);
     }
     if ((strlen($_POST["username"]) == 0) OR ((strlen($_POST["email"]) == 0))) {
@@ -79,10 +81,11 @@ if (isset($_POST["submit_user"])) {
 
 if (isset($_GET["id"])) {
     $rUser = getRegisteredUser($_GET["id"]);
-    if (!$rUser) {
+    if ((!$rUser) OR (!hasPermissions("adv", "edit_reguser"))) {
         exit;
     }
-}
+} else if (!hasPermissions("adv", "add_reguser")) { exit; }
+
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
 } else {
@@ -254,14 +257,14 @@ if ($rSettings["sidebar"]) {
                                                                 } else {
                                                                     $rOverride = Array();
                                                                 }
-                                                                foreach (getPackages() as $rPackage) {
+                                                                foreach (getPackages($rUser["member_group_id"]) as $rPackage) {
                                                                 if ($rPackage["is_official"]) { ?>
                                                                 <tr>
                                                                     <td class="text-center"><?=$rPackage["id"]?></td>
                                                                     <td><?=$rPackage["package_name"]?></td>
                                                                     <td class="text-center"><?=$rPackage["official_credits"]?></td>
                                                                     <td align="center">
-                                                                        <input onkeypress="return isNumberKey(event)" name="override_<?=$rPackage["id"]?>" type="text" value="<?php if (isset($rOverride[$rPackage["id"]])) { echo htmlspecialchars($rOverride[$rPackage["id"]]["official_credits"]); } ?>" style="width:100px;" class="text-center" />
+                                                                        <input class="form-control" onkeypress="return isNumberKey(event)" name="override_<?=$rPackage["id"]?>" type="text" value="<?php if (isset($rOverride[$rPackage["id"]])) { echo htmlspecialchars($rOverride[$rPackage["id"]]["official_credits"]); } ?>" style="width:100px;" class="text-center" />
                                                                     </td>
                                                                 </tr>
                                                                 <?php }

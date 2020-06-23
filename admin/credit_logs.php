@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "credits_log"))) { exit; }
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";

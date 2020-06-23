@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "subresellers"))) { exit; }
 
 $rMemberGroups = getMemberGroups();
 
@@ -21,16 +21,20 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
+										<?php if (hasPermissions("adv", "mng_regusers")) { ?>
                                         <a href="reg_users.php">
                                             <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-account-group"></i> Registered Users
                                             </button>
                                         </a>
+										<?php }
+										if (hasPermissions("adv", "subreseller")) { ?>
                                         <a href="subreseller_setup.php">
                                             <button type="button" class="btn btn-primary waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Setup Access
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>
@@ -60,8 +64,10 @@ if ($rSettings["sidebar"]) {
                                             <td><?=$rMemberGroups[$rItem["reseller"]]["group_name"]?></td>
                                             <td><?=$rMemberGroups[$rItem["subreseller"]]["group_name"]?></td>
                                             <td class="text-center">
+												<?php if (hasPermissions("adv", "subreseller")) { ?>
                                                 <a href="./subreseller_setup.php?id=<?=$rItem["id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                                                 <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rItem["id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
+												<?php } else { echo "--"; } ?>
                                             </td>
                                         </tr>
                                         <?php } ?>

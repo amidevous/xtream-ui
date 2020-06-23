@@ -1,6 +1,7 @@
 <?php
 include "session.php"; include "functions.php";
 if (!isset($_GET["id"])) { exit; }
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "manage_tickets"))) { exit; }
 
 $rTicket = getTicket($_GET["id"]);
 if (!$rTicket) {
@@ -24,7 +25,8 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
-                            <?php if ($rTicket["status"] > 0) { ?>
+                            <?php if ($rTicket["status"] > 0) {
+							if (($rPermissions["is_reseller"]) OR (hasPermissions("adv", "ticket"))) { ?>
                             <div class="page-title-right">
                                 <a href="./ticket.php?id=<?=$rTicket["id"]?>">
                                     <button type="button" class="btn btn-sm btn-primary waves-effect waves-light float-right">
@@ -32,7 +34,8 @@ if ($rSettings["sidebar"]) {
                                     </button>
                                 </a>
                             </div>
-                            <?php } ?>
+                            <?php }
+							} ?>
                             <h4 class="page-title"><?=$rTicket["title"]?></h4>
                         </div>
                     </div>

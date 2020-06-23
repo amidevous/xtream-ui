@@ -260,6 +260,9 @@ body{
     }
 }
 @media (max-width:991px){
+	.username {
+		display: none;
+	}
     .wrapper{
         padding-top:70px
     }

@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "mass_edit_users"))) { exit; }
 
 if (isset($_POST["submit_user"])) {
     $rArray = Array();

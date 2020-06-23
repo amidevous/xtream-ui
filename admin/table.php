@@ -9,7 +9,7 @@ if (!isset($_SESSION['hash'])) { exit; }
 $joinQuery = "";
 
 if ($_GET["id"] == "mag_events") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "manage_events"))) { exit; }
     $table = 'mag_events';
     $get = $_GET["id"];
     $primaryKey = 'id';
@@ -37,7 +37,7 @@ if ($_GET["id"] == "mag_events") {
         )
     );
 } else if ($_GET["id"] == "bouquets_streams") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "bouquets"))) { exit; }
     $table = 'streams';
     $get = $_GET["id"];
     $primaryKey = 'id';
@@ -63,7 +63,7 @@ if ($_GET["id"] == "mag_events") {
         )
     );
 } else if ($_GET["id"] == "streams_short") {
-    if (!$rPermissions["is_admin"]) { exit; }
+	if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "categories"))) { exit; }
     $table = 'streams';
     $get = $_GET["id"];
     $primaryKey = 'id';
@@ -77,12 +77,16 @@ if ($_GET["id"] == "mag_events") {
         array('db' => 'stream_display_name', 'dt' => 1),
         array('db' => 'id', 'dt' => 2,
             'formatter' => function( $d, $row) {
-                return '<a href="./stream.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Stream" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				if (hasPermissions("adv", "edit_stream")) {
+					return '<a href="./stream.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Stream" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				} else {
+					return '--';
+				}
             }
         )
     );
 } else if ($_GET["id"] == "movies_short") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "categories"))) { exit; }
     $table = 'streams';
     $get = $_GET["id"];
     $primaryKey = 'id';
@@ -96,12 +100,16 @@ if ($_GET["id"] == "mag_events") {
         array('db' => 'stream_display_name', 'dt' => 1),
         array('db' => 'id', 'dt' => 2,
             'formatter' => function( $d, $row) {
-                return '<a href="./movie.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Movie" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				if (hasPermissions("adv", "edit_movie")) {
+					return '<a href="./movie.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Movie" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				} else {
+					return '--';
+				}
             }
         )
     );
 } else if ($_GET["id"] == "radios_short") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "categories"))) { exit; }
     $table = 'streams';
     $get = $_GET["id"];
     $primaryKey = 'id';
@@ -115,12 +123,16 @@ if ($_GET["id"] == "mag_events") {
         array('db' => 'stream_display_name', 'dt' => 1),
         array('db' => 'id', 'dt' => 2,
             'formatter' => function( $d, $row) {
-                return '<a href="./radio.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Station" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				if (hasPermissions("adv", "edit_radio")) {
+					return '<a href="./radio.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Station" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				} else {
+					return '--';
+				}
             }
         )
     );
 } else if ($_GET["id"] == "series_short") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "categories"))) { exit; }
     $table = 'series';
     $get = $_GET["id"];
     $primaryKey = 'id';
@@ -134,12 +146,16 @@ if ($_GET["id"] == "mag_events") {
         array('db' => 'title', 'dt' => 1),
         array('db' => 'id', 'dt' => 2,
             'formatter' => function( $d, $row) {
-                return '<a href="./series.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Series" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				if (hasPermissions("adv", "edit_series")) {
+					return '<a href="./series.php?id='.$d.'"><button type="button" data-toggle="tooltip" data-placement="top" title="" data-original-title="Edit Series" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>';
+				} else {
+					return '--';
+				}
             }
         )
     );
 } else if ($_GET["id"] == "vod_selection") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "create_channel"))) { exit; }
     $rCategoriesVOD = getCategories("movie");
     $rSeriesList = getEpisodeParents();
     $table = 'streams';
@@ -183,7 +199,7 @@ if ($_GET["id"] == "mag_events") {
         )
     );
 } else if ($_GET["id"] == "bouquets_vod") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "bouquets"))) { exit; }
     $rCategoriesVOD = getCategories("movie");
     $table = 'streams';
     $get = $_GET["id"];
@@ -210,7 +226,7 @@ if ($_GET["id"] == "mag_events") {
         )
     );
 } else if ($_GET["id"] == "bouquets_series") {
-    if (!$rPermissions["is_admin"]) { exit; }
+	if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "bouquets"))) { exit; }
     $rCategoriesVOD = getCategories("series");
     $table = 'series';
     $get = $_GET["id"];
@@ -237,7 +253,7 @@ if ($_GET["id"] == "mag_events") {
         )
     );
 } else if ($_GET["id"] == "bouquets_radios") {
-    if (!$rPermissions["is_admin"]) { exit; }
+    if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "bouquets"))) { exit; }
     $rCategoriesVOD = getCategories("radio");
     $table = 'streams';
     $get = $_GET["id"];

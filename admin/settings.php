@@ -1,21 +1,22 @@
 <?php
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { exit; }
+if ((!hasPermissions("adv", "settings")) && (!hasPermissions("adv", "database"))) { exit; }
 
 $rTMDBLanguages = Array("" => "Default - EN", "aa" => "Afar", "af" => "Afrikaans", "ak" => "Akan", "an" => "Aragonese", "as" => "Assamese", "av" => "Avaric", "ae" => "Avestan", "ay" => "Aymara", "az" => "Azerbaijani", "ba" => "Bashkir", "bm" => "Bambara", "bi" => "Bislama", "bo" => "Tibetan", "br" => "Breton", "ca" => "Catalan", "cs" => "Czech", "ce" => "Chechen", "cu" => "Slavic", "cv" => "Chuvash", "kw" => "Cornish", "co" => "Corsican", "cr" => "Cree", "cy" => "Welsh", "da" => "Danish", "de" => "German", "dv" => "Divehi", "dz" => "Dzongkha", "eo" => "Esperanto", "et" => "Estonian", "eu" => "Basque", "fo" => "Faroese", "fj" => "Fijian", "fi" => "Finnish", "fr" => "French", "fy" => "Frisian", "ff" => "Fulah", "gd" => "Gaelic", "ga" => "Irish", "gl" => "Galician", "gv" => "Manx", "gn" => "Guarani", "gu" => "Gujarati", "ht" => "Haitian", "ha" => "Hausa", "sh" => "Serbo-Croatian", "hz" => "Herero", "ho" => "Hiri Motu", "hr" => "Croatian", "hu" => "Hungarian", "ig" => "Igbo", "io" => "Ido", "ii" => "Yi", "iu" => "Inuktitut", "ie" => "Interlingue", "ia" => "Interlingua", "id" => "Indonesian", "ik" => "Inupiaq", "is" => "Icelandic", "it" => "Italian", "ja" => "Japanese", "kl" => "Kalaallisut", "kn" => "Kannada", "ks" => "Kashmiri", "kr" => "Kanuri", "kk" => "Kazakh", "km" => "Khmer", "ki" => "Kikuyu", "rw" => "Kinyarwanda", "ky" => "Kirghiz", "kv" => "Komi", "kg" => "Kongo", "ko" => "Korean", "kj" => "Kuanyama", "ku" => "Kurdish", "lo" => "Lao", "la" => "Latin", "lv" => "Latvian", "li" => "Limburgish", "ln" => "Lingala", "lt" => "Lithuanian", "lb" => "Letzeburgesch", "lu" => "Luba-Katanga", "lg" => "Ganda", "mh" => "Marshall", "ml" => "Malayalam", "mr" => "Marathi", "mg" => "Malagasy", "mt" => "Maltese", "mo" => "Moldavian", "mn" => "Mongolian", "mi" => "Maori", "ms" => "Malay", "my" => "Burmese", "na" => "Nauru", "nv" => "Navajo", "nr" => "Ndebele", "nd" => "Ndebele", "ng" => "Ndonga", "ne" => "Nepali", "nl" => "Dutch", "nn" => "Norwegian Nynorsk", "nb" => "Norwegian Bokmal", "no" => "Norwegian", "ny" => "Chichewa", "oc" => "Occitan", "oj" => "Ojibwa", "or" => "Oriya", "om" => "Oromo", "os" => "Ossetian; Ossetic", "pi" => "Pali", "pl" => "Polish", "pt" => "Portuguese", "pt-BR" => "Portuguese - Brazil", "qu" => "Quechua", "rm" => "Raeto-Romance", "ro" => "Romanian", "rn" => "Rundi", "ru" => "Russian", "sg" => "Sango", "sa" => "Sanskrit", "si" => "Sinhalese", "sk" => "Slovak", "sl" => "Slovenian", "se" => "Northern Sami", "sm" => "Samoan", "sn" => "Shona", "sd" => "Sindhi", "so" => "Somali", "st" => "Sotho", "es" => "Spanish", "sq" => "Albanian", "sc" => "Sardinian", "sr" => "Serbian", "ss" => "Swati", "su" => "Sundanese", "sw" => "Swahili", "sv" => "Swedish", "ty" => "Tahitian", "ta" => "Tamil", "tt" => "Tatar", "te" => "Telugu", "tg" => "Tajik", "tl" => "Tagalog", "th" => "Thai", "ti" => "Tigrinya", "to" => "Tonga", "tn" => "Tswana", "ts" => "Tsonga", "tk" => "Turkmen", "tr" => "Turkish", "tw" => "Twi", "ug" => "Uighur", "uk" => "Ukrainian", "ur" => "Urdu", "uz" => "Uzbek", "ve" => "Venda", "vi" => "Vietnamese", "vo" => "Volapük", "wa" => "Walloon", "wo" => "Wolof", "xh" => "Xhosa", "yi" => "Yiddish", "za" => "Zhuang", "zu" => "Zulu", "ab" => "Abkhazian", "zh" => "Mandarin", "ps" => "Pushto", "am" => "Amharic", "ar" => "Arabic", "bg" => "Bulgarian", "cn" => "Cantonese", "mk" => "Macedonian", "el" => "Greek", "fa" => "Persian", "he" => "Hebrew", "hi" => "Hindi", "hy" => "Armenian", "en" => "English", "ee" => "Ewe", "ka" => "Georgian", "pa" => "Punjabi", "bn" => "Bengali", "bs" => "Bosnian", "ch" => "Chamorro", "be" => "Belarusian", "yo" => "Yoruba");
 $rMAGs = Array("AuraHD","AuraHD2","AuraHD3","AuraHD4","AuraHD5","AuraHD6","AuraHD7","AuraHD8","AuraHD9","MAG200","MAG245","MAG245D","MAG250","MAG254","MAG255","MAG256","MAG257","MAG260","MAG270","MAG275","MAG322","MAG323","MAG324","MAG325","MAG349","MAG350","MAG351","MAG352","MAG420","WR320");
 
-if (isset($_GET["update"])) {
+if ((isset($_GET["update"])) && (hasPermissions("adv", "settings"))) {
     updateTables();
     header("Location: ./settings.php");exit;
 }
 
-if (isset($_GET["reset"])) {
+if ((isset($_GET["reset"])) && (hasPermissions("adv", "settings"))) {
     resetSettings();
     header("Location: ./settings.php");exit;
 }
 
-if (isset($_POST["submit_settings"])) {
+if ((isset($_POST["submit_settings"])) && (hasPermissions("adv", "settings"))) {
     $rArray = getSettings();
     foreach (Array("disallow_empty_user_agents", "persistent_connections", "show_all_category_mag", "show_not_on_air_video", "show_banned_video", "show_expired_video", "new_sorting_bouquet", "rtmp_random", "use_buffer", "audio_restart_loss", "save_closed_connection", "client_logs_save", "case_sensitive_line", "county_override_1st", "disallow_2nd_ip_con", "firewall", "use_mdomain_in_lists", "mag_security", "always_enabled_subtitles", "enable_connection_problem_indication", "show_tv_channel_logo", "show_channel_logo_in_preview", "stb_change_pass", "enable_debug_stalker") as $rSetting) {
         if (isset($_POST[$rSetting])) {
@@ -43,11 +44,17 @@ if (isset($_POST["submit_settings"])) {
     } else {
         $rAdminSettings["disable_trial"] = false;
     }
-    if (isset($_POST["sidebar"])) {
-        $rAdminSettings["sidebar"] = true;
-        unset($_POST["sidebar"]);
+	if (isset($_POST["ip_logout"])) {
+        $rAdminSettings["ip_logout"] = true;
+        unset($_POST["ip_logout"]);
     } else {
-        $rAdminSettings["sidebar"] = false;
+        $rAdminSettings["ip_logout"] = false;
+    }
+	if (isset($_POST["recaptcha_enable"])) {
+        $rAdminSettings["recaptcha_enable"] = true;
+        unset($_POST["recaptcha_enable"]);
+    } else {
+        $rAdminSettings["recaptcha_enable"] = false;
     }
     if (isset($_POST["download_images"])) {
         $rAdminSettings["download_images"] = true;
@@ -61,11 +68,35 @@ if (isset($_POST["submit_settings"])) {
     } else {
         $rAdminSettings["local_api"] = false;
     }
+    if (isset($_POST["dark_mode_login"])) {
+        $rAdminSettings["dark_mode_login"] = true;
+        unset($_POST["dark_mode_login"]);
+    } else {
+        $rAdminSettings["dark_mode_login"] = false;
+    }
     if (isset($_POST["change_usernames"])) {
         $rAdminSettings["change_usernames"] = true;
         unset($_POST["change_usernames"]);
     } else {
         $rAdminSettings["change_usernames"] = false;
+    }
+    if (isset($_POST["change_own_dns"])) {
+        $rAdminSettings["change_own_dns"] = true;
+        unset($_POST["change_own_dns"]);
+    } else {
+        $rAdminSettings["change_own_dns"] = false;
+    }
+    if (isset($_POST["change_own_email"])) {
+        $rAdminSettings["change_own_email"] = true;
+        unset($_POST["change_own_email"]);
+    } else {
+        $rAdminSettings["change_own_email"] = false;
+    }
+    if (isset($_POST["change_own_password"])) {
+        $rAdminSettings["change_own_password"] = true;
+        unset($_POST["change_own_password"]);
+    } else {
+        $rAdminSettings["change_own_password"] = false;
     }
     if (isset($_POST["reseller_restrictions"])) {
         $rAdminSettings["reseller_restrictions"] = true;
@@ -148,7 +179,7 @@ if (isset($_POST["submit_settings"])) {
 }
 
 $rSettings = getSettings(); // Update
-$rSettings["sidebar"] = $rAdminSettings["sidebar"];
+$rSettings["sidebar"] = $rUserInfo["sidebar"];
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -191,6 +222,7 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-body">
                                     <div id="basicwizard">
                                         <ul class="nav nav-pills bg-light nav-justified form-wizard-header mb-4">
+											<?php if (hasPermissions("adv", "settings")) { ?>
                                             <li class="nav-item">
                                                 <a href="#general-details" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
                                                     <i class="mdi mdi-account-card-details-outline mr-1"></i>
@@ -201,6 +233,12 @@ if ($rSettings["sidebar"]) {
                                                 <a href="#xui" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
 													<i class="mdi mdi-settings mr-1"></i>
                                                     <span class="d-none d-sm-inline">Xtream UI</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item">
+                                                <a href="#reseller" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2"> 
+													<i class="mdi mdi-coins mr-1"></i>
+                                                    <span class="d-none d-sm-inline">Reseller</span>
                                                 </a>
                                             </li>
                                             <li class="nav-item">
@@ -221,14 +259,18 @@ if ($rSettings["sidebar"]) {
                                                     <span class="d-none d-sm-inline">MAG</span>
                                                 </a>
                                             </li>
+											<?php }
+											if (hasPermissions("adv", "database")) { ?>
                                             <li class="nav-item">
                                                 <a href="#backups" data-toggle="tab" class="nav-link rounded-0 pt-2 pb-2">
 													<i class="mdi mdi-backup-restore mr-1"></i>
                                                     <span class="d-none d-sm-inline">Backups</span>
                                                 </a>
                                             </li>
+											<?php } ?>
                                         </ul>
                                         <div class="tab-content b-0 mb-0 pt-0">
+											<?php if (hasPermissions("adv", "settings")) { ?>
                                             <div class="tab-pane" id="general-details">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -262,6 +304,12 @@ if ($rSettings["sidebar"]) {
                                                                 <input type="text" class="form-control" id="live_streaming_pass" name="live_streaming_pass" value="<?=htmlspecialchars($rSettings["live_streaming_pass"])?>">
                                                             </div>
                                                         </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="crypt_load_balancing">Load Balancing Key</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="crypt_load_balancing" name="crypt_load_balancing" value="<?=htmlspecialchars($rSettings["crypt_load_balancing"])?>">
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <ul class="list-inline wizard mb-0">
@@ -284,12 +332,6 @@ if ($rSettings["sidebar"]) {
                                             <div class="tab-pane" id="xui">
                                                 <div class="row">
                                                     <div class="col-12">
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="copyrights_text">Reseller Footer Copyright</label>
-                                                            <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="copyrights_text" name="copyrights_text" value="<?=htmlspecialchars($rSettings["copyrights_text"])?>">
-                                                            </div>
-                                                        </div>
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="admin_username">Player Credentials <i data-toggle="tooltip" data-placement="top" title="" data-original-title="To play live streams in the Admin Interface, create a line with HLS output enabled and access to all bouquets. Enter the credentials here." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-4">
@@ -335,15 +377,25 @@ if ($rSettings["sidebar"]) {
                                                             </div>
                                                         </div>
 														<div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="recaptcha_v2_site_key">reCAPTCHA V2 - Site Key <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Adding a site key will enable reCAPTCHA V2 on login. Please visit https://google.com/recaptcha/admin to obtain your API keys." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="recaptcha_v2_site_key">reCAPTCHA V2 - Site Key <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Please visit https://google.com/recaptcha/admin to obtain your API keys." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
                                                                 <input type="text" class="form-control" id="recaptcha_v2_site_key" name="recaptcha_v2_site_key" value="<?=htmlspecialchars($rAdminSettings["recaptcha_v2_site_key"])?>">
                                                             </div>
                                                         </div>
 														<div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="recaptcha_v2_secret_key">reCAPTCHA V2 - Secret Key</label>
+                                                            <label class="col-md-4 col-form-label" for="recaptcha_v2_secret_key">reCAPTCHA V2 - Secret Key <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Please visit https://google.com/recaptcha/admin to obtain your API keys." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
                                                                 <input type="text" class="form-control" id="recaptcha_v2_secret_key" name="recaptcha_v2_secret_key" value="<?=htmlspecialchars($rAdminSettings["recaptcha_v2_secret_key"])?>">
+                                                            </div>
+                                                        </div>
+														<div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="recaptcha_enable">Enable reCAPTCHA <i class="mdi mdi-information" data-toggle="modal" data-target=".bs-domains"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="recaptcha_enable" id="recaptcha_enable" type="checkbox"<?php if ($rAdminSettings["recaptcha_enable"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="ip_logout">Logout On IP Change <i data-toggle="tooltip" data-placement="top" title="" data-original-title="This will destroy a session if the IP changes during use, this will safeguard you from cookie attacks. Disable for Cloudflare usage." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="ip_logout" id="ip_logout" type="checkbox"<?php if ($rAdminSettings["ip_logout"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
 														<div class="form-group row mb-4">
@@ -361,9 +413,9 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-2">
                                                                 <input name="auto_update" id="auto_update" type="checkbox"<?php if ($rAdminSettings["auto_update"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
-                                                            <label class="col-md-4 col-form-label" for="sidebar">Sidebar Navigation</label>
+                                                            <label class="col-md-4 col-form-label" for="download_images">Download Images <i data-toggle="tooltip" data-placement="top" title="" data-original-title="If this option is set, images from TMDb for example will be downloaded to the master server." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input name="sidebar" id="sidebar" type="checkbox"<?php if ($rAdminSettings["sidebar"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input name="download_images" id="download_images" type="checkbox"<?php if ($rAdminSettings["download_images"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -380,30 +432,61 @@ if ($rSettings["sidebar"]) {
                                                                 <input name="google_2factor" id="google_2factor" type="checkbox"<?php if ($rAdminSettings["google_2factor"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
-                                                        <div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="download_images">Download Images <i data-toggle="tooltip" data-placement="top" title="" data-original-title="If this option is set, images from TMDb for example will be downloaded to the master server." class="mdi mdi-information"></i></label>
-                                                            <div class="col-md-2">
-                                                                <input name="download_images" id="download_images" type="checkbox"<?php if ($rAdminSettings["download_images"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
-                                                            </div>
-                                                            <label class="col-md-4 col-form-label" for="reseller_restrictions">Reseller Restrictions <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set this option to allow resellers to restrict by User-Agent and IP address." class="mdi mdi-information"></i></label>
-                                                            <div class="col-md-2">
-                                                                <input name="reseller_restrictions" id="reseller_restrictions" type="checkbox"<?php if ($rAdminSettings["reseller_restrictions"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
-                                                            </div>
-                                                        </div>
 														<div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="local_api">Localhost API <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you're having issues with starting and stopping streams." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
                                                                 <input name="local_api" id="local_api" type="checkbox"<?php if ($rAdminSettings["local_api"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
-                                                            <label class="col-md-4 col-form-label" for="change_usernames">Resellers Change Username <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you'd like Resellers to still be able to change usernames even if they can't change the passwords." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="dark_mode_login">Dark Mode Login</label>
                                                             <div class="col-md-2">
-                                                                <input name="change_usernames" id="change_usernames" type="checkbox"<?php if ($rAdminSettings["change_usernames"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input name="dark_mode_login" id="dark_mode_login" type="checkbox"<?php if ($rAdminSettings["dark_mode_login"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <ul class="list-inline wizard mb-0">
+                                                    <li class="list-inline-item float-right">
+                                                        <input name="submit_settings" type="submit" class="btn btn-primary" value="Save Changes" />
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                            <div class="tab-pane" id="reseller">
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="copyrights_text">Footer Copyright</label>
+                                                            <div class="col-md-8">
+                                                                <input type="text" class="form-control" id="copyrights_text" name="copyrights_text" value="<?=htmlspecialchars($rSettings["copyrights_text"])?>">
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+															<label class="col-md-4 col-form-label" for="disable_trial">Disable Trials <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Use this option to temporarily disable generating trials for all users." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="disable_trial" id="disable_trial" type="checkbox"<?php if ($rAdminSettings["disable_trial"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="reseller_restrictions">Allow Restrictions <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Set this option to allow resellers to restrict by User-Agent and IP address." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="reseller_restrictions" id="reseller_restrictions" type="checkbox"<?php if ($rAdminSettings["reseller_restrictions"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
 														<div class="form-group row mb-4">
-                                                            <label class="col-md-4 col-form-label" for="disable_trial">Disable Trials <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Use this option to temporarily disable generating trials for all users." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="change_usernames">Change Usernames <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you'd like Resellers to still be able to change usernames even if they can't change the passwords." class="mdi mdi-information"></i></label>
                                                             <div class="col-md-2">
-                                                                <input name="disable_trial" id="disable_trial" type="checkbox"<?php if ($rAdminSettings["disable_trial"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                                <input name="change_usernames" id="change_usernames" type="checkbox"<?php if ($rAdminSettings["change_usernames"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="change_own_dns">Change Own DNS <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you'd like Resellers to still be able to change usernames even if they can't change the passwords." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="change_own_dns" id="change_own_dns" type="checkbox"<?php if ($rAdminSettings["change_own_dns"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row mb-4">
+                                                            <label class="col-md-4 col-form-label" for="change_own_email">Change Own Email Address <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you'd like Resellers to still be able to change usernames even if they can't change the passwords." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="change_own_email" id="change_own_email" type="checkbox"<?php if ($rAdminSettings["change_own_email"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
+                                                            </div>
+                                                            <label class="col-md-4 col-form-label" for="change_own_password">Change Own Password <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Select this option if you'd like Resellers to be able to change their own password." class="mdi mdi-information"></i></label>
+                                                            <div class="col-md-2">
+                                                                <input name="change_own_password" id="change_own_password" type="checkbox"<?php if ($rAdminSettings["change_own_password"] == 1) { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -726,6 +809,8 @@ if ($rSettings["sidebar"]) {
                                                     </li>
                                                 </ul>
                                             </div>
+											<?php }
+											if (hasPermissions("adv", "database")) { ?>
                                             <div class="tab-pane" id="backups">
                                                 <div class="row">
                                                     <div class="col-12">
@@ -743,21 +828,76 @@ if ($rSettings["sidebar"]) {
                                                     </div> <!-- end col -->
                                                 </div> <!-- end row -->
                                                 <ul class="list-inline wizard mb-0" style="margin-top:30px;">
+													<?php if (hasPermissions("adv", "settings")) { ?>
                                                     <li class="list-inline-item">
                                                         <a href="./settings.php?update"><button type="button" class="btn btn-warning waves-effect waves-light btn-xl">Update Tables</button></a>
                                                     </li>
                                                     <li class="list-inline-item">
                                                         <a href="./settings.php?reset"><button type="button" class="btn btn-danger waves-effect waves-light btn-xl">Reset Settings</button></a>
                                                     </li>
+													<?php } ?>
                                                     <li class="list-inline-item float-right">
                                                         <button id="create_backup" onClick="api('', 'backup')" class="btn btn-primary">Create Backup</button>
                                                     </li>
                                                 </ul>
                                             </div>
+											<?php } ?>
                                         </div> <!-- tab-content -->
                                     </div> <!-- end #basicwizard-->
                                 </div> <!-- end card-body -->
                             </div> <!-- end card-->
+                            <div class="modal fade bs-domains" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true" style="display: none;">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h4 class="modal-title" id="modalLabel">Domain List</h4>
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="sub-header">Ensure the following domains are entered in your reCAPTCHA V2 admin console, otherwise your resellers will be unable to login via their domain.</p>
+                                            <div class="table-responsive">
+                                                <table class="table mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Type / Reseller</th>
+                                                            <th>Domain Name</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php if (strlen($rServers[$_INFO["server_id"]]["server_ip"]) > 0) { ?>
+                                                        <tr>
+                                                            <td>Server IP</td>
+                                                            <td><?=$rServers[$_INFO["server_id"]]["server_ip"]?></td>
+                                                        </tr>
+                                                        <?php }
+                                                        if (strlen($rServers[$_INFO["server_id"]]["vpn_ip"]) > 0) { ?>
+                                                        <tr>
+                                                            <td>Server VPN</td>
+                                                            <td><?=$rServers[$_INFO["server_id"]]["vpn_ip"]?></td>
+                                                        </tr>
+                                                        <?php }
+                                                        if (strlen($rServers[$_INFO["server_id"]]["domain_name"]) > 0) { ?>
+                                                        <tr>
+                                                            <td>Server Domain</td>
+                                                            <td><?=$rServers[$_INFO["server_id"]]["domain_name"]?></td>
+                                                        </tr>
+                                                        <?php }
+                                                        $result = $db->query("SELECT `username`, `reseller_dns` FROM `reg_users` WHERE `reseller_dns` <> '' AND `verified` = 1 ORDER BY `username` ASC;");
+                                                        if (($result) && ($result->num_rows > 0)) {
+                                                        while ($row = $result->fetch_assoc()) { ?>
+                                                        <tr>
+                                                            <td><?=$row["username"]?></td>
+                                                            <td><?=$row["reseller_dns"]?></td>
+                                                        </tr>
+                                                        <?php }
+                                                        } ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div><!-- /.modal-content -->
+                                </div><!-- /.modal-dialog -->
+                            </div><!-- /.modal -->
                         </div> <!-- end col -->
                     </div>
                 </form>

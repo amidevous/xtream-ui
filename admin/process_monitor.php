@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "process_monitor"))) { exit; }
 
 if ((!isset($_GET["server"])) OR (!isset($rServers[$_GET["server"]]))) {
     header("Location: ./dashboard.php");exit;

@@ -5,13 +5,15 @@ if ($rPermissions["is_admin"]) { exit; }
 $rRegisteredUsers = getRegisteredUsers($rUserInfo["id"]);
 
 if ((isset($_GET["trial"])) OR (isset($_POST["trial"]))) {
-    $canGenerateTrials = checkTrials();
+    if ($rAdminSettings["disable_trial"]) {
+        $canGenerateTrials = False;
+    } else if ($rUserInfo["credits"] < $rPermissions["minimum_trial_credits"]) {
+        $canGenerateTrials = False;
+    } else {
+        $canGenerateTrials = checkTrials();
+    }
 } else {
     $canGenerateTrials = True;
-}
-
-if ($rAdminSettings["disable_trial"]) {
-	$canGenerateTrials = False;
 }
 
 if (isset($_POST["submit_user"])) {
@@ -39,7 +41,7 @@ if (isset($_POST["submit_user"])) {
                 $rCost = $rPackage["trial_credits"];
             } else {
                 $rOverride = json_decode($rUserInfo["override_packages"], True);
-                if ((isset($rOverride[$rPackage["id"]]["official_credits"])) && (strlen() > 0)) {
+                if ((isset($rOverride[$rPackage["id"]]["official_credits"])) && (strlen($rOverride[$rPackage["id"]]["official_credits"]) > 0)) {
                     $rCost = $rOverride[$rPackage["id"]]["official_credits"];
                 } else {
                     $rCost = $rPackage["official_credits"];
@@ -65,7 +67,7 @@ if (isset($_POST["submit_user"])) {
                 $rArray["max_connections"] = $rPackage["max_connections"];
                 $rArray["is_restreamer"] = $rPackage["is_restreamer"];
                 $rOwner = $_POST["member_id"];
-                if (in_array($rOwner, $rRegisteredUsers)) {
+                if (in_array($rOwner, array_keys($rRegisteredUsers))) {
                     $rArray["member_id"] = $rOwner;
                 } else {
                     $rArray["member_id"] = $rUserInfo["id"]; // Invalid owner, reset.
@@ -87,7 +89,7 @@ if (isset($_POST["submit_user"])) {
         // No package, just editing fields.
         $rArray["reseller_notes"] = $_POST["reseller_notes"];
         $rOwner = $_POST["member_id"];
-        if (in_array($rOwner, $rRegisteredUsers)) {
+        if (in_array($rOwner, array_keys($rRegisteredUsers))) {
             $rArray["member_id"] = $rOwner;
         } else {
             $rArray["member_id"] = $rUserInfo["id"]; // Invalid owner, reset.
@@ -756,7 +758,7 @@ if ($rSettings["sidebar"]) {
                         }
                         <?php } ?>
                         $(rData.bouquets).each(function(rIndex) {
-                            rTable.row.add([rData.bouquets[rIndex].id, rData.bouquets[rIndex].bouquet_name, rData.bouquets[rIndex].bouquet_channels.length, rData.bouquets[rIndex].bouquet_series.length]);
+							rTable.row.add([rData.bouquets[rIndex].id, rData.bouquets[rIndex].bouquet_name, rData.bouquets[rIndex].bouquet_channels.length, rData.bouquets[rIndex].bouquet_series.length]);
                         });
                     }
                     rTable.draw();
@@ -770,9 +772,11 @@ if ($rSettings["sidebar"]) {
                 $(".purchase").prop('disabled', true);
                 <?php }
                 foreach (json_decode($rUser["bouquet"], True) as $rBouquetID) {
-                    $rBouquetData = getBouquet($rBouquetID); ?>
-                    rTable.row.add([<?=$rBouquetID?>, '<?=$rBouquetData["bouquet_name"]?>', <?=count(json_decode($rBouquetData["bouquet_channels"], True))?>, <?=count(json_decode($rBouquetData["bouquet_series"], True))?>]);
-                <?php } ?>
+                    $rBouquetData = getBouquet($rBouquetID);
+					if (strlen($rBouquetID) > 0) { ?>
+					rTable.row.add([<?=$rBouquetID?>, '<?=$rBouquetData["bouquet_name"]?>', <?=count(json_decode($rBouquetData["bouquet_channels"], True))?>, <?=count(json_decode($rBouquetData["bouquet_series"], True))?>]);
+					<?php }
+                } ?>
                 rTable.draw();
             }
         }

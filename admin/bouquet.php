@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_bouquet")) && (!hasPermissions("adv", "edit_bouquet")))) { exit; }
 
 if (isset($_POST["submit_bouquet"])) {
     $rArray = Array("bouquet_name" => "", "bouquet_channels" => Array(), "bouquet_series" => Array());
@@ -29,9 +29,10 @@ if (isset($_POST["submit_bouquet"])) {
         }
     }
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_bouquet")) { exit; }
         $rCols = "id,".$rCols;
         $rValues = $_POST["edit"].",".$rValues;
-    }
+    } else if (!hasPermissions("adv", "add_bouquet")) { exit; }
     $rQuery = "REPLACE INTO `bouquets`(".$rCols.") VALUES(".$rValues.");";
     if ($db->query($rQuery)) {
         if (isset($_POST["edit"])) {
@@ -50,9 +51,11 @@ if (isset($_POST["submit_bouquet"])) {
 if (isset($_GET["id"])) {
     $rBouquets = getBouquets();
     $rBouquetArr = $rBouquets[$_GET["id"]];
-    if (!$rBouquetArr) {
+    if ((!$rBouquetArr) OR (!hasPermissions("adv", "edit_bouquet"))) {
         exit;
     }
+} else if (!hasPermissions("adv", "add_bouquet")) {
+	exit;
 }
 
 if ($rSettings["sidebar"]) {

@@ -194,7 +194,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="password"><?php if (isset($_GET["id"])) { ?>Change <?php } ?>Password</label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="password" name="password" value="" required data-parsley-trigger="change">
+																<input type="text" class="form-control" id="password" name="password" <?php if (!isset($rUser)) { echo 'value="'.generateString(10).'" required data-parsley-trigger="change"'; } else { echo 'value=""'; } ?> required data-parsley-trigger="change">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">

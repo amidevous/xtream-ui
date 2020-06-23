@@ -1,19 +1,22 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR ((!hasPermissions("adv", "add_movie")) && (!hasPermissions("adv", "edit_movie")))) { exit; }
+if ((isset($_GET["import"])) && (!hasPermissions("adv", "import_movies"))) { exit; }
 
 $rCategories = getCategories("movie");
 $rTranscodeProfiles = getTranscodeProfiles();
 
-if (isset($_POST["submit_radio"])) {
+if (isset($_POST["submit_movie"])) {
     set_time_limit(0);
     ini_set('mysql.connect_timeout', 0);
     ini_set('max_execution_time', 0);
     ini_set('default_socket_timeout', 0);
     if (isset($_POST["edit"])) {
+		if (!hasPermissions("adv", "edit_movie")) { exit; }
         $rArray = getStream($_POST["edit"]);
         unset($rArray["id"]);
     } else {
+		if (!hasPermissions("adv", "add_movie")) { exit; }
         $rArray = Array("movie_symlink" => 0, "type" => 2, "target_container" => Array("mp4"), "added" => time(), "read_native" => 0, "stream_all" => 0, "redirect_stream" => 1, "direct_source" => 0, "gen_timestamps" => 1, "transcode_attributes" => Array(), "stream_display_name" => "", "stream_source" => Array(), "movie_subtitles" => Array(), "category_id" => 0, "stream_icon" => "", "notes" => "", "custom_sid" => "", "custom_ffmpeg" => "", "transcode_profile_id" => 0, "enable_transcode" => 0, "auto_restart" => "[]", "allow_record" => 0, "rtmp_output" => 0, "epg_id" => null, "channel_id" => null, "epg_lang" => null, "tv_archive_server_id" => 0, "tv_archive_duration" => 0, "delay_minutes" => 0, "external_push" => Array(), "probesize_ondemand" => 128000);
     }
     $rArray["stream_display_name"] = $_POST["stream_display_name"];
@@ -72,6 +75,7 @@ if (isset($_POST["submit_radio"])) {
     unset($_POST["bouquets"]);
     $rImportStreams = Array();
     if (!empty($_FILES['m3u_file']['tmp_name'])) {
+		if (!hasPermissions("adv", "import_movies")) { exit; }
         $rStreamDatabase = Array();
         $result = $db->query("SELECT `stream_source` FROM `streams` WHERE `type` = 2;");
         if (($result) && ($result->num_rows > 0)) {
@@ -110,6 +114,7 @@ if (isset($_POST["submit_radio"])) {
 			}
         }
     } else if (!empty($_POST["import_folder"])) {
+		if (!hasPermissions("adv", "import_movies")) { exit; }
         $rStreamDatabase = Array();
         $result = $db->query("SELECT `stream_source` FROM `streams` WHERE `type` = 2;");
         if (($result) && ($result->num_rows > 0)) {
@@ -273,7 +278,7 @@ if (isset($_POST["submit_radio"])) {
 $rServerTree = Array();
 $rServerTree[] = Array("id" => "source", "parent" => "#", "text" => "<strong>Stream Source</strong>", "icon" => "mdi mdi-youtube-tv", "state" => Array("opened" => true));
 if (isset($_GET["id"])) {
-    if (isset($_GET["import"])) { exit; }
+    if ((isset($_GET["import"])) OR (!hasPermissions("adv", "edit_movie"))) { exit; }
     $rMovie = getStream($_GET["id"]);
     if ((!$rMovie) or ($rMovie["type"] <> 2)) {
         exit;
@@ -293,6 +298,7 @@ if (isset($_GET["id"])) {
         $rServerTree[] = Array("id" => $rServer["id"], "parent" => $rParent, "text" => $rServer["server_name"], "icon" => "mdi mdi-server-network", "state" => Array("opened" => true));
     }
 } else {
+	if (!hasPermissions("adv", "add_movie")) { exit; }
     foreach ($rServers as $rServer) {
         $rServerTree[] = Array("id" => $rServer["id"], "parent" => "#", "text" => $rServer["server_name"], "icon" => "mdi mdi-server-network", "state" => Array("opened" => true));
     }
@@ -739,7 +745,7 @@ if ($rSettings["sidebar"]) {
                                                         <a href="javascript: void(0);" class="btn btn-secondary">Previous</a>
                                                     </li>
                                                     <li class="list-inline-item float-right">
-                                                        <input name="submit_radio" type="submit" class="btn btn-primary" value="<?php if (isset($rMovie)) { echo "Edit"; } else { echo "Add"; } ?>" />
+                                                        <input name="submit_movie" type="submit" class="btn btn-primary" value="<?php if (isset($rMovie)) { echo "Edit"; } else { echo "Add"; } ?>" />
                                                     </li>
                                                 </ul>
                                             </div>

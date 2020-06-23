@@ -2,6 +2,7 @@
 include "session.php"; include "functions.php";
 
 if ($rPermissions["is_admin"]) {
+	if (!hasPermissions("adv", "users")) { exit; }
     $rRegisteredUsers = getRegisteredUsers();
 } else {
     $rRegisteredUsers = getRegisteredUsers($rUserInfo["id"]);
@@ -46,12 +47,14 @@ if ($rSettings["sidebar"]) {
                                                 <i class="mdi mdi-refresh"></i> Refresh
                                             </button>
                                         </a>
-                                        <?php } ?>
+                                        <?php }
+										if ((hasPermissions("adv", "add_user")) OR ($rPermissions["is_reseller"])) { ?>
                                         <a href="user<?php if ($rPermissions["is_reseller"]) { echo "_reseller"; } ?>.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 <i class="mdi mdi-plus"></i> Add User
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>
@@ -124,7 +127,7 @@ if ($rSettings["sidebar"]) {
                 <!-- end row-->
             </div> <!-- end container -->
             <?php if ((($rPermissions["is_reseller"]) && ($rPermissions["allow_download"])) OR ($rPermissions["is_admin"])) { ?>
-            <div class="modal fade downloadModal" tabindex="-1" role="dialog" aria-labelledby="downloadLabel" aria-hidden="true" style="display: none;" data-username="" data-password="">
+            <div class="modal fade downloadModal" role="dialog" aria-labelledby="downloadLabel" aria-hidden="true" style="display: none;" data-username="" data-password="">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -135,74 +138,17 @@ if ($rSettings["sidebar"]) {
                             <div class="col-12">
                                 <select id="download_type" class="form-control" data-toggle="select2">
                                     <option value="">Select an ouput format: </option>
-                                    <optgroup label="M3U Plus">
-                                        <option value="type=m3u_plus&amp;output=hls">M3U Plus - HLS </option>
-                                        <option value="type=m3u_plus&amp;output=mpegts">M3U Plus - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Standard M3U">
-                                        <option value="type=m3u&amp;output=hls">Standard M3U - HLS </option>
-                                        <option value="type=m3u&amp;output=mpegts">Standard M3U - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Enigma 2 OE">
-                                        <option value="type=enigma22_script&amp;output=hls">Enigma 2 - HLS </option>
-                                        <option value="type=enigma22_script&amp;output=ts">Enigma 2 - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="DreamBox OE 2.0">
-                                        <option value="type=dreambox&amp;output=hls">DreamBox - HLS </option>
-                                        <option value="type=dreambox&amp;output=mpegts">DreamBox - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Giga Blue">
-                                        <option value="type=gigablue&amp;output=hls">Giga Blue - HLS </option>
-                                        <option value="type=gigablue&amp;output=mpegts">Giga Blue - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Simple List">
-                                        <option value="type=simple&amp;output=hls">Simple List - HLS </option>
-                                        <option value="type=simple&amp;output=mpegts">Simple List - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Octagon">
-                                        <option value="type=octagon&amp;output=hls">Octagon - HLS </option>
-                                        <option value="type=octagon&amp;output=mpegts">Octagon - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Starlive v3 / Star Sat HD6060 / AZ Class">
-                                        <option value="type=starlivev3&amp;output=hls">Starlive v3 - HLS </option>
-                                        <option value="type=starlivev3&amp;output=mpegts">Starlive v3 - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Starlive v5">
-                                        <option value="type=starlivev5&amp;output=hls">Starlive V5 - HLS </option>
-                                        <option value="type=starlivev5&amp;output=mpegts">Starlive V5 - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="MediaStar / StarLive / Geant / Tiger">
-                                        <option value="type=mediastar&amp;output=hls">MediaStar - HLS </option>
-                                        <option value="type=mediastar&amp;output=mpegts">MediaStar - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Web TV List">
-                                        <option value="type=webtvlist&amp;output=hls">Web TV List - HLS </option>
-                                        <option value="type=webtvlist&amp;output=mpegts">Web TV List - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Ariva">
-                                        <option value="type=ariva&amp;output=hls">Ariva - HLS </option>
-                                        <option value="type=ariva&amp;output=mpegts">Ariva - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Spark">
-                                        <option value="type=spark&amp;output=hls">Spark - HLS </option>
-                                        <option value="type=spark&amp;output=mpegts">Spark - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Geant / Starsat / Tiger / Qmax / Hyper / Royal (OLD)">
-                                        <option value="type=gst&amp;output=hls">Geant - HLS </option>
-                                        <option value="type=gst&amp;output=mpegts">Geant - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Fortec 999 / Prifix 9400 / Starport">
-                                        <option value="type=fps&amp;output=hls">Fortec 999 - HLS </option>
-                                        <option value="type=fps&amp;output=mpegts">Fortec 999 - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Revolution 60/60 | Sunplus">
-                                        <option value="type=revosun&amp;output=hls">Revolution 60/60 - HLS </option>
-                                        <option value="type=revosun&amp;output=mpegts">Revolution 60/60 - MPEGTS</option>
-                                    </optgroup>
-                                    <optgroup label="Zorro">
-                                        <option value="type=zorro&amp;output=hls">Zorro - HLS </option>
-                                        <option value="type=zorro&amp;output=mpegts">Zorro - MPEGTS</option>
-                                    </optgroup>
+                                    <?php
+                                    $result = $db->query("SELECT * FROM `devices` ORDER BY `device_id` ASC;");
+                                    if (($result) && ($result->num_rows > 0)) {
+                                        while ($row = $result->fetch_assoc()) {
+                                            if ($row["copy_text"]) {
+                                                echo '<optgroup label="'.$row["device_name"].'"><option data-text="'.str_replace('"', '\"', $row["copy_text"]).'" value="type='.$row["device_key"].'&amp;output=hls">'.$row["device_name"].' - HLS </option><option data-text="'.str_replace('"', '\"', $row["copy_text"]).'" value="type='.$row["device_key"].'&amp;output=mpegts">'.$row["device_name"].' - MPEGTS</option></optgroup>';
+                                            } else {
+                                                echo '<optgroup label="'.$row["device_name"].'"><option value="type='.$row["device_key"].'&amp;output=hls">'.$row["device_name"].' - HLS </option><option value="type='.$row["device_key"].'&amp;output=mpegts">'.$row["device_name"].' - MPEGTS</option></optgroup>';
+                                            }
+                                        }
+                                    } ?>
                                 </select>
                             </div>
                             <div class="col-12" style="margin-top:10px;">
@@ -210,7 +156,7 @@ if ($rSettings["sidebar"]) {
                                     <input type="text" class="form-control" id="download_url" value="">
                                     <div class="input-group-append">
                                         <button class="btn btn-warning waves-effect waves-light" type="button" onClick="copyDownload();"><i class="mdi mdi-content-copy"></i></button>
-                                        <button class="btn btn-info waves-effect waves-light" type="button" onClick="doDownload();"><i class="mdi mdi-download"></i></button>
+                                        <button class="btn btn-info waves-effect waves-light" type="button" onClick="doDownload();" id="download_button" disabled><i class="mdi mdi-download"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -291,19 +237,14 @@ if ($rSettings["sidebar"]) {
         }
         function download(username, password) {
             $("#download_type").val("");
+            $("#download_button").attr("disabled", true);
             $('.downloadModal').data('username', username);
             $('.downloadModal').data('password', password);
             $('.downloadModal').modal('show');
         }
+       
         $("#download_type").change(function() {
             if ($("#download_type").val().length > 0) {
-                if ($("#download_type").val() == "type=enigma22_script&output=hls" || $("#download_type").val()=="type=enigma22_script&output=ts") {
-                    rBefore = "wget -O /etc/enigma2/iptv.sh \"";
-                    rAfter = "\" && chmod 777 /etc/enigma2/iptv.sh && /etc/enigma2/iptv.sh";
-                } else {
-                    rBefore = "";
-                    rAfter = "";
-                }
                 <?php
                 if (strlen($rUserInfo["reseller_dns"]) > 0) {
                     $rDNS = $rUserInfo["reseller_dns"];
@@ -311,7 +252,14 @@ if ($rSettings["sidebar"]) {
                     $rDNS = $rServers[$_INFO["server_id"]]["domain_name"] ? $rServers[$_INFO["server_id"]]["domain_name"] : $rServers[$_INFO["server_id"]]["server_ip"];
                 }
                 ?>
-                $("#download_url").val(rBefore + "http://<?=$rDNS?>:<?=$rServers[$_INFO["server_id"]]["http_broadcast_port"]?>/get.php?username=" + $('.downloadModal').data('username') + "&password=" + $('.downloadModal').data('password') + "&" + decodeURIComponent($('.downloadModal select').val() + rAfter));
+                rText = "http://<?=$rDNS?>:<?=$rServers[$_INFO["server_id"]]["http_broadcast_port"]?>/get.php?username=" + $('.downloadModal').data('username') + "&password=" + $('.downloadModal').data('password') + "&" + decodeURIComponent($('.downloadModal select').val());
+                if ($("#download_type").find(':selected').data('text')) {
+                    rText = $("#download_type").find(':selected').data('text').replace("{DEVICE_LINK}", '"' + rText + '"');
+                    $("#download_button").attr("disabled", true);
+                } else {
+                    $("#download_button").attr("disabled", false);
+                }
+                $("#download_url").val(rText);
             } else {
                 $("#download_url").val("");
             }

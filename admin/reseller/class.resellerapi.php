@@ -19,7 +19,7 @@ class Controller {
     public function testconnection($param) {
         global $db;
         $return = array();
-        $rUserInfo = $db->query("SELECT * FROM `reseller_credentials` WHERE `api_key` = '" . resellerapi_encrypt($db->real_escape_string($param['api_key']), "!SMARTERS!") . "' AND `api_key` <> '';");
+        $rUserInfo = $db->query("SELECT * FROM `reseller_credentials` WHERE `api_key` = '" . $db->real_escape_string(resellerapi_encrypt($param['api_key']), "!SMARTERS!") . "' AND `api_key` <> '';");
         if ($rUserInfo->num_rows > 0) {
             $return['result'] = 'success';
             $return['message'] = 'SUCCESSFUL!';
@@ -33,7 +33,7 @@ class Controller {
     public function getresellerid($param) {
         global $db;
         $return = array();
-        $rUserInfo = $db->query("SELECT * FROM `reseller_credentials` WHERE `api_key` = '" . resellerapi_encrypt($db->real_escape_string($param['api_key']), "!SMARTERS!") . "' AND `api_key` <> '';");
+        $rUserInfo = $db->query("SELECT * FROM `reseller_credentials` WHERE `api_key` = '" . $db->real_escape_string(resellerapi_encrypt($param['api_key']), "!SMARTERS!") . "' AND `api_key` <> '';");
         if ($rUserInfo->num_rows > 0) {
             while ($row = $rUserInfo->fetch_assoc()) {
                 $return['result'] = 'success';

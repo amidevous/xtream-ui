@@ -1,7 +1,12 @@
 <?php
 include "session.php"; include "functions.php";
 if (!$rPermissions["is_admin"]) { header("Location: ./reseller.php"); }
-$rColours = Array(1 => Array("purple", "#675db7"), 2 => Array("success", "#23b397"), 3 => Array("pink", "#e36498"), 4 => Array("info", "#56C3D6"));
+
+if ($rAdminSettings["dark_mode"]) {
+	$rColours = Array(1 => Array("secondary", "#7e8e9d"), 2 => Array("secondary", "#7e8e9d"), 3 => Array("secondary", "#7e8e9d"), 4 => Array("secondary", "#7e8e9d"));
+} else {
+	$rColours = Array(1 => Array("purple", "#675db7"), 2 => Array("success", "#23b397"), 3 => Array("pink", "#e36498"), 4 => Array("info", "#56C3D6"));
+}
 
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
@@ -13,11 +18,12 @@ if ($rSettings["sidebar"]) {
         <?php } else { ?>
         <div class="wrapper"><div class="container-fluid">
         <?php } ?>
+				<?php if (hasPermissions("adv", "index")) { ?>
                 <!-- start page title -->
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
-                            <ul class="nav nav-tabs nav-bordered dashboard-tabs">
+                            <ul class="nav nav-tabs nav-bordered dashboard-tabs" style="flex-wrap: nowrap !important;">
                                 <li class="nav-item">
                                     <a data-id="home" href="#" class="nav-link active">
                                         Overview
@@ -35,18 +41,25 @@ if ($rSettings["sidebar"]) {
                     </div>
                 </div>     
                 <!-- end page title --> 
-
                 <div class="tab-content">
                     <div class="tab-pane show active" id="server-home">
                         <div class="row">
                             <div class="col-md-6 col-xl-3">
+								<?php if (hasPermissions("adv", "live_connections")) { ?>
 								<a href="./live_connections.php">
+								<?php } ?>
 									<div class="card-box active-connections">
 										<div class="row">
 											<div class="col-6">
+												<?php if ($rAdminSettings["dark_mode"]) { ?>
+												<div class="avatar-sm bg-secondary rounded">
+													<i class="fe-zap avatar-title font-22 text-white"></i>
+												</div>
+												<?php } else { ?>
 												<div class="avatar-sm bg-soft-purple rounded">
 													<i class="fe-zap avatar-title font-22 text-purple"></i>
 												</div>
+												<?php } ?>
 											</div>
 											<div class="col-6">
 												<div class="text-right">
@@ -56,17 +69,27 @@ if ($rSettings["sidebar"]) {
 											</div>
 										</div>
 									</div> <!-- end card-box-->
+								<?php if (hasPermissions("adv", "live_connections")) { ?>
 								</a>
+								<?php } ?>
                             </div> <!-- end col -->
 
                             <div class="col-md-6 col-xl-3">
+								<?php if (hasPermissions("adv", "live_connections")) { ?>
 								<a href="./live_connections.php">
+								<?php } ?>
 									<div class="card-box online-users">
 										<div class="row">
 											<div class="col-6">
+												<?php if ($rAdminSettings["dark_mode"]) { ?>
+												<div class="avatar-sm bg-secondary rounded">
+													<i class="fe-zap avatar-title font-22 text-white"></i>
+												</div>
+												<?php } else { ?>
 												<div class="avatar-sm bg-soft-success rounded">
 													<i class="fe-users avatar-title font-22 text-success"></i>
 												</div>
+												<?php } ?>
 											</div>
 											<div class="col-6">
 												<div class="text-right">
@@ -76,17 +99,27 @@ if ($rSettings["sidebar"]) {
 											</div>
 										</div>
 									</div> <!-- end card-box-->
+								<?php if (hasPermissions("adv", "live_connections")) { ?>
 								</a>
+								<?php } ?>
                             </div> <!-- end col -->
 							
 							<div class="col-md-6 col-xl-3">
+								<?php if (hasPermissions("adv", "streams")) { ?>
 								<a href="./streams.php?filter=1">
+								<?php } ?>
 									<div class="card-box active-streams">
 										<div class="row">
 											<div class="col-6">
+												<?php if ($rAdminSettings["dark_mode"]) { ?>
+												<div class="avatar-sm bg-secondary rounded">
+													<i class="fe-zap avatar-title font-22 text-white"></i>
+												</div>
+												<?php } else { ?>
 												<div class="avatar-sm bg-soft-pink rounded">
 													<i class="fe-play avatar-title font-22 text-pink"></i>
 												</div>
+												<?php } ?>
 											</div>
 											<div class="col-6">
 												<div class="text-right">
@@ -96,17 +129,27 @@ if ($rSettings["sidebar"]) {
 											</div>
 										</div>
 									</div> <!-- end card-box-->
+								<?php if (hasPermissions("adv", "streams")) { ?>
 								</a>
+								<?php } ?>
                             </div> <!-- end col -->
 							
 							<div class="col-md-6 col-xl-3">
+								<?php if (hasPermissions("adv", "streams")) { ?>
 								<a href="./streams.php?filter=2">
+								<?php } ?>
 									<div class="card-box offline-streams">
 										<div class="row">
 											<div class="col-6">
+												<?php if ($rAdminSettings["dark_mode"]) { ?>
+												<div class="avatar-sm bg-secondary rounded">
+													<i class="fe-zap avatar-title font-22 text-white"></i>
+												</div>
+												<?php } else { ?>
 												<div class="avatar-sm bg-soft-info rounded">
 													<i class="fe-pause avatar-title font-22 text-info"></i>
 												</div>
+												<?php } ?>
 											</div>
 											<div class="col-6">
 												<div class="text-right">
@@ -116,19 +159,23 @@ if ($rSettings["sidebar"]) {
 											</div>
 										</div>
 									</div> <!-- end card-box-->
+								<?php if (hasPermissions("adv", "streams")) { ?>
 								</a>
+								<?php } ?>
                             </div> <!-- end col -->
 							<?php $i = 0; foreach ($rServers as $rServer) { $i ++; if ($i == 5) { $i = 1; } ?>
 							<div class="col-xl-3 col-md-6">
 								<div class="card-header bg-<?=$rColours[$i][0]?> py-3 text-white">
+									<?php if (hasPermissions("adv", "live_connections")) { ?>
 									<div class="float-right">
 										<a href="./live_connections.php?server_id=<?=$rServer["id"]?>" class="arrow-none card-drop">
 											<i class="mdi mdi-play"></i>
 										</a>
 									</div>
+									<?php } ?>
 									<h5 class="card-title mb-0 text-white"><?=$rServer["server_name"]?></h5>
 								</div>
-								<div class="card-header py-3 text-white bg-white">
+								<div class="card-header py-3 text-white<?php if (!$rAdminSettings["dark_mode"]) { echo " bg-white"; } ?>">
 									<div class="row">
 										<div class="col-md-4" align="center">
 											<h4 class="header-title">Conns.</h4>
@@ -185,9 +232,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box active-connections">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-purple rounded">
                                                 <i class="fe-zap avatar-title font-22 text-purple"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-right">
@@ -199,7 +252,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="mt-3">
                                         <h6 class="text-uppercase">Total Connections <span class="float-right entry-percentage">0</span></h6>
                                         <div class="progress progress-sm m-0">
-                                            <div class="progress-bar bg-purple" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+                                            <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } else { ?>
+											<div class="progress-bar bg-purple" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } ?>
                                                 <span class="sr-only">0%</span>
                                             </div>
                                         </div>
@@ -211,9 +268,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box online-users">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-success rounded">
                                                 <i class="fe-users avatar-title font-22 text-success"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-right">
@@ -225,7 +288,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="mt-3">
                                         <h6 class="text-uppercase">Total Active <span class="float-right entry-percentage">0</span></h6>
                                         <div class="progress progress-sm m-0">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+                                            <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } else { ?>
                                             <div class="progress-bar bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } ?>
                                                 <span class="sr-only">0%</span>
                                             </div>
                                         </div>
@@ -237,9 +304,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box input-flow">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-primary rounded">
                                                 <i class="fe-trending-down avatar-title font-22 text-primary"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-right">
@@ -251,7 +324,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="mt-3">
                                         <h6 class="text-uppercase">Network Load <span class="float-right entry-percentage">0%</span></h6>
                                         <div class="progress progress-sm m-0">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+                                            <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } else { ?>
                                             <div class="progress-bar bg-primary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } ?>
                                                 <span class="sr-only">0%</span>
                                             </div>
                                         </div>
@@ -263,9 +340,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box output-flow">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-info rounded">
                                                 <i class="fe-trending-up avatar-title font-22 text-info"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-right">
@@ -277,7 +360,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="mt-3">
                                         <h6 class="text-uppercase">Network Load <span class="float-right entry-percentage">0%</span></h6>
                                         <div class="progress progress-sm m-0">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+                                            <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } else { ?>
                                             <div class="progress-bar bg-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } ?>
                                                 <span class="sr-only">0%</span>
                                             </div>
                                         </div>
@@ -289,9 +376,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box active-streams">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-purple rounded">
                                                 <i class="fe-arrow-up-right avatar-title font-22 text-purple"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <a href="javascript:void(0);" onClick="onlineStreams()">
@@ -306,7 +399,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="mt-3">
                                         <h6 class="text-uppercase">Offline Streams <span class="float-right entry-percentage">0</span></h6>
                                         <div class="progress progress-sm m-0">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+                                            <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } else { ?>
                                             <div class="progress-bar bg-purple" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } ?>
                                                 <span class="sr-only">0%</span>
                                             </div>
                                         </div>
@@ -319,9 +416,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box cpu-usage">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-success rounded">
                                                 <i class="fe-cpu avatar-title font-22 text-success"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-right">
@@ -333,7 +436,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="mt-3">
                                         <h6 class="text-uppercase">&nbsp;</h6>
                                         <div class="progress progress-sm m-0">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+                                            <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } else { ?>
                                             <div class="progress-bar bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } ?>
                                                 <span class="sr-only">0%</span>
                                             </div>
                                         </div>
@@ -345,9 +452,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box mem-usage">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-primary rounded">
                                                 <i class="fe-terminal avatar-title font-22 text-primary"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-right">
@@ -359,7 +472,11 @@ if ($rSettings["sidebar"]) {
                                     <div class="mt-3">
                                         <h6 class="text-uppercase">&nbsp;</h6>
                                         <div class="progress progress-sm m-0">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+                                            <div class="progress-bar bg-secondary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } else { ?>
                                             <div class="progress-bar bg-primary" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+											<?php } ?>
                                                 <span class="sr-only">0%</span>
                                             </div>
                                         </div>
@@ -371,9 +488,15 @@ if ($rSettings["sidebar"]) {
                                 <div class="card-box uptime">
                                     <div class="row">
                                         <div class="col-6">
+											<?php if ($rAdminSettings["dark_mode"]) { ?>
+											<div class="avatar-sm bg-secondary rounded">
+												<i class="fe-zap avatar-title font-22 text-white"></i>
+											</div>
+											<?php } else { ?>
                                             <div class="avatar-sm bg-soft-info rounded">
                                                 <i class="fe-power avatar-title font-22 text-info"></i>
                                             </div>
+											<?php } ?>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-right">
@@ -393,6 +516,12 @@ if ($rSettings["sidebar"]) {
                     </div>
                 </div>
                 <!-- end row -->
+				<?php } else { ?>
+				<div class="alert alert-danger show text-center" role="alert" style="margin-top:20px;">
+					Welcome to Xtream UI! You do not have permission to view the dashboard.<br/>
+					<?php if ($rSettings["sidebar"]) { echo "Please navigate using the menu on the left."; } else { echo "Please navigate using the top menu."; } ?>
+				</div>
+				<?php } ?>
                
             </div> <!-- end container -->
         </div>

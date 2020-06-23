@@ -1,6 +1,7 @@
 <?php
 include "session.php"; include "functions.php";
 if (($rPermissions["is_reseller"]) && (!$rPermissions["reset_stb_data"])) { exit; }
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "streams"))) { exit; }
 
 if (isset($_GET["category"])) {
     if (!isset($rCategories[$_GET["category"]])) {
@@ -52,18 +53,22 @@ if ($rSettings["sidebar"]) {
                                             </button>
                                         </a>
                                         <?php }
-                                        if ($rPermissions["is_admin"]) { ?>
+                                        if ($rPermissions["is_admin"]) {
+										if (hasPermissions("adv", "add_stream")) { ?>
                                         <a href="stream.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm">
                                                 Add Stream
                                             </button>
                                         </a>
+										<?php }
+										if (hasPermissions("adv", "create_channel")) { ?>
                                         <a href="created_channel.php">
                                             <button type="button" class="btn btn-purple waves-effect waves-light btn-sm">
                                                 Create
                                             </button>
                                         </a>
-                                        <?php } ?>
+                                        <?php }
+										} ?>
                                     </li>
                                 </ol>
                             </div>

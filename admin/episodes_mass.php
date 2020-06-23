@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "mass_sedits"))) { exit; }
 
 $rCategories = getCategories("series");
 $rSeries = getSeries();

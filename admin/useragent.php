@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "block_uas"))) { exit; }
 
 if (isset($_POST["submit_ua"])) {
     $rArray = Array("user_agent" => "", "exact_match" => 0, "attempts_blocked" => 0);

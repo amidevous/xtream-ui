@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "tprofiles"))) { exit; }
 
 $rProfiles = getTranscodeProfiles();
 if ($rSettings["sidebar"]) {
@@ -17,6 +17,7 @@ if ($rSettings["sidebar"]) {
                 <div class="row">
                     <div class="col-12">
                         <div class="page-title-box">
+							<?php if (hasPermissions("adv", "tprofile")) { ?>
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
@@ -28,6 +29,7 @@ if ($rSettings["sidebar"]) {
                                     </li>
                                 </ol>
                             </div>
+							<?php } ?>
                             <h4 class="page-title">Transcode Profiles</h4>
                         </div>
                     </div>
@@ -55,8 +57,10 @@ if ($rSettings["sidebar"]) {
                                             <td><?=$rProfile["profile_name"]?></td>
                                             <td><?=(strlen($rProfile["profile_options"]) > 100 ? substr($rProfile["profile_options"],0,100)."..." : $rProfile["profile_options"])?></td>
                                             <td class="text-center">
+												<?php if (hasPermissions("adv", "edit_tprofile")) { ?>
                                                 <a href="./profile.php?id=<?=$rProfile["profile_id"]?>"><button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs"><i class="mdi mdi-pencil-outline"></i></button></a>
                                                 <button type="button" class="btn btn-outline-danger waves-effect waves-light btn-xs" onClick="api(<?=$rProfile["profile_id"]?>, 'delete');"><i class="mdi mdi-close"></i></button>
+												<?php } else { echo "--"; } ?>
                                             </td>
                                         </tr>
                                         <?php } ?>

@@ -1,5 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "manage_tickets"))) { exit; }
 $rStatusArray = Array(0 => "CLOSED", 1 => "OPEN", 2 => "RESPONDED", 3 => "READ");
 
 if ($rSettings["sidebar"]) {
@@ -8,9 +9,9 @@ if ($rSettings["sidebar"]) {
     include "header.php";
 }
         if ($rSettings["sidebar"]) { ?>
-        <div class="content-page"><div class="content boxed-layout-ext"><div class="container-fluid">
+        <div class="content-page"><div class="content"><div class="container-fluid">
         <?php } else { ?>
-        <div class="wrapper boxed-layout-ext"><div class="container-fluid">
+        <div class="wrapper"><div class="container-fluid">
         <?php } ?>
                 <div class="row">
                     <div class="col-12">
@@ -67,7 +68,8 @@ if ($rSettings["sidebar"]) {
                                                 <a href="javascript: void(0);" class="table-action-btn dropdown-toggle arrow-none btn btn-light btn-sm" data-toggle="dropdown" aria-expanded="false"><i class="mdi mdi-dots-horizontal"></i></a>
                                                 <div class="dropdown-menu dropdown-menu-right">
                                                     <a class="dropdown-item" href="./ticket_view.php?id=<?=$rTicket["id"]?>"><i class="mdi mdi-eye mr-2 text-muted font-18 vertical-middle"></i>View Ticket</a>
-                                                    <?php if ($rTicket["status"] > 0) { ?>
+													<?php if (hasPermissions("adv", "ticket")) {
+                                                    if ($rTicket["status"] > 0) { ?>
                                                     <a class="dropdown-item" href="javascript:void(0);" onClick="api(<?=$rTicket["id"]?>, 'close');"><i class="mdi mdi-check-all mr-2 text-muted font-18 vertical-middle"></i>Close</a>
                                                     <?php } else if ($rPermissions["is_admin"]) { ?>
                                                     <a class="dropdown-item" href="javascript:void(0);" onClick="api(<?=$rTicket["id"]?>, 'reopen');"><i class="mdi mdi-check-all mr-2 text-muted font-18 vertical-middle"></i>Re-Open</a>
@@ -79,7 +81,7 @@ if ($rSettings["sidebar"]) {
                                                     <?php } else { ?>
                                                     <a class="dropdown-item" href="javascript:void(0);" onClick="api(<?=$rTicket["id"]?>, 'unread');"><i class="mdi mdi-star mr-2 font-18 text-muted vertical-middle"></i>Mark as Unread</a>
                                                     <?php }
-                                                    } ?>
+                                                    } } ?>
                                                 </div>
                                             </div>
                                         </td>

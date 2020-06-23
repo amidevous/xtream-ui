@@ -1,6 +1,6 @@
 <?php
 include "session.php"; include "functions.php";
-if (!$rPermissions["is_admin"]) { exit; }
+if ((!$rPermissions["is_admin"]) OR (!hasPermissions("adv", "folder_watch"))) { exit; }
 
 if (isset($_GET["kill"])) {
     if (isset($rAdminSettings["watch_pid"])) {
@@ -25,26 +25,32 @@ if ($rSettings["sidebar"]) {
                             <div class="page-title-right">
                                 <ol class="breadcrumb m-0">
                                     <li>
+										<?php if (hasPermissions("adv", "folder_watch_settings")) { ?>
                                         <a href="settings_watch.php">
                                             <button type="button" class="btn btn-primary waves-effect waves-light btn-sm">
                                                 Settings
                                             </button>
                                         </a>
+										<?php }
+										if (hasPermissions("adv", "folder_watch_output")) { ?>
                                         <a href="watch_output.php">
                                             <button type="button" class="btn btn-info waves-effect waves-light btn-sm">
                                                 Watch Output
                                             </button>
                                         </a>
+										<?php } ?>
                                         <a href="watch.php?kill=1">
                                             <button type="button" class="btn btn-danger waves-effect waves-light btn-sm" data-toggle="tooltip" data-placement="top" title="" data-original-title="Kill Process">
                                                 <i class="mdi mdi-hammer"></i>
                                             </button>
                                         </a>
+										<?php if (hasPermissions("adv", "folder_watch_add")) { ?>
                                         <a href="watch_add.php">
                                             <button type="button" class="btn btn-success waves-effect waves-light btn-sm" data-toggle="tooltip" data-placement="top" title="" data-original-title="Add Folder">
                                                 <i class="mdi mdi-plus"></i>
                                             </button>
                                         </a>
+										<?php } ?>
                                     </li>
                                 </ol>
                             </div>

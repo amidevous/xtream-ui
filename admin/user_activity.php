@@ -1,5 +1,8 @@
 <?php
 include "functions.php";
+if (($rPermissions["is_admin"]) && (!hasPermissions("adv", "connection_logs"))) { exit; }
+if (($rPermissions["is_reseller"]) && (!$rPermissions["reseller_client_connection_logs"])) { exit; }
+
 if (!isset($_SESSION['hash'])) { header("Location: ./login.php"); exit; }
 if ($rSettings["sidebar"]) {
     include "header_sidebar.php";
