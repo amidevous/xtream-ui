@@ -310,7 +310,7 @@ if ($rSettings["sidebar"]) {
                                     <a href="./streams.php<?php if (isset($_GET["category"])) { echo "?category=".$_GET["category"]; } ?>"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Streams</li></a>
                                 </ol>
                             </div>
-                            <h4 class="page-title"><?php if (isset($rStream)) { echo $rStream["stream_display_name"]; } else if (isset($_GET["import"])) { echo "Import Streams"; } else { echo "Add Stream"; } ?></h4>
+                            <h4 class="page-title"><?php if (isset($rStream)) { echo $rStream["stream_display_name"].' &nbsp;<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rStream["id"].');"><i class="mdi mdi-play"></i></button>'; } else if (isset($_GET["import"])) { echo "Import Streams"; } else { echo "Add Stream"; } ?></h4>
                         </div>
                     </div>
                 </div>     
@@ -341,7 +341,7 @@ if ($rSettings["sidebar"]) {
                                             <th></th>
                                             <th></th>
                                             <th>Server</th>
-                                            <th></th>
+                                            <th>Current Source</th>
                                             <th>Clients</th>
                                             <th>Uptime</th>
                                             <th>Actions</th>
@@ -556,7 +556,7 @@ if ($rSettings["sidebar"]) {
                                                         <div class="form-group row mb-4">
                                                             <label class="col-md-4 col-form-label" for="http_proxy">HTTP Proxy <i data-toggle="tooltip" data-placement="top" title="" data-original-title="Format: ip:port" class="mdi mdi-information"></i></label>
                                                             <div class="col-md-8">
-                                                                <input type="text" class="form-control" id="http_proxy" name="http_proxy" value="<?php if (isset($rStreamOptions[2])) { echo $rStreamOptions[1]["value"]; } else { echo $rStreamArguments["proxy"]["argument_default_value"]; } ?>">
+                                                                <input type="text" class="form-control" id="http_proxy" name="http_proxy" value="<?php if (isset($rStreamOptions[2])) { echo $rStreamOptions[2]["value"]; } else { echo $rStreamArguments["proxy"]["argument_default_value"]; } ?>">
                                                             </div>
                                                         </div>
                                                         <div class="form-group row mb-4">
@@ -790,6 +790,7 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
+        <script src="assets/libs/magnific-popup/jquery.magnific-popup.min.js"></script>
 
         <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
@@ -890,6 +891,14 @@ if ($rSettings["sidebar"]) {
                 $.toast("An error occured while processing your request.");
             });
         }
+        function player(rID) {
+            $.magnificPopup.open({
+                items: {
+                    src: "./player.php?type=live&id=" + rID,
+                    type: 'iframe'
+                }
+            });
+        }
         $(document).ready(function() {
             $('select').select2({width: '100%'})
             var elems = Array.prototype.slice.call(document.querySelectorAll('.js-switch'));
@@ -968,8 +977,8 @@ if ($rSettings["sidebar"]) {
                     }
                 },
                 columnDefs: [
-                    {"className": "dt-center", "targets": [2,4,5,6]},
-                    {"visible": false, "targets": [0,1,3,7]}
+                    {"className": "dt-center", "targets": [2,3,4,5,6]},
+                    {"visible": false, "targets": [0,1,7]}
                 ],
             });
             setTimeout(reloadStream, 5000);

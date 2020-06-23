@@ -200,7 +200,8 @@ if ($rSettings["sidebar"]) {
                     {"visible": false, "targets": [4,9]}
                     <?php } ?>
                 ],
-                order: [[ 0, "desc" ]]
+                order: [[ 0, "desc" ]],
+                stateSave: true
             });
             <?php if (!$detect->isMobile()) { ?>
             setTimeout(reloadUsers, 5000);

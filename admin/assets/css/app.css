@@ -2295,10 +2295,10 @@ table.dataTable{
     margin-bottom:15px!important
 }
 table.dataTable tbody>tr.selected,table.dataTable tbody>tr>.selected{
-    background-color:#5089de
+    background-color:#5089de !important;
 }
 table.dataTable tbody>tr.selected td,table.dataTable tbody>tr>.selected td{
-    border-color:#5089de
+    border-color:#5089de !important;
 }
 table.dataTable tbody td:focus{
     outline:0!important
@@ -3820,7 +3820,7 @@ body.authentication-bg-pattern{
 .checkbox-offset {
     margin-top:7px;
 }
-.ui-selectable-helper {
+.ui-selectable-helper, .dt-rowReorder-float {
     display: none;
 }
 #datatable-mass_length, #datatable-mass_filter {
@@ -3846,4 +3846,7 @@ body.authentication-bg-pattern{
 }
 #datatable-md1, #datatable-md2, #datatable-md3 {
     width: 100% !important;
+}
+table.dataTable tbody > tr.reordered, table.dataTable tbody > tr > .reordered {
+    background-color: #eeeeee;
 }

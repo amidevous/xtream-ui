@@ -293,7 +293,8 @@ if ($rSettings["sidebar"]) {
                     <?php } ?>
                 ],
                 order: [[ 0, "desc" ]],
-                pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>
+                pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>,
+                stateSave: true
             });
             $('#stream_search').keyup(function(){
                 $('#datatable-streampage').DataTable().search($(this).val()).draw();

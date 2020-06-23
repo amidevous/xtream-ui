@@ -32,9 +32,9 @@ def installBalancer(rDetails):
         writeDetails(rDetails)
         return True
     try:
-        rIn, rOut, rErr = rClient.exec_command("sudo apt-get install python")
+        rIn, rOut, rErr = rClient.exec_command("sudo apt-get install python -y")
         rStatus = rOut.channel.recv_exit_status()
-        rIn, rOut, rErr = rClient.exec_command("sudo wget \"%s\" -O \"/tmp/balancer.py\"" % rDownloadURL)
+        rIn, rOut, rErr = rClient.exec_command("sudo wget -q \"%s\" -O \"/tmp/balancer.py\"" % rDownloadURL)
         rStatus = rOut.channel.recv_exit_status()
         rIn, rOut, rErr = rClient.exec_command("sudo python /tmp/balancer.py \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" %d" % (rIP, rConfig["db_port"], rConfig["db_user"], rConfig["db_pass"], rConfig["db_name"], int(rDetails["id"])))
         rStatus = rOut.channel.recv_exit_status()

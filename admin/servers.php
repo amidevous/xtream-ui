@@ -188,6 +188,7 @@ if ($rSettings["sidebar"]) {
                     $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
                 },
                 responsive: false,
+                stateSave: true
             });
         });
         </script>

@@ -1,5 +1,5 @@
 <?php
-$rRelease = 14;
+$rRelease = 15;
 
 session_start();
 ini_set('display_errors', 0);
@@ -77,6 +77,27 @@ function listDir($rServerID, $rDirectory, $rAllowed=null) {
     return $rReturn;
 }
 
+function getEncodeErrors($rID) {
+    global $rSettings;
+    $rServers = getStreamingServers(true);
+    ini_set('default_socket_timeout', 3);
+    $rErrors = Array();
+    $rStreamSys = getStreamSys($rID);
+    foreach ($rStreamSys as $rServer) {
+        $rServerID = $rServer["server_id"];
+        if (isset($rServers[$rServerID])) {
+            if (!($rServer["pid"] > 0 && $rServer["to_analyze"] == 0 && $rServer["stream_status"] <> 1)) {
+                $rFilename = MAIN_DIR."movies/".intval($rID).".errors";
+                $rError = file_get_contents("http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=getFile&filename=".urlencode($rFilename));
+                if (strlen($rError) > 0) {
+                    $rErrors[$rServerID] = $rError;
+                }
+            }
+        }
+    }
+    return $rErrors;
+}
+
 function getTimeDifference($rServerID) {
 	global $rServers, $rSettings;
     $rAPI = "http://".$rServers[intval($rServerID)]["server_ip"].":".$rServers[intval($rServerID)]["http_broadcast_port"]."/system_api.php?password=".urlencode($rSettings["live_streaming_pass"])."&action=getDiff&main_time=".intval(time());
@@ -125,10 +146,14 @@ if (!$db = new mysqli($_INFO["host"], $_INFO["db_user"], $_INFO["db_pass"], $_IN
 $db->set_charset("utf8");
 date_default_timezone_set(getTimezone());
 
-function getStreamingServers() {
+function getStreamingServers($rActive = false) {
     global $db;
     $return = Array();
-    $result = $db->query("SELECT * FROM `streaming_servers` ORDER BY `id` ASC;");
+    if ($rActive) {
+        $result = $db->query("SELECT * FROM `streaming_servers` WHERE `status` = 1 ORDER BY `id` ASC;");
+    } else {
+        $result = $db->query("SELECT * FROM `streaming_servers` ORDER BY `id` ASC;");
+    }
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $return[$row["id"]] = $row;
@@ -560,7 +585,7 @@ function addToBouquet($rType, $rBouquetID, $rID) {
         }
         $rChannels = json_decode($rBouquet[$rColumn], True);
         if (!in_array($rID, $rChannels)) {
-            $rChannels[] = $rID;
+            array_unshift($rChannels, $rID);
             if (count($rChannels) > 0) {
                 $db->query("UPDATE `bouquets` SET `".$rColumn."` = '".$db->real_escape_string(json_encode(array_values($rChannels)))."' WHERE `id` = ".intval($rBouquetID).";");
             }

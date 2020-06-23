@@ -141,7 +141,8 @@ if ($rSettings["sidebar"]) {
                 drawCallback: function() {
                     $(".dataTables_paginate > .pagination").addClass("pagination-rounded")
                 },
-                order: [[ 0, "desc" ]]
+                order: [[ 0, "desc" ]],
+                stateSave: true
             })
         });
         </script>

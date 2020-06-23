@@ -131,6 +131,7 @@ if ($rSettings["sidebar"]) {
                 columnDefs: [
                     {"className": "dt-center", "targets": [0,1,2,5]}
                 ],
+                stateSave: true
             });
         });
         </script>

@@ -20,6 +20,8 @@ if (isset($_POST["submit_stream"])) {
     if (strlen($_POST["movie_subtitles"]) > 0) {
         $rSplit = explode(":", $_POST["movie_subtitles"]);
         $rArray["movie_subtitles"] = Array("files" => Array($rSplit[2]), "names" => Array("Subtitles"), "charset" => Array("UTF-8"), "location" => intval($rSplit[1]));
+    } else {
+        $rArray["movie_subtitles"] = Array();
     }
     $rArray["notes"] = $_POST["notes"];
     $rArray["target_container"] = Array($_POST["target_container"]);
@@ -179,7 +181,7 @@ if ($rSettings["sidebar"]) {
                                     <a href="./movies.php"><li class="breadcrumb-item"><i class="mdi mdi-backspace"></i> Back to Movies</li></a>
                                 </ol>
                             </div>
-                            <h4 class="page-title"><?php if (isset($rMovie)) { echo $rMovie["stream_display_name"]; } else if (isset($_GET["import"])) { echo "Import Movies"; } else { echo "Add Movie"; } ?></h4>
+                            <h4 class="page-title"><?php if (isset($rMovie)) { echo $rMovie["stream_display_name"].' &nbsp;<button type="button" class="btn btn-outline-info waves-effect waves-light btn-xs" onClick="player('.$rMovie["id"].', \''.json_decode($rMovie["target_container"], True)[0].'\');"><i class="mdi mdi-play"></i></button>'; } else if (isset($_GET["import"])) { echo "Import Movies"; } else { echo "Add Movie"; } ?></h4>
                         </div>
                     </div>
                 </div>     
@@ -224,7 +226,16 @@ if ($rSettings["sidebar"]) {
                                 </table>
                             </div>
                         </div>
-                        <?php } ?>
+                        <?php $rEncodeErrors = getEncodeErrors($rMovie["id"]);
+                        foreach ($rEncodeErrors as $rServerID => $rEncodeError) { ?>
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            <strong>Error on Server - <?=$rServers[$rServerID]["server_name"]?></strong><br/>
+                            <?=str_replace("\n", "<br/>", $rEncodeError)?>
+                        </div>
+                        <?php } } ?>
                         <div class="card">
                             <div class="card-body">
                                 <form<?php if(isset($_GET["import"])) { echo " enctype=\"multipart/form-data\""; } ?> action="./movie.php<?php if (isset($_GET["import"])) { echo "?import"; } else if (isset($_GET["id"])) { echo "?id=".$_GET["id"]; } ?>" method="POST" id="stream_form">
@@ -439,7 +450,7 @@ if ($rSettings["sidebar"]) {
                                                             <div class="col-md-2">
                                                                 <input name="direct_source" id="direct_source" type="checkbox" <?php if (isset($rMovie)) { if ($rMovie["direct_source"] == 1) { echo "checked "; } } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
-                                                            <label class="col-md-4 col-form-label" for="read_native">Native Frames <i data-toggle="tooltip" data-placement="top" title="" data-original-title="You should always read live streams as non-native frames. However if you are streaming static video files, set this to true otherwise the encoding process will fail." class="mdi mdi-information"></i></label>
+                                                            <label class="col-md-4 col-form-label" for="read_native">Native Frames</label>
                                                             <div class="col-md-2">
                                                                 <input name="read_native" id="read_native" type="checkbox" <?php if (isset($rMovie)) { if ($rMovie["read_native"] == 1) { echo "checked "; } } else { echo "checked "; } ?>data-plugin="switchery" class="js-switch" data-color="#039cfd"/>
                                                             </div>
@@ -657,6 +668,7 @@ if ($rSettings["sidebar"]) {
         <script src="assets/libs/datatables/buttons.print.min.js"></script>
         <script src="assets/libs/datatables/dataTables.keyTable.min.js"></script>
         <script src="assets/libs/datatables/dataTables.select.min.js"></script>
+        <script src="assets/libs/magnific-popup/jquery.magnific-popup.min.js"></script>
 
         <!-- Plugins js-->
         <script src="assets/libs/twitter-bootstrap-wizard/jquery.bootstrap.wizard.min.js"></script>
@@ -751,7 +763,14 @@ if ($rSettings["sidebar"]) {
             $("#search").val("");
             $("#doSearch").click();
         }
-        
+        function player(rID, rContainer) {
+            $.magnificPopup.open({
+                items: {
+                    src: "./player.php?type=movie&id=" + rID + "&container=" + rContainer,
+                    type: 'iframe'
+                }
+            });
+        }
         $(document).ready(function() {
             $('select').select2({width: '100%'});
             

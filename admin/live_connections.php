@@ -173,6 +173,7 @@ if ($rSettings["sidebar"]) {
                 order: [[ 0, "desc" ]],
                 pageLength: <?=$rAdminSettings["default_entries"] ?: 10?>,
                 lengthMenu: [10, 25, 50, 250, 500, 1000],
+                stateSave: true
             });
             <?php if (!$detect->isMobile()) { ?>
             setTimeout(reloadUsers, 5000);

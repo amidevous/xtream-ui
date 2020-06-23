@@ -121,7 +121,7 @@ if (isset($_POST["submit_stream"])) {
                 $rOnDemandArray = Array();
                 if (isset($_POST["on_demand"])) {
                     foreach ($_POST["on_demand"] as $rID) {
-                        $rOnDemandArray[] = $rID;
+                        $rOnDemandArray[] = intval($rID);
                     }
                 }
                 $rStreamExists = Array();
@@ -146,7 +146,8 @@ if (isset($_POST["submit_stream"])) {
                             $rOD = 1;
                         } else {
                             $rOD = 0;
-                        }                            
+                        }
+                        
                         if (isset($rStreamExists[$rServerID])) {
                             if (!$db->query("UPDATE `streams_sys` SET `parent_id` = ".$rParent.", `on_demand` = ".$rOD." WHERE `server_stream_id` = ".$rStreamExists[$rServerID].";")) {
                                 $_STATUS = 1;
@@ -189,6 +190,16 @@ if (isset($_POST["submit_stream"])) {
             }
         }
         if (isset($_POST["restart_on_edit"])) {
+            $rPost = Array("action" => "stream", "sub" => "stop", "stream_ids" => array_values($rStreamIDs));
+            $rContext = stream_context_create(array(
+                'http' => array(
+                    'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                    'method'  => 'POST',
+                    'content' => http_build_query($rPost)
+                )
+            ));
+            $rAPI = "http://".$rServers[$_INFO["server_id"]]["server_ip"].":".$rServers[$_INFO["server_id"]]["http_broadcast_port"]."/api.php";
+            $rResult = json_decode(file_get_contents($rAPI, false, $rContext), True);
             $rPost = Array("action" => "stream", "sub" => "start", "stream_ids" => array_values($rStreamIDs));
             $rContext = stream_context_create(array(
                 'http' => array(
